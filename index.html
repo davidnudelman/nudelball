@@ -12,14 +12,16 @@
 <body>
 
 <!-- ===== WELCOME SCREEN ===== -->
-<div id="welcome">
-  <div class="welcome-box">
+<div id="welcome" class="welcome-screen">
+  <div class="welcome-box welcome-card">
     <h1><span data-i18n="welcomeTitle1">Nudel</span><span data-i18n="welcomeTitle2" style="color:var(--accent)">ball</span></h1>
     <p class="subtitle" data-i18n="welcomeSubtitle">Manage your club to glory</p>
 
     <!-- New Game Form -->
     <div id="welcome-new">
-      <input type="text" id="manager-name" data-i18n-placeholder="managerPlaceholder" placeholder="Enter your name, Manager..." maxlength="24" autofocus>
+      <div class="manager-input-group">
+        <input type="text" class="form-input" id="manager-name" data-i18n-placeholder="managerPlaceholder" placeholder="Enter your name, Manager..." maxlength="24" autofocus>
+      </div>
       <div class="team-picker" id="team-picker"></div>
       <div class="team-assign" id="team-selected" style="display:none">
         <div class="label" data-i18n="selectedTeam">Selected Team</div>
@@ -29,48 +31,56 @@
           <input type="text" id="team-rename" data-i18n-placeholder="teamRenamePlaceholder" placeholder="Custom team name..." maxlength="20">
         </div>
       </div>
-      <button class="wbtn primary" id="start-btn" disabled data-i18n="enterDugout">Enter The Dugout</button>
+      <button class="btn btn-success btn-start" id="start-btn" disabled data-i18n="enterDugout">Enter The Dugout</button>
     </div>
 
     <!-- Continue / New Game Buttons (shown when a save exists) -->
     <div id="welcome-continue" style="display:none">
-      <button class="wbtn primary" id="continue-btn" data-i18n="continueGame">Continue Game</button>
-      <button class="wbtn secondary" id="newgame-btn" data-i18n="newGame">New Game</button>
+      <button class="btn btn-success btn-start" id="continue-btn" data-i18n="continueGame">Continue Game</button>
+      <button class="btn btn-secondary" id="newgame-btn" data-i18n="newGame">New Game</button>
     </div>
 
     <!-- Welcome screen quick-access buttons -->
-    <button class="welcome-settings-btn" onclick="toggleHelp()">&#128214; How to Play</button>
-    <button class="welcome-settings-btn" onclick="toggleSettings()">&#9881; <span data-i18n="settings">Settings</span></button>
+    <button class="btn btn-secondary btn-sm" style="margin-top:var(--sp-sm);width:100%" onclick="toggleHelp()">&#128214; How to Play</button>
+    <button class="btn btn-secondary btn-sm" style="margin-top:var(--sp-xs);width:100%" onclick="toggleSettings()">&#9881; <span data-i18n="settings">Settings</span></button>
 
     <div class="welcome-footer">A Game by DAV<span class="footer-red">ID</span> NUDELMAN</div>
   </div>
 </div>
 
 <!-- ===== TOP BAR ===== -->
-<div id="top-bar" style="display:none">
-  <div class="logo">NB</div>
-  <div class="manager-info" id="manager-info"></div>
-  <div class="season-badge" id="season-badge">Season 1</div>
-  <button id="mute-btn" onclick="toggleMute()" title="Mute/Unmute">&#128266;</button>
-  <button id="play-match-btn" onclick="playMatch()" data-i18n="playMatch">Play Match</button>
-  <button id="settings-btn" onclick="toggleSettings()" title="Settings">&#9881;</button>
+<div id="top-bar" class="top-bar" style="display:none">
+  <div class="top-bar-inner">
+    <div class="top-bar-left">
+      <div class="top-bar-title">Nudel<span>ball</span></div>
+      <div class="manager-badge" id="manager-info"></div>
+      <div class="season-badge" id="season-badge">Season 1</div>
+    </div>
+    <div class="top-bar-right">
+      <button class="top-bar-icon" id="mute-btn" onclick="toggleMute()" title="Mute/Unmute">&#128266;</button>
+      <button class="btn btn-success" id="play-match-btn" onclick="playMatch()" data-i18n="playMatch">Play Match</button>
+      <button class="top-bar-icon" id="settings-btn" onclick="toggleSettings()" title="Settings">&#9881;</button>
+    </div>
+  </div>
 </div>
 
 <!-- ===== NAV BAR ===== -->
-<div id="nav" style="display:none">
-  <button class="nav-btn active" data-view="dashboard" data-i18n="dashboard" onclick="showView('dashboard')">Dashboard</button>
-  <button class="nav-btn" data-view="squad" data-i18n="squad" onclick="showView('squad')">Squad</button>
-  <button class="nav-btn" data-view="table" data-i18n="table" onclick="showView('table')">Table</button>
-  <button class="nav-btn" data-view="calendar" data-i18n="calendar" onclick="showView('calendar')">Calendar</button>
-  <button class="nav-btn" data-view="scorers" data-i18n="topScorers" onclick="showView('scorers')">Top Scorers</button>
-  <button class="nav-btn" data-view="market" data-i18n="market" onclick="showView('market')">Market</button>
-  <button class="nav-btn" data-view="cup" onclick="showView('cup')">&#127942; Cup</button>
-  <button class="nav-btn" data-view="history" data-i18n="history" onclick="showView('history')">History</button>
-  <button class="nav-btn" data-view="trophyroom" data-i18n="trophyRoom" onclick="showView('trophyroom')">Trophy Room</button>
+<div id="nav" class="nav-bar" style="display:none">
+  <div class="nav-bar-inner">
+    <button class="nav-btn active" data-view="dashboard" data-i18n="dashboard" onclick="showView('dashboard')">Dashboard</button>
+    <button class="nav-btn" data-view="squad" data-i18n="squad" onclick="showView('squad')">Squad</button>
+    <button class="nav-btn" data-view="table" data-i18n="table" onclick="showView('table')">Table</button>
+    <button class="nav-btn" data-view="calendar" data-i18n="calendar" onclick="showView('calendar')">Calendar</button>
+    <button class="nav-btn" data-view="scorers" data-i18n="topScorers" onclick="showView('scorers')">Top Scorers</button>
+    <button class="nav-btn" data-view="market" data-i18n="market" onclick="showView('market')">Market</button>
+    <button class="nav-btn" data-view="cup" onclick="showView('cup')">&#127942; Cup</button>
+    <button class="nav-btn" data-view="history" data-i18n="history" onclick="showView('history')">History</button>
+    <button class="nav-btn" data-view="trophyroom" data-i18n="trophyRoom" onclick="showView('trophyroom')">Trophy Room</button>
+  </div>
 </div>
 
 <!-- ===== MAIN CONTENT ===== -->
-<div id="main" style="display:none">
+<div id="main" class="container" style="display:none">
 
   <!-- Dashboard -->
   <div id="view-dashboard" class="view active">
@@ -103,9 +113,9 @@
       <div class="card-title" data-i18n="squadManagement">Squad Management</div>
       <div class="squad-controls">
         <select id="formation-select" class="formation-select" onchange="onFormationChange()"></select>
-        <button class="btn btn-accent" onclick="autoPick()" data-i18n="autoPick">Auto-Pick</button>
-        <button class="btn btn-outline" onclick="clearSelection()" data-i18n="clear">Clear</button>
-        <button class="btn btn-outline" id="sort-btn" onclick="toggleSort()">Sort: Position</button>
+        <button class="btn btn-primary" onclick="autoPick()" data-i18n="autoPick">Auto-Pick</button>
+        <button class="btn btn-secondary" onclick="clearSelection()" data-i18n="clear">Clear</button>
+        <button class="btn btn-secondary" id="sort-btn" onclick="toggleSort()">Sort: Position</button>
         <div class="selected-count"><span data-i18n="selected">Selected:</span> <span id="sel-count">0</span>/11</div>
       </div>
       <div id="formation-bar" class="formation-bar" style="display:none">
@@ -173,7 +183,7 @@
   </div>
 
   <!-- Footer -->
-  <div class="app-footer" id="app-footer">A Game by DAV<span class="footer-red">ID</span> NUDELMAN<div class="footer-version" id="footer-version"></div></div>
+  <div class="app-footer" id="app-footer">A Game by DAV<span class="footer-red">ID</span> NUDELMAN <div class="footer-version" id="footer-version"></div></div>
 </div>
 
 <!-- ===== SEASON OVERLAY ===== -->
@@ -182,11 +192,11 @@
 </div>
 
 <!-- ===== SETTINGS OVERLAY ===== -->
-<div class="settings-overlay" id="settings-overlay" style="display:none">
-  <div class="settings-box">
-    <div class="settings-header">
-      <h3 data-i18n="settings">Settings</h3>
-      <button class="settings-close" onclick="toggleSettings()">&times;</button>
+<div class="overlay settings-overlay" id="settings-overlay" style="display:none">
+  <div class="overlay-content settings-box">
+    <div class="overlay-header settings-header">
+      <h2 data-i18n="settings">Settings</h2>
+      <button class="overlay-close settings-close" onclick="toggleSettings()">&times;</button>
     </div>
     <div class="settings-row">
       <span class="settings-label" data-i18n="theme">Theme</span>
@@ -225,22 +235,22 @@
 </div>
 
 <!-- ===== HELP OVERLAY ===== -->
-<div class="help-overlay" id="help-overlay" style="display:none">
-  <div class="help-box">
-    <div class="help-header">
-      <h3>&#128214; How to Play</h3>
-      <button class="help-close" onclick="toggleHelp()">&times;</button>
+<div class="overlay help-overlay" id="help-overlay" style="display:none">
+  <div class="overlay-content help-box">
+    <div class="overlay-header help-header">
+      <h2>&#128214; How to Play</h2>
+      <button class="overlay-close help-close" onclick="toggleHelp()">&times;</button>
     </div>
     <div class="help-body" id="help-body"></div>
   </div>
 </div>
 
 <!-- ===== CHANGELOG OVERLAY ===== -->
-<div class="changelog-overlay" id="changelog-overlay" style="display:none">
-  <div class="changelog-box">
-    <div class="changelog-header">
-      <h3>&#128203; Changelog</h3>
-      <button class="changelog-close" onclick="toggleChangelog()">&times;</button>
+<div class="overlay changelog-overlay" id="changelog-overlay" style="display:none">
+  <div class="overlay-content changelog-box">
+    <div class="overlay-header changelog-header">
+      <h2>&#128203; Changelog</h2>
+      <button class="overlay-close changelog-close" onclick="toggleChangelog()">&times;</button>
     </div>
     <div class="changelog-body" id="changelog-body"></div>
   </div>
