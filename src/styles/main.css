@@ -2385,3 +2385,2426 @@ select:focus-visible {
     scroll-behavior: auto !important;
   }
 }
+
+/* ==========================================================================
+   35. App-Specific Component Styles
+   Bridges actual HTML/TS class names to the design system.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   35a. Welcome Screen (welcome-box mapped to welcome-card)
+   -------------------------------------------------------------------------- */
+#welcome {
+  padding: var(--sp-lg);
+}
+
+.welcome-box {
+  max-width: 800px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.welcome-box h1 {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-size: 2.8rem;
+  font-weight: 700;
+  margin-bottom: var(--sp-sm);
+  color: var(--text);
+  letter-spacing: -1px;
+}
+
+.welcome-box .subtitle {
+  font-size: 1rem;
+  color: var(--text-dim);
+  margin-bottom: var(--sp-xl);
+}
+
+.welcome-footer {
+  margin-top: var(--sp-xl);
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-size: 0.78rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.footer-red {
+  color: var(--red);
+}
+
+/* Team selection box */
+.team-assign {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--sp-md);
+  margin: var(--sp-md) 0;
+  text-align: center;
+}
+
+.team-assign .label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  margin-bottom: var(--sp-xs);
+}
+
+.team-assign .team {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.team-assign .rename-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-sm);
+  margin-top: var(--sp-sm);
+}
+
+.team-assign .rename-row label {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.team-assign .rename-row input {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  font-size: 0.88rem;
+  transition: border-color var(--transition-fast);
+}
+
+.team-assign .rename-row input:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+/* --------------------------------------------------------------------------
+   35b. Top Bar — Manager Info
+   -------------------------------------------------------------------------- */
+#top-bar .manager-badge {
+  font-family: 'Oswald', system-ui, sans-serif;
+}
+
+/* --------------------------------------------------------------------------
+   35c. Main Content — Container padding
+   -------------------------------------------------------------------------- */
+#main {
+  padding-top: var(--sp-lg);
+  padding-bottom: var(--sp-xl);
+}
+
+#main > .view {
+  margin-bottom: var(--sp-md);
+}
+
+/* --------------------------------------------------------------------------
+   35d. Card Title (used widely in TS views)
+   -------------------------------------------------------------------------- */
+.card-title {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: var(--sp-md);
+  padding-bottom: var(--sp-sm);
+  border-bottom: 1px solid var(--border);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* --------------------------------------------------------------------------
+   35e. Dashboard — Result Banner & Fixtures
+   -------------------------------------------------------------------------- */
+.result-banner {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--sp-lg);
+  margin-bottom: var(--sp-md);
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.result-banner h3 {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: var(--sp-sm);
+}
+
+.score-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-lg);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.score-line .score {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--text);
+}
+
+.rb-details {
+  margin-top: var(--sp-md);
+  padding-top: var(--sp-sm);
+  border-top: 1px solid var(--border);
+}
+
+.rb-event {
+  font-size: 0.82rem;
+  padding: 3px 0;
+  color: var(--text-dim);
+}
+
+.rb-event.rb-home {
+  text-align: left;
+}
+
+.rb-event.rb-away {
+  text-align: right;
+}
+
+.rb-event.rb-injury {
+  color: var(--red);
+}
+
+.rb-min {
+  color: var(--accent);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  margin-right: var(--sp-xs);
+}
+
+/* Next fixture card */
+.fixture-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--sp-md);
+  margin-bottom: var(--sp-sm);
+  transition: border-color var(--transition-fast),
+              box-shadow var(--transition-fast);
+  cursor: pointer;
+}
+
+.fixture-card:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-sm);
+}
+
+.fixture-card.player-match {
+  border-left: 3px solid var(--accent);
+}
+
+.fixture-card.cup-fixture {
+  border-left: 3px solid var(--gold);
+}
+
+.fixture-main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-md);
+}
+
+.fixture-main .team-name {
+  font-weight: 600;
+  font-size: 0.92rem;
+  min-width: 120px;
+}
+
+.fixture-main .team-name.home {
+  text-align: right;
+}
+
+.fixture-main .team-name.away {
+  text-align: left;
+}
+
+.fixture-main .vs {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.fixture-main .score-box {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--text);
+  min-width: 60px;
+  text-align: center;
+}
+
+/* Fixture report (expanded) */
+.fixture-report {
+  margin-top: var(--sp-sm);
+  padding-top: var(--sp-sm);
+  border-top: 1px solid var(--border);
+}
+
+.fr-event {
+  font-size: 0.78rem;
+  padding: 2px 0;
+  color: var(--text-dim);
+}
+
+.fr-event.fr-home {
+  text-align: left;
+}
+
+.fr-event.fr-away {
+  text-align: right;
+}
+
+.fr-event.fr-injury {
+  color: var(--red);
+}
+
+.fr-min {
+  color: var(--accent);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Cup status on dashboard */
+.dash-cup {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--sp-sm) var(--sp-md);
+  margin-bottom: var(--sp-md);
+  font-size: 0.88rem;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Trophy shelf on dashboard */
+.trophy-shelf {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-sm);
+  justify-content: center;
+}
+
+.trophy-shelf .trophy {
+  cursor: default;
+  transition: transform var(--transition-fast);
+}
+
+.trophy-shelf .trophy:hover {
+  transform: scale(1.2);
+}
+
+.trophy-shelf .trophy.silver {
+  filter: grayscale(0.6) brightness(1.2);
+}
+
+/* --------------------------------------------------------------------------
+   35f. Squad View — Player Rows & Bars
+   -------------------------------------------------------------------------- */
+
+/* Squad list grid */
+.squad-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+/* Player list header */
+.player-list-header {
+  display: grid;
+  grid-template-columns: 36px 44px 1fr 100px 60px;
+  gap: var(--sp-sm);
+  align-items: center;
+  padding: var(--sp-sm) var(--sp-md);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+  background: var(--surface2);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  border: 1px solid var(--border);
+}
+
+/* Position group headers */
+.pos-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-sm) var(--sp-md);
+  margin-top: var(--sp-sm);
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.pos-group-label {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text);
+}
+
+.pos-group-count {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+}
+
+/* Squad row — player card in list */
+.squad-row {
+  display: grid;
+  grid-template-columns: 36px 44px 1fr 100px 60px;
+  gap: var(--sp-sm);
+  align-items: center;
+  padding: var(--sp-sm) var(--sp-md);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: none;
+  cursor: pointer;
+  transition: background var(--transition-fast),
+              border-color var(--transition-fast);
+  min-height: 48px;
+}
+
+.squad-row:last-child {
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+}
+
+.squad-row.zebra {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+html.light .squad-row.zebra {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.squad-row:hover {
+  background: rgba(79, 195, 247, 0.06);
+}
+
+html.light .squad-row:hover {
+  background: rgba(2, 136, 209, 0.06);
+}
+
+.squad-row.selected {
+  background: rgba(79, 195, 247, 0.1);
+  border-color: var(--accent);
+}
+
+html.light .squad-row.selected {
+  background: rgba(2, 136, 209, 0.08);
+}
+
+.squad-row.injured-row {
+  opacity: 0.6;
+}
+
+.squad-row.suspended-row {
+  opacity: 0.55;
+}
+
+/* Checkbox cell */
+.pr-sel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pr-sel input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+/* Position badge */
+.pr-pos {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 22px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+.pr-pos.gk {
+  background: rgba(79, 195, 247, 0.18);
+  color: #4fc3f7;
+  border: 1px solid rgba(79, 195, 247, 0.3);
+}
+
+.pr-pos.def {
+  background: rgba(102, 187, 106, 0.18);
+  color: #66bb6a;
+  border: 1px solid rgba(102, 187, 106, 0.3);
+}
+
+.pr-pos.mid {
+  background: rgba(255, 167, 38, 0.18);
+  color: #ffa726;
+  border: 1px solid rgba(255, 167, 38, 0.3);
+}
+
+.pr-pos.str {
+  background: rgba(239, 83, 80, 0.18);
+  color: #ef5350;
+  border: 1px solid rgba(239, 83, 80, 0.3);
+}
+
+html.light .pr-pos.gk {
+  background: rgba(2, 136, 209, 0.12);
+  color: #0277bd;
+  border-color: rgba(2, 136, 209, 0.25);
+}
+
+html.light .pr-pos.def {
+  background: rgba(46, 125, 50, 0.12);
+  color: #2e7d32;
+  border-color: rgba(46, 125, 50, 0.25);
+}
+
+html.light .pr-pos.mid {
+  background: rgba(239, 108, 0, 0.12);
+  color: #e65100;
+  border-color: rgba(239, 108, 0, 0.25);
+}
+
+html.light .pr-pos.str {
+  background: rgba(198, 40, 40, 0.12);
+  color: #c62828;
+  border-color: rgba(198, 40, 40, 0.25);
+}
+
+/* Player info cell */
+.pr-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.pr-name {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.pr-name .player-link {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text);
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.pr-name .player-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.pr-secondary {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Status icons in player names */
+.injury-icon {
+  color: var(--red);
+  font-size: 0.75rem;
+}
+
+.fresh-icon {
+  color: var(--yellow);
+  font-size: 0.82rem;
+}
+
+.top-scorer-star {
+  color: var(--gold);
+  font-size: 0.9rem;
+}
+
+.prev-scorer-ball {
+  color: var(--text-dim);
+  font-size: 0.78rem;
+}
+
+.retire-icon {
+  font-size: 0.78rem;
+  margin-left: 2px;
+}
+
+.retire-icon.retire-urgent {
+  color: var(--red);
+}
+
+/* Form badges */
+.form-badge {
+  font-size: 0.78rem;
+  margin-left: 2px;
+}
+
+/* Card badges (yellow/red cards, suspension) */
+.card-badge {
+  font-size: 0.72rem;
+  margin-left: 2px;
+  vertical-align: middle;
+}
+
+.yellow-card-badge {
+  color: var(--yellow);
+}
+
+.red-card-badge {
+  color: var(--red);
+}
+
+.suspended-badge {
+  color: var(--red);
+}
+
+/* Position select dropdown */
+.pos-select {
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: border-color var(--transition-fast);
+}
+
+.pos-select:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.oop-select {
+  border-color: var(--yellow);
+}
+
+.oop-label {
+  color: var(--yellow);
+  font-weight: 600;
+}
+
+/* Assigned position column */
+.pr-assigned {
+  display: flex;
+  align-items: center;
+}
+
+/* Skill column */
+.pr-skill {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--accent);
+  text-align: center;
+}
+
+/* Mobile position select (hidden on desktop) */
+.pr-assign-mobile {
+  display: none;
+}
+
+/* Stamina classes */
+.stam-good {
+  color: var(--green);
+}
+
+.stam-warn {
+  color: var(--yellow);
+}
+
+.stam-low {
+  color: var(--red);
+}
+
+/* Selected count display */
+.selected-count {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  font-weight: 500;
+  margin-left: auto;
+}
+
+/* Formation select dropdown */
+.formation-select {
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  min-width: 140px;
+}
+
+/* Formation bar */
+.formation-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  padding: var(--sp-sm) 0;
+  font-size: 0.85rem;
+}
+
+.form-label {
+  color: var(--text-dim);
+  font-weight: 500;
+}
+
+.form-display {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--accent);
+}
+
+.form-ok {
+  color: var(--green);
+  font-size: 0.82rem;
+}
+
+.form-penalty {
+  color: var(--yellow);
+  font-size: 0.82rem;
+}
+
+/* Power bar */
+.power-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-md);
+  padding: var(--sp-sm);
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--sp-sm);
+  flex-wrap: wrap;
+}
+
+.pb-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+}
+
+.pb-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+}
+
+.pb-value {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.pb-avg {
+  color: var(--accent);
+}
+
+.pb-total {
+  color: var(--gold);
+}
+
+/* Tactic bar */
+.tactic-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  flex-wrap: wrap;
+}
+
+.tactic-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.tactic-btn {
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-weight: 500;
+  background: var(--surface2);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  transition: background var(--transition-fast),
+              color var(--transition-fast),
+              border-color var(--transition-fast);
+}
+
+.tactic-btn:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+.tactic-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+/* Training bar */
+.training-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  flex-wrap: wrap;
+}
+
+.training-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.training-btn {
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-weight: 500;
+  background: var(--surface2);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  transition: background var(--transition-fast),
+              color var(--transition-fast),
+              border-color var(--transition-fast);
+}
+
+.training-btn:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+.training-btn.active {
+  background: var(--green);
+  color: #fff;
+  border-color: var(--green);
+  font-weight: 600;
+}
+
+/* News panel */
+.news-panel {
+  margin-bottom: var(--sp-md);
+}
+
+.news-title {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text);
+  margin-bottom: var(--sp-sm);
+}
+
+.news-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--sp-sm);
+}
+
+.news-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--sp-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.news-item.news-injuries {
+  border-left: 3px solid var(--red);
+}
+
+.news-item.news-match {
+  border-left: 3px solid var(--accent);
+}
+
+.news-item.news-retire {
+  border-left: 3px solid var(--yellow);
+}
+
+.news-item.news-joke {
+  border-left: 3px solid var(--green);
+}
+
+.news-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+  margin-bottom: var(--sp-xs);
+}
+
+.news-body {
+  font-size: 0.85rem;
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.inj-line,
+.retire-line {
+  padding: 2px 0;
+}
+
+/* --------------------------------------------------------------------------
+   35g. Division Tabs (used by Table, Calendar, Scorers)
+   -------------------------------------------------------------------------- */
+.div-tabs {
+  display: flex;
+  gap: var(--sp-xs);
+  margin-bottom: var(--sp-md);
+}
+
+.div-tab {
+  padding: 8px 18px;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 500;
+  background: var(--surface2);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: background var(--transition-fast),
+              color var(--transition-fast),
+              border-color var(--transition-fast);
+}
+
+.div-tab:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+.div-tab.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   35h. League Table (generated by dashboard/table views)
+   -------------------------------------------------------------------------- */
+.league-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.league-table th {
+  background: var(--surface2);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+  padding: 8px 10px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.league-table th:nth-child(2) {
+  text-align: left;
+}
+
+.league-table td {
+  padding: 8px 10px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+  font-variant-numeric: tabular-nums;
+}
+
+.league-table td:nth-child(2) {
+  text-align: left;
+}
+
+.league-table td.pos {
+  font-weight: 700;
+  color: var(--text-dim);
+  width: 32px;
+}
+
+.league-table td.pts {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.league-table th.pos {
+  width: 32px;
+}
+
+.league-table th.pts {
+  color: var(--accent);
+}
+
+.league-table .team-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+}
+
+.league-table .team-link {
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.league-table .team-link:hover {
+  color: var(--accent);
+}
+
+.league-table .player-row {
+  background: rgba(79, 195, 247, 0.1);
+  font-weight: 600;
+}
+
+html.light .league-table .player-row {
+  background: rgba(2, 136, 209, 0.08);
+}
+
+.league-table .player-row td {
+  color: var(--accent);
+}
+
+.league-table .promote td:first-child {
+  border-left: 3px solid var(--green);
+}
+
+.league-table .relegate td:first-child {
+  border-left: 3px solid var(--red);
+}
+
+.league-table tbody tr:hover {
+  background: rgba(79, 195, 247, 0.06);
+}
+
+/* --------------------------------------------------------------------------
+   35i. Match View Components
+   -------------------------------------------------------------------------- */
+.match-header-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-xl);
+  padding: var(--sp-xl) 0;
+}
+
+.mh-team {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 1.05rem;
+  min-width: 140px;
+}
+
+.mh-team.home {
+  text-align: right;
+}
+
+.mh-team.away {
+  text-align: left;
+}
+
+.match-score-big {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-size: 3rem;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: 2px;
+  min-width: 100px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.match-timer {
+  text-align: center;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  margin-bottom: var(--sp-sm);
+}
+
+.match-timer .minute {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-weight: 700;
+  color: var(--accent);
+  font-size: 1.1rem;
+}
+
+.match-power {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-xl);
+  padding: var(--sp-sm);
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+
+.mp-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.mp-value {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+/* Match tactics bar */
+.match-tactics-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-sm);
+  padding: var(--sp-sm) 0;
+  flex-wrap: wrap;
+}
+
+.match-tactic-btn {
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-weight: 500;
+  background: var(--surface2);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  transition: background var(--transition-fast),
+              color var(--transition-fast);
+}
+
+.match-tactic-btn:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+.match-tactic-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+/* Cup final banner */
+.cup-final-banner {
+  text-align: center;
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  padding: var(--sp-sm);
+  background: rgba(255, 215, 0, 0.08);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--sp-md);
+}
+
+/* Rival results */
+.rival-results {
+  margin-top: var(--sp-lg);
+  padding-top: var(--sp-md);
+  border-top: 1px solid var(--border);
+}
+
+.rr-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--sp-sm);
+}
+
+.rival-result {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-sm);
+  padding: var(--sp-xs) 0;
+  font-size: 0.82rem;
+}
+
+.rr-score {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-weight: 700;
+  min-width: 70px;
+  text-align: center;
+}
+
+/* Substitutions panel */
+.subs-panel {
+  margin-top: var(--sp-lg);
+  padding-top: var(--sp-md);
+  border-top: 1px solid var(--border);
+}
+
+.subs-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: var(--sp-sm);
+}
+
+.sub-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  padding: var(--sp-xs) var(--sp-sm);
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--sp-xs);
+}
+
+.sub-pos {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 20px;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.sub-name {
+  font-weight: 600;
+  font-size: 0.85rem;
+  flex: 1;
+}
+
+.sub-stats {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.sub-btn {
+  padding: 4px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: var(--accent);
+  color: #fff;
+  transition: background var(--transition-fast);
+}
+
+.sub-btn:hover {
+  background: var(--accent2);
+}
+
+/* --------------------------------------------------------------------------
+   35j. Market View
+   -------------------------------------------------------------------------- */
+.market-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--sp-md);
+  margin-bottom: var(--sp-md);
+}
+
+.budget-display {
+  font-size: 0.88rem;
+  color: var(--text-dim);
+}
+
+.budget-display .amount {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--green);
+}
+
+.squad-size-display {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+
+.market-section-title {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text);
+  margin: var(--sp-md) 0 var(--sp-sm);
+  padding-bottom: var(--sp-xs);
+  border-bottom: 1px solid var(--border);
+}
+
+.market-reminder {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--yellow);
+  border-radius: var(--radius-sm);
+  padding: var(--sp-sm) var(--sp-md);
+  margin-bottom: var(--sp-md);
+  font-size: 0.85rem;
+}
+
+.mr-text {
+  color: var(--text-dim);
+}
+
+/* Free agent cards */
+.fa-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--sp-md);
+  margin-bottom: var(--sp-sm);
+  transition: border-color var(--transition-fast),
+              box-shadow var(--transition-fast);
+}
+
+.fa-card:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-sm);
+}
+
+.fa-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  margin-bottom: var(--sp-sm);
+}
+
+.fa-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  margin-top: var(--sp-sm);
+}
+
+.fa-price {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-weight: 700;
+  color: var(--green);
+}
+
+.btn-sign {
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-weight: 700;
+  background: var(--green);
+  color: #fff;
+  transition: background var(--transition-fast);
+}
+
+.btn-sign:hover {
+  background: #57a85b;
+}
+
+.btn-sell {
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-weight: 700;
+  background: var(--red);
+  color: #fff;
+  transition: background var(--transition-fast);
+}
+
+.btn-sell:hover {
+  background: #d32f2f;
+}
+
+/* Stamina bar */
+.stamina-bar {
+  width: 60px;
+  height: 6px;
+  background: var(--surface);
+  border-radius: 3px;
+  overflow: hidden;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.stamina-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width var(--transition-fast);
+}
+
+.stamina-fill.stam-green {
+  background: var(--green);
+}
+
+.stamina-fill.stam-yellow {
+  background: var(--yellow);
+}
+
+.stamina-fill.stam-red {
+  background: var(--red);
+}
+
+.stamina-text {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Transfer log */
+.transfer-log {
+  margin-top: var(--sp-md);
+}
+
+.transfer-entry {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  padding: var(--sp-xs) var(--sp-sm);
+  font-size: 0.82rem;
+  border-radius: var(--radius-sm);
+  margin-bottom: 2px;
+}
+
+.transfer-entry.buy {
+  background: rgba(102, 187, 106, 0.08);
+  border-left: 3px solid var(--green);
+}
+
+.transfer-entry.sell {
+  background: rgba(239, 83, 80, 0.08);
+  border-left: 3px solid var(--red);
+}
+
+/* Position badges used in market (p-pos uses POS_CSS classes) */
+.p-pos {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 22px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+.p-pos.gk {
+  background: rgba(79, 195, 247, 0.18);
+  color: #4fc3f7;
+  border: 1px solid rgba(79, 195, 247, 0.3);
+}
+
+.p-pos.def {
+  background: rgba(102, 187, 106, 0.18);
+  color: #66bb6a;
+  border: 1px solid rgba(102, 187, 106, 0.3);
+}
+
+.p-pos.mid {
+  background: rgba(255, 167, 38, 0.18);
+  color: #ffa726;
+  border: 1px solid rgba(255, 167, 38, 0.3);
+}
+
+.p-pos.str {
+  background: rgba(239, 83, 80, 0.18);
+  color: #ef5350;
+  border: 1px solid rgba(239, 83, 80, 0.3);
+}
+
+.p-name {
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.p-skill-label {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+/* --------------------------------------------------------------------------
+   35k. Scorers Table
+   -------------------------------------------------------------------------- */
+.scorers-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.scorers-table th {
+  background: var(--surface2);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.scorers-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.scorers-table .rank {
+  font-weight: 700;
+  color: var(--text-dim);
+  width: 32px;
+  text-align: center;
+}
+
+.scorers-table .goals {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-weight: 700;
+  color: var(--accent);
+  text-align: center;
+}
+
+.scorers-table tbody tr:hover {
+  background: rgba(79, 195, 247, 0.06);
+}
+
+/* --------------------------------------------------------------------------
+   35l. Calendar View
+   -------------------------------------------------------------------------- */
+.week-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  margin: var(--sp-md) 0 var(--sp-sm);
+}
+
+.week-header .badge {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 4px 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.cup-cal-header {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin: var(--sp-lg) 0 var(--sp-sm);
+}
+
+.fixture-card.has-report {
+  cursor: pointer;
+}
+
+.fixture-card.expanded {
+  border-color: var(--accent);
+}
+
+.fixture-card.cup-placeholder {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* --------------------------------------------------------------------------
+   35m. History Table
+   -------------------------------------------------------------------------- */
+.history-empty {
+  text-align: center;
+  color: var(--text-dim);
+  padding: var(--sp-xl);
+  font-size: 0.92rem;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.history-table th {
+  background: var(--surface2);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.history-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.history-table .season-num {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.history-table tbody tr:hover {
+  background: rgba(79, 195, 247, 0.06);
+}
+
+/* --------------------------------------------------------------------------
+   35n. Trophy Room
+   -------------------------------------------------------------------------- */
+.trophy-room-section {
+  margin-bottom: var(--sp-xl);
+}
+
+.section-title {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text);
+  margin-bottom: var(--sp-md);
+  padding-bottom: var(--sp-sm);
+  border-bottom: 1px solid var(--border);
+}
+
+.record-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--sp-md);
+}
+
+.record-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--sp-md);
+  text-align: center;
+  transition: transform var(--transition-fast),
+              box-shadow var(--transition-fast);
+}
+
+.record-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.record-card.is-record {
+  border-color: var(--gold);
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.15);
+}
+
+.rc-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+  margin-bottom: var(--sp-xs);
+}
+
+.rc-value {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.rc-detail {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  margin-top: var(--sp-xs);
+}
+
+.rc-compare {
+  margin-top: var(--sp-sm);
+  font-size: 0.72rem;
+  color: var(--text-dim);
+}
+
+.rc-yours {
+  color: var(--accent);
+}
+
+.rc-league {
+  color: var(--text-dim);
+}
+
+/* Milestones */
+.milestone-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: var(--sp-md);
+}
+
+.milestone-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--sp-md);
+  text-align: center;
+  transition: transform var(--transition-fast);
+}
+
+.milestone-card:hover {
+  transform: translateY(-2px);
+}
+
+.ms-icon {
+  font-size: 2rem;
+  margin-bottom: var(--sp-xs);
+}
+
+.ms-value {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.ms-label {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Badges */
+.badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-sm);
+  margin-top: var(--sp-sm);
+}
+
+.badge {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+}
+
+.badge.gold {
+  background: rgba(255, 215, 0, 0.12);
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.badge.locked {
+  opacity: 0.4;
+}
+
+/* Hall of Fame table */
+.hof-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.hof-table th {
+  background: var(--surface2);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.hof-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.hof-rank {
+  font-weight: 700;
+  color: var(--text-dim);
+  text-align: center;
+  width: 32px;
+}
+
+.hof-goals {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-weight: 700;
+  color: var(--accent);
+  text-align: center;
+}
+
+/* --------------------------------------------------------------------------
+   35o. Cup View
+   -------------------------------------------------------------------------- */
+.cup-winner-banner {
+  text-align: center;
+  padding: var(--sp-lg);
+  margin-bottom: var(--sp-md);
+  background: rgba(255, 215, 0, 0.06);
+  border: 1px solid var(--gold);
+  border-radius: var(--radius-md);
+}
+
+.cup-winner-trophy {
+  font-size: 3rem;
+  margin-bottom: var(--sp-sm);
+}
+
+.cup-winner-name {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--gold);
+}
+
+.cup-winner-label {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.cup-round {
+  margin-bottom: var(--sp-md);
+  padding: var(--sp-md);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.cup-round.cup-round-current {
+  border-color: var(--accent);
+  box-shadow: 0 0 8px rgba(79, 195, 247, 0.15);
+}
+
+.cup-round-title {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 0.92rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text);
+  margin-bottom: var(--sp-sm);
+}
+
+.cup-matches {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+.cup-match {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-sm);
+  padding: var(--sp-xs) var(--sp-sm);
+  background: var(--surface);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+}
+
+.cup-match.cup-match-player {
+  border-left: 3px solid var(--accent);
+}
+
+.cup-team {
+  min-width: 120px;
+  font-weight: 500;
+}
+
+.cup-team.cup-team-winner {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.cup-team.cup-team-bye {
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+.cup-score {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-weight: 700;
+  min-width: 50px;
+  text-align: center;
+}
+
+/* --------------------------------------------------------------------------
+   35p. Team Profile
+   -------------------------------------------------------------------------- */
+.tp-back {
+  font-size: 0.82rem;
+  color: var(--accent);
+  cursor: pointer;
+  margin-bottom: var(--sp-md);
+  display: inline-block;
+}
+
+.tp-back:hover {
+  text-decoration: underline;
+}
+
+.tp-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-md);
+  margin-bottom: var(--sp-lg);
+}
+
+.tp-section {
+  margin-bottom: var(--sp-lg);
+}
+
+.tp-section-title {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text);
+  margin-bottom: var(--sp-sm);
+  padding-bottom: var(--sp-xs);
+  border-bottom: 1px solid var(--border);
+}
+
+.tp-h2h {
+  display: flex;
+  gap: var(--sp-md);
+  flex-wrap: wrap;
+}
+
+.h2h-stat {
+  padding: var(--sp-sm) var(--sp-md);
+  border-radius: var(--radius-sm);
+  text-align: center;
+  min-width: 80px;
+}
+
+.h2h-stat.h2h-win {
+  background: rgba(102, 187, 106, 0.12);
+}
+
+.h2h-stat.h2h-draw {
+  background: rgba(253, 216, 53, 0.12);
+}
+
+.h2h-stat.h2h-loss {
+  background: rgba(239, 83, 80, 0.12);
+}
+
+.h2h-val {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.h2h-lbl {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+}
+
+.tp-list {
+  margin-bottom: var(--sp-sm);
+}
+
+.tp-label {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tp-val {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.tp-player-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   35q. Player Profile
+   -------------------------------------------------------------------------- */
+.pp-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-md);
+  margin-bottom: var(--sp-lg);
+}
+
+.pp-pos {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 30px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.pp-pos.gk {
+  background: rgba(79, 195, 247, 0.18);
+  color: #4fc3f7;
+}
+
+.pp-pos.def {
+  background: rgba(102, 187, 106, 0.18);
+  color: #66bb6a;
+}
+
+.pp-pos.mid {
+  background: rgba(255, 167, 38, 0.18);
+  color: #ffa726;
+}
+
+.pp-pos.str {
+  background: rgba(239, 83, 80, 0.18);
+  color: #ef5350;
+}
+
+.pp-name {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.pp-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: var(--sp-sm);
+  margin-bottom: var(--sp-lg);
+}
+
+.pp-stat-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--sp-md);
+  text-align: center;
+}
+
+.ps-val {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.ps-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+}
+
+.pp-section {
+  margin-bottom: var(--sp-lg);
+}
+
+.pp-section-title {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text);
+  margin-bottom: var(--sp-sm);
+  padding-bottom: var(--sp-xs);
+  border-bottom: 1px solid var(--border);
+}
+
+/* --------------------------------------------------------------------------
+   35r. Team Plate (colored name badges)
+   -------------------------------------------------------------------------- */
+.team-plate {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.team-plate-sm {
+  padding: 2px 8px;
+  font-size: 0.78rem;
+}
+
+.flag {
+  display: inline-flex;
+  width: 18px;
+  height: 12px;
+  border-radius: 2px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.flag .fh {
+  width: 50%;
+  height: 100%;
+}
+
+/* --------------------------------------------------------------------------
+   35s. Season Overlay
+   -------------------------------------------------------------------------- */
+.season-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 600;
+  background: rgba(0, 0, 0, 0.75);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-md);
+}
+
+.season-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--sp-xl);
+  max-width: 600px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+}
+
+/* --------------------------------------------------------------------------
+   35t. App Footer
+   -------------------------------------------------------------------------- */
+.app-footer {
+  text-align: center;
+  padding: var(--sp-xl) var(--sp-md);
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.footer-version {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  margin-top: var(--sp-xs);
+  letter-spacing: 1px;
+}
+
+/* --------------------------------------------------------------------------
+   35u. Stat Badge (used by templates.ts)
+   -------------------------------------------------------------------------- */
+.stat-badge {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--sp-sm) var(--sp-md);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+
+.sb-value {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.sb-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+}
+
+/* --------------------------------------------------------------------------
+   35v. Overlay Display Override
+   The TS toggles overlays via display:flex/none, so override the CSS
+   opacity/visibility approach for compatibility.
+   -------------------------------------------------------------------------- */
+.settings-overlay,
+.help-overlay,
+.changelog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: rgba(0, 0, 0, 0.65);
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-md);
+}
+
+html.light .settings-overlay,
+html.light .help-overlay,
+html.light .changelog-overlay {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.settings-box,
+.help-box,
+.changelog-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--sp-xl);
+  max-width: 560px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+}
+
+.settings-header,
+.help-header,
+.changelog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--sp-lg);
+}
+
+.settings-header h2,
+.settings-header h3,
+.help-header h2,
+.help-header h3,
+.changelog-header h2,
+.changelog-header h3 {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-size: 1.2rem;
+  color: var(--text);
+}
+
+.settings-close,
+.help-close,
+.changelog-close {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 1.3rem;
+  transition: background var(--transition-fast),
+              color var(--transition-fast);
+}
+
+.settings-close:hover,
+.help-close:hover,
+.changelog-close:hover {
+  background: var(--surface2);
+  color: var(--text);
+}
+
+/* Settings changelog link */
+.settings-changelog-link {
+  display: block;
+  padding: var(--sp-sm) 0;
+  font-size: 0.88rem;
+  color: var(--accent);
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.settings-changelog-link:hover {
+  color: var(--accent2);
+}
+
+/* Help body */
+.help-body {
+  font-size: 0.88rem;
+  color: var(--text);
+  line-height: 1.7;
+}
+
+/* Changelog body */
+.changelog-body {
+  font-size: 0.88rem;
+  color: var(--text);
+  line-height: 1.7;
+}
+
+/* --------------------------------------------------------------------------
+   35w. Responsive Overrides for App Components
+   -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  .squad-row {
+    grid-template-columns: 30px 36px 1fr 60px;
+    font-size: 0.85rem;
+  }
+
+  .player-list-header {
+    grid-template-columns: 30px 36px 1fr 60px;
+  }
+
+  .pr-assigned {
+    display: none;
+  }
+
+  .pr-assign-mobile {
+    display: block;
+    margin-top: var(--sp-xs);
+  }
+
+  .pr-skill {
+    font-size: 0.88rem;
+  }
+
+  .match-header-area {
+    gap: var(--sp-md);
+  }
+
+  .mh-team {
+    min-width: 100px;
+    font-size: 0.92rem;
+  }
+
+  .match-score-big {
+    font-size: 2.2rem;
+  }
+
+  .fixture-main .team-name {
+    min-width: 80px;
+    font-size: 0.82rem;
+  }
+
+  .news-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .record-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .pp-stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .milestone-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .squad-row {
+    grid-template-columns: 26px 32px 1fr 48px;
+    padding: var(--sp-xs) var(--sp-sm);
+    gap: var(--sp-xs);
+  }
+
+  .player-list-header {
+    grid-template-columns: 26px 32px 1fr 48px;
+    padding: var(--sp-xs) var(--sp-sm);
+  }
+
+  .pr-pos {
+    width: 32px;
+    height: 20px;
+    font-size: 0.65rem;
+  }
+
+  .pr-name .player-link {
+    font-size: 0.82rem;
+  }
+
+  .pr-secondary {
+    font-size: 0.68rem;
+  }
+
+  .match-header-area {
+    flex-direction: column;
+    gap: var(--sp-sm);
+  }
+
+  .match-score-big {
+    font-size: 2.8rem;
+    order: -1;
+  }
+
+  .mh-team {
+    min-width: unset;
+    text-align: center !important;
+  }
+
+  .score-line {
+    flex-direction: column;
+    gap: var(--sp-sm);
+  }
+
+  .score-line .score {
+    font-size: 2.2rem;
+  }
+
+  .fixture-main {
+    flex-direction: column;
+    gap: var(--sp-xs);
+  }
+
+  .fixture-main .team-name {
+    text-align: center !important;
+    min-width: unset;
+  }
+
+  .record-grid,
+  .milestone-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pp-stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .tp-h2h {
+    flex-direction: column;
+  }
+
+  .div-tabs {
+    flex-wrap: wrap;
+  }
+}

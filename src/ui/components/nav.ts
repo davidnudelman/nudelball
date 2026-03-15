@@ -110,7 +110,7 @@ export function updateTopBar(G: GameState, settings: Settings): void {
 
   const managerEl = document.getElementById('manager-info');
   if (managerEl) {
-    managerEl.innerHTML = G.manager + ' — ' + teamLabel(pt) + ' (' + t(settings, 'div') + ' ' + pt.div + ')';
+    managerEl.innerHTML = '<span class="mgr-name">' + G.manager + '</span> — ' + teamLabel(pt) + ' (' + t(settings, 'div') + ' ' + pt.div + ')';
   }
 
   const seasonEl = document.getElementById('season-badge');
@@ -276,10 +276,10 @@ export function enterGame(G: GameState, settings: Settings): void {
   if (welcome) welcome.style.display = 'none';
 
   const topBar = document.getElementById('top-bar');
-  if (topBar) topBar.style.display = 'flex';
+  if (topBar) topBar.style.display = '';
 
   const nav = document.getElementById('nav');
-  if (nav) nav.style.display = 'flex';
+  if (nav) nav.style.display = '';
 
   const main = document.getElementById('main');
   if (main) main.style.display = 'block';
