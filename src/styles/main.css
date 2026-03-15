@@ -1,0 +1,2387 @@
+/* ==========================================================================
+   Nudelball Soccer Management Game — Main Stylesheet
+   Dark-first theme with light mode toggle via .light on <html>
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. CSS Custom Properties (Dark Theme — Default)
+   -------------------------------------------------------------------------- */
+:root {
+  /* Backgrounds */
+  --bg: #181a20;
+  --surface: #23262f;
+  --surface2: #2a2d38;
+  --border: #333640;
+
+  /* Text */
+  --text: #e8eaed;
+  --text-dim: #9aa0a8;
+
+  /* Accents */
+  --accent: #4fc3f7;
+  --accent2: #81d4fa;
+
+  /* Semantic Colors */
+  --green: #66bb6a;
+  --red: #ef5350;
+  --yellow: #fdd835;
+
+  /* Medals */
+  --gold: #ffd700;
+  --silver: #c0c0c0;
+  --bronze: #cd7f32;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6);
+
+  /* Radii */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s ease;
+  --transition-slow: 0.4s ease;
+
+  /* Spacing scale */
+  --sp-xs: 4px;
+  --sp-sm: 8px;
+  --sp-md: 16px;
+  --sp-lg: 24px;
+  --sp-xl: 32px;
+  --sp-xxl: 48px;
+}
+
+/* --------------------------------------------------------------------------
+   1b. Light Theme (applied via .light class on <html>)
+   -------------------------------------------------------------------------- */
+html.light {
+  --bg: #f0f2f5;
+  --surface: #ffffff;
+  --surface2: #e8eaed;
+  --border: #d0d3d9;
+  --text: #1a1c22;
+  --text-dim: #5f6570;
+  --accent: #0288d1;
+  --accent2: #0277bd;
+  --green: #2e7d32;
+  --red: #c62828;
+  --yellow: #f9a825;
+  --gold: #d4a800;
+  --silver: #8a8a8a;
+  --bronze: #a0612a;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* --------------------------------------------------------------------------
+   2. Reset & Base
+   -------------------------------------------------------------------------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  font-size: 16px;
+}
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--accent2);
+  text-decoration: underline;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+button {
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  border: none;
+  outline: none;
+}
+
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  line-height: 1.3;
+  font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   3. Layout
+   -------------------------------------------------------------------------- */
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 var(--sp-md);
+  width: 100%;
+}
+
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.gap-xs { gap: var(--sp-xs); }
+.gap-sm { gap: var(--sp-sm); }
+.gap-md { gap: var(--sp-md); }
+.gap-lg { gap: var(--sp-lg); }
+
+/* --------------------------------------------------------------------------
+   4. Welcome Screen
+   -------------------------------------------------------------------------- */
+.welcome-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: var(--sp-lg);
+}
+
+.welcome-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--sp-xxl) var(--sp-xl);
+  max-width: 800px;
+  width: 100%;
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+}
+
+.welcome-card h1 {
+  font-size: 2.2rem;
+  margin-bottom: var(--sp-sm);
+  color: var(--text);
+  letter-spacing: -0.5px;
+}
+
+.welcome-card h1 span {
+  color: var(--accent);
+}
+
+.welcome-card p {
+  color: var(--text-dim);
+  margin-bottom: var(--sp-lg);
+  font-size: 1.05rem;
+}
+
+.welcome-card .subtitle {
+  font-size: 0.95rem;
+  color: var(--text-dim);
+  margin-bottom: var(--sp-xl);
+}
+
+/* Manager Name Input */
+.manager-input-group {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  margin-bottom: var(--sp-lg);
+  justify-content: center;
+}
+
+.manager-input-group label {
+  font-weight: 500;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.manager-input-group input {
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  width: 260px;
+  transition: border-color var(--transition-fast);
+}
+
+.manager-input-group input:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+/* --------------------------------------------------------------------------
+   5. Team Picker
+   -------------------------------------------------------------------------- */
+.team-picker-section {
+  margin-top: var(--sp-lg);
+}
+
+.team-picker-section h2 {
+  font-size: 1.2rem;
+  margin-bottom: var(--sp-md);
+  color: var(--text);
+}
+
+/* Division groups */
+.tp-div {
+  margin-bottom: var(--sp-lg);
+}
+
+.tp-div-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--text-dim);
+  margin-bottom: var(--sp-sm);
+  padding-bottom: var(--sp-xs);
+  border-bottom: 1px solid var(--border);
+}
+
+/* Team grid — 4 columns by default */
+.tp-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--sp-sm);
+}
+
+/* Individual team card */
+.tp-card {
+  background: var(--surface2);
+  border: 2px solid transparent;
+  border-radius: var(--radius-md);
+  padding: var(--sp-md) var(--sp-sm);
+  text-align: center;
+  cursor: pointer;
+  transition: transform var(--transition-fast),
+              border-color var(--transition-fast),
+              box-shadow var(--transition-fast),
+              background var(--transition-fast);
+  user-select: none;
+}
+
+.tp-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--accent);
+  background: var(--surface);
+}
+
+.tp-card.selected {
+  border-color: var(--accent);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px rgba(79, 195, 247, 0.25);
+}
+
+html.light .tp-card.selected {
+  box-shadow: 0 0 0 3px rgba(2, 136, 209, 0.25);
+}
+
+.tp-card .tp-badge {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto var(--sp-sm);
+  font-size: 2rem;
+  line-height: 48px;
+}
+
+.tp-card .tp-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.tp-card .tp-info {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+/* Start Game button */
+.btn-start {
+  margin-top: var(--sp-xl);
+  padding: 14px 48px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  border-radius: var(--radius-md);
+  background: var(--green);
+  color: #fff;
+  transition: background var(--transition-fast),
+              transform var(--transition-fast);
+}
+
+.btn-start:hover {
+  background: #57a85b;
+  transform: translateY(-1px);
+}
+
+.btn-start:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* --------------------------------------------------------------------------
+   6. Top Bar
+   -------------------------------------------------------------------------- */
+.top-bar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: var(--sp-sm) var(--sp-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.top-bar-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-md);
+}
+
+.top-bar-left {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-md);
+}
+
+.top-bar-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.3px;
+}
+
+.top-bar-title span {
+  color: var(--accent);
+}
+
+/* Manager / Team info in top bar */
+.manager-badge {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.manager-badge .mgr-name {
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Season badge */
+.season-badge {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+/* Top bar icons (settings, help, changelog) */
+.top-bar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+}
+
+.top-bar-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 1.15rem;
+  transition: background var(--transition-fast),
+              color var(--transition-fast);
+}
+
+.top-bar-icon:hover {
+  background: var(--surface2);
+  color: var(--text);
+}
+
+/* --------------------------------------------------------------------------
+   7. Navigation Bar
+   -------------------------------------------------------------------------- */
+.nav-bar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: var(--sp-xs) var(--sp-md);
+}
+
+.nav-bar-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  overflow-x: auto;
+  scrollbar-width: none; /* Firefox: hide scrollbar */
+}
+
+.nav-bar-inner::-webkit-scrollbar {
+  display: none;
+}
+
+/* Navigation buttons */
+.nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background var(--transition-fast),
+              color var(--transition-fast);
+  min-height: 44px; /* touch-friendly */
+}
+
+.nav-btn .nav-icon {
+  font-size: 1.05rem;
+  flex-shrink: 0;
+}
+
+.nav-btn:hover {
+  background: var(--surface2);
+  color: var(--text);
+}
+
+.nav-btn.active {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Play Match button — prominent green */
+.nav-btn.play-match {
+  background: var(--green);
+  color: #fff;
+  font-weight: 700;
+  margin-left: auto;
+  padding: 8px 20px;
+  border-radius: var(--radius-md);
+  transition: background var(--transition-fast),
+              transform var(--transition-fast),
+              box-shadow var(--transition-fast);
+}
+
+.nav-btn.play-match:hover {
+  background: #57a85b;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 187, 106, 0.35);
+}
+
+.nav-btn.play-match:active {
+  transform: translateY(0);
+}
+
+/* --------------------------------------------------------------------------
+   8. Views — Tab-like visibility
+   -------------------------------------------------------------------------- */
+.view {
+  display: none;
+}
+
+.view.active {
+  display: block;
+  animation: viewFadeIn 0.25s ease;
+}
+
+@keyframes viewFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.view-header {
+  padding: var(--sp-lg) 0 var(--sp-md);
+}
+
+.view-header h2 {
+  font-size: 1.35rem;
+  color: var(--text);
+}
+
+.view-header p {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  margin-top: var(--sp-xs);
+}
+
+/* --------------------------------------------------------------------------
+   9. Cards
+   -------------------------------------------------------------------------- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--sp-lg);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition-fast);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--sp-md);
+}
+
+.card-header h3 {
+  font-size: 1.05rem;
+  color: var(--text);
+}
+
+.card-header .card-action {
+  font-size: 0.8rem;
+  color: var(--accent);
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.card-header .card-action:hover {
+  color: var(--accent2);
+}
+
+.card-body {
+  color: var(--text);
+}
+
+.card-footer {
+  margin-top: var(--sp-md);
+  padding-top: var(--sp-md);
+  border-top: 1px solid var(--border);
+}
+
+/* Card grid layout */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--sp-md);
+}
+
+/* --------------------------------------------------------------------------
+   10. Tables — League Standings & Squad
+   -------------------------------------------------------------------------- */
+.table-wrapper {
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  -webkit-overflow-scrolling: touch;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+thead th {
+  background: var(--surface2);
+  color: var(--text-dim);
+  font-weight: 600;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 10px 12px;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background var(--transition-fast);
+}
+
+tbody tr:last-child {
+  border-bottom: none;
+}
+
+tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+html.light tbody tr:nth-child(even) {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+tbody tr:hover {
+  background: rgba(79, 195, 247, 0.06);
+}
+
+html.light tbody tr:hover {
+  background: rgba(2, 136, 209, 0.06);
+}
+
+tbody td {
+  padding: 10px 12px;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+/* Highlight current team row in standings */
+tbody tr.my-team {
+  background: rgba(79, 195, 247, 0.1);
+  font-weight: 600;
+}
+
+tbody tr.my-team td {
+  color: var(--accent);
+}
+
+html.light tbody tr.my-team {
+  background: rgba(2, 136, 209, 0.08);
+}
+
+/* Numeric columns — center align */
+td.num,
+th.num {
+  text-align: center;
+}
+
+/* --------------------------------------------------------------------------
+   11. Squad View
+   -------------------------------------------------------------------------- */
+.squad-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-md);
+  flex-wrap: wrap;
+  margin-bottom: var(--sp-md);
+}
+
+.squad-controls label {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  font-weight: 500;
+}
+
+.squad-controls select {
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  min-width: 160px;
+  transition: border-color var(--transition-fast);
+}
+
+.squad-controls select:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+/* Player row in squad list */
+.player-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  padding: var(--sp-sm) var(--sp-md);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--sp-xs);
+  transition: background var(--transition-fast),
+              border-color var(--transition-fast);
+}
+
+.player-row:hover {
+  background: var(--surface2);
+  border-color: var(--accent);
+}
+
+.player-row .player-checkbox {
+  flex-shrink: 0;
+}
+
+.player-row .player-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text);
+  min-width: 140px;
+}
+
+.player-row .player-stats {
+  display: flex;
+  gap: var(--sp-sm);
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  flex-wrap: wrap;
+}
+
+.player-row .player-stat {
+  background: var(--surface2);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Formation / Tactic / Training selectors */
+.selector-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+.selector-group label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+}
+
+/* --------------------------------------------------------------------------
+   12. Position Badges
+   -------------------------------------------------------------------------- */
+.pos-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 22px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+/* Goalkeeper — blue */
+.pos-gk {
+  background: rgba(79, 195, 247, 0.18);
+  color: #4fc3f7;
+  border: 1px solid rgba(79, 195, 247, 0.3);
+}
+
+/* Defender — green */
+.pos-def {
+  background: rgba(102, 187, 106, 0.18);
+  color: #66bb6a;
+  border: 1px solid rgba(102, 187, 106, 0.3);
+}
+
+/* Midfielder — orange */
+.pos-mid {
+  background: rgba(255, 167, 38, 0.18);
+  color: #ffa726;
+  border: 1px solid rgba(255, 167, 38, 0.3);
+}
+
+/* Striker — red */
+.pos-str {
+  background: rgba(239, 83, 80, 0.18);
+  color: #ef5350;
+  border: 1px solid rgba(239, 83, 80, 0.3);
+}
+
+/* Light theme position badge adjustments */
+html.light .pos-gk {
+  background: rgba(2, 136, 209, 0.12);
+  color: #0277bd;
+  border-color: rgba(2, 136, 209, 0.25);
+}
+
+html.light .pos-def {
+  background: rgba(46, 125, 50, 0.12);
+  color: #2e7d32;
+  border-color: rgba(46, 125, 50, 0.25);
+}
+
+html.light .pos-mid {
+  background: rgba(239, 108, 0, 0.12);
+  color: #e65100;
+  border-color: rgba(239, 108, 0, 0.25);
+}
+
+html.light .pos-str {
+  background: rgba(198, 40, 40, 0.12);
+  color: #c62828;
+  border-color: rgba(198, 40, 40, 0.25);
+}
+
+/* --------------------------------------------------------------------------
+   13. Buttons
+   -------------------------------------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 0.88rem;
+  transition: background var(--transition-fast),
+              transform var(--transition-fast),
+              box-shadow var(--transition-fast);
+  min-height: 44px; /* touch-friendly */
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+/* Primary button — accent colored */
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: var(--accent2);
+  box-shadow: 0 4px 12px rgba(79, 195, 247, 0.3);
+}
+
+html.light .btn-primary:hover {
+  box-shadow: 0 4px 12px rgba(2, 136, 209, 0.25);
+}
+
+/* Secondary button — surface colored */
+.btn-secondary {
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+  background: var(--border);
+}
+
+/* Danger button — red */
+.btn-danger {
+  background: var(--red);
+  color: #fff;
+}
+
+.btn-danger:hover {
+  background: #d32f2f;
+  box-shadow: 0 4px 12px rgba(239, 83, 80, 0.3);
+}
+
+/* Success button — green */
+.btn-success {
+  background: var(--green);
+  color: #fff;
+}
+
+.btn-success:hover {
+  background: #57a85b;
+  box-shadow: 0 4px 12px rgba(102, 187, 106, 0.3);
+}
+
+/* Small button variant */
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  min-height: 32px;
+}
+
+/* Icon-only button */
+.btn-icon {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: var(--radius-sm);
+  background: var(--surface2);
+  color: var(--text-dim);
+  font-size: 1.1rem;
+}
+
+.btn-icon:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+/* Disabled state — all buttons */
+.btn:disabled,
+.btn[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* --------------------------------------------------------------------------
+   14. Form Elements
+   -------------------------------------------------------------------------- */
+.form-group {
+  margin-bottom: var(--sp-md);
+}
+
+.form-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  margin-bottom: var(--sp-xs);
+}
+
+.form-input {
+  width: 100%;
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  transition: border-color var(--transition-fast),
+              box-shadow var(--transition-fast);
+}
+
+.form-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(79, 195, 247, 0.15);
+  outline: none;
+}
+
+html.light .form-input:focus {
+  box-shadow: 0 0 0 3px rgba(2, 136, 209, 0.15);
+}
+
+/* Checkbox */
+.checkbox-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkbox-wrap input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* Range / Slider */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--surface2);
+  outline: none;
+  transition: background var(--transition-fast);
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: 2px solid var(--surface);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition-fast);
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: 2px solid var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Select dropdown */
+select {
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 32px 8px 12px;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239aa0a8' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  cursor: pointer;
+  transition: border-color var(--transition-fast);
+}
+
+select:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+/* --------------------------------------------------------------------------
+   15. Overlay / Modal Base
+   -------------------------------------------------------------------------- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-md);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--transition-normal),
+              visibility var(--transition-normal);
+}
+
+.overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+html.light .overlay {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.overlay-content {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--sp-xl);
+  max-width: 560px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+  transform: translateY(12px);
+  transition: transform var(--transition-normal);
+}
+
+.overlay.active .overlay-content {
+  transform: translateY(0);
+}
+
+.overlay-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--sp-lg);
+}
+
+.overlay-header h2 {
+  font-size: 1.2rem;
+  color: var(--text);
+}
+
+.overlay-close {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 1.3rem;
+  transition: background var(--transition-fast),
+              color var(--transition-fast);
+}
+
+.overlay-close:hover {
+  background: var(--surface2);
+  color: var(--text);
+}
+
+/* --------------------------------------------------------------------------
+   16. Settings Overlay
+   -------------------------------------------------------------------------- */
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-sm) 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.settings-row:last-child {
+  border-bottom: none;
+}
+
+.settings-row .settings-label {
+  font-size: 0.9rem;
+  color: var(--text);
+  font-weight: 500;
+}
+
+.settings-row .settings-sublabel {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+/* Toggle button group */
+.settings-toggle {
+  display: flex;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.stoggle-opt {
+  padding: 6px 16px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  background: var(--surface2);
+  color: var(--text-dim);
+  border: none;
+  transition: background var(--transition-fast),
+              color var(--transition-fast);
+  min-height: 36px;
+}
+
+.stoggle-opt:not(:last-child) {
+  border-right: 1px solid var(--border);
+}
+
+.stoggle-opt:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+.stoggle-opt.active {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Volume slider in settings */
+.volume-slider {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  min-width: 180px;
+}
+
+.volume-slider input[type="range"] {
+  flex: 1;
+}
+
+.volume-slider .volume-value {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  min-width: 32px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------------------------------------------------------
+   17. Help & Changelog Overlays
+   -------------------------------------------------------------------------- */
+.help-section {
+  margin-bottom: var(--sp-lg);
+}
+
+.help-section h3 {
+  font-size: 0.95rem;
+  color: var(--accent);
+  margin-bottom: var(--sp-sm);
+}
+
+.help-section p,
+.help-section li {
+  font-size: 0.88rem;
+  color: var(--text-dim);
+  line-height: 1.7;
+}
+
+.help-section ul {
+  padding-left: var(--sp-md);
+  list-style: disc;
+}
+
+.changelog-entry {
+  padding: var(--sp-md) 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.changelog-entry:last-child {
+  border-bottom: none;
+}
+
+.changelog-entry .cl-version {
+  font-weight: 700;
+  color: var(--accent);
+  font-size: 0.9rem;
+}
+
+.changelog-entry .cl-date {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  margin-left: var(--sp-sm);
+}
+
+.changelog-entry ul {
+  margin-top: var(--sp-sm);
+  padding-left: var(--sp-md);
+  list-style: disc;
+}
+
+.changelog-entry li {
+  font-size: 0.85rem;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+/* --------------------------------------------------------------------------
+   18. Match View
+   -------------------------------------------------------------------------- */
+.match-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-xl);
+  padding: var(--sp-xl) 0;
+}
+
+.match-team {
+  text-align: center;
+  min-width: 140px;
+}
+
+.match-team .team-badge {
+  font-size: 2.5rem;
+  margin-bottom: var(--sp-sm);
+}
+
+.match-team .team-name {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--text);
+}
+
+/* Live score display */
+.match-score {
+  font-size: 3rem;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: 2px;
+  min-width: 100px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.match-score .score-divider {
+  color: var(--text-dim);
+  margin: 0 4px;
+}
+
+/* Match progress bar */
+.match-progress {
+  width: 100%;
+  height: 6px;
+  background: var(--surface2);
+  border-radius: 3px;
+  overflow: hidden;
+  margin: var(--sp-md) 0;
+}
+
+.match-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--green));
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.match-minute {
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  margin-bottom: var(--sp-sm);
+}
+
+/* Match events feed */
+.match-events {
+  max-height: 360px;
+  overflow-y: auto;
+  padding: var(--sp-sm);
+}
+
+.match-event {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-sm);
+  padding: var(--sp-sm) 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.85rem;
+}
+
+.match-event:last-child {
+  border-bottom: none;
+}
+
+/* Minute marker column */
+.match-event .event-minute {
+  font-weight: 700;
+  color: var(--accent);
+  min-width: 36px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.match-event .event-icon {
+  flex-shrink: 0;
+  font-size: 1rem;
+}
+
+.match-event .event-text {
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.match-event .event-text .scorer {
+  font-weight: 600;
+}
+
+/* Goal event highlight */
+.match-event.goal {
+  background: rgba(79, 195, 247, 0.05);
+  border-radius: var(--radius-sm);
+  padding: var(--sp-sm);
+}
+
+/* Card event (yellow/red) */
+.match-event.yellow-card .event-icon {
+  color: var(--yellow);
+}
+
+.match-event.red-card .event-icon {
+  color: var(--red);
+}
+
+/* Team Plates — colored team name badges */
+.team-plate {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 0.85rem;
+  /* color and background set via inline style for team-specific colors */
+}
+
+/* --------------------------------------------------------------------------
+   19. Save Slots
+   -------------------------------------------------------------------------- */
+.save-slots-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--sp-lg);
+}
+
+.save-slots-panel h3 {
+  font-size: 1.05rem;
+  margin-bottom: var(--sp-md);
+  color: var(--text);
+}
+
+.save-slot-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-sm) var(--sp-md);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--sp-sm);
+  transition: border-color var(--transition-fast);
+}
+
+.save-slot-row:hover {
+  border-color: var(--accent);
+}
+
+.save-slot-row:last-child {
+  margin-bottom: 0;
+}
+
+.save-slot-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.save-slot-info .slot-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.save-slot-info .slot-meta {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+.save-slot-actions {
+  display: flex;
+  gap: var(--sp-xs);
+}
+
+.save-slot-row .btn-load {
+  background: var(--accent);
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-weight: 600;
+  transition: background var(--transition-fast);
+}
+
+.save-slot-row .btn-load:hover {
+  background: var(--accent2);
+}
+
+.save-slot-row .btn-delete {
+  background: transparent;
+  color: var(--red);
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  transition: background var(--transition-fast);
+}
+
+.save-slot-row .btn-delete:hover {
+  background: rgba(239, 83, 80, 0.12);
+}
+
+/* --------------------------------------------------------------------------
+   20. Stats & Badges
+   -------------------------------------------------------------------------- */
+.stat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-badge.power {
+  background: rgba(79, 195, 247, 0.15);
+  color: var(--accent);
+}
+
+.stat-badge.power-high {
+  background: rgba(102, 187, 106, 0.15);
+  color: var(--green);
+}
+
+.stat-badge.power-low {
+  background: rgba(239, 83, 80, 0.15);
+  color: var(--red);
+}
+
+/* Form indicator (W/D/L dots) */
+.form-indicator {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.form-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.form-dot.w {
+  background: var(--green);
+}
+
+.form-dot.d {
+  background: var(--yellow);
+  color: #333;
+}
+
+.form-dot.l {
+  background: var(--red);
+}
+
+/* --------------------------------------------------------------------------
+   21. Transfer Market
+   -------------------------------------------------------------------------- */
+.transfer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--sp-md);
+}
+
+.transfer-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--sp-md);
+  transition: border-color var(--transition-fast),
+              box-shadow var(--transition-fast);
+}
+
+.transfer-card:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-md);
+}
+
+.transfer-card .player-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  margin-bottom: var(--sp-sm);
+}
+
+.transfer-card .player-header .player-name {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--text);
+}
+
+.transfer-card .player-details {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  margin-bottom: var(--sp-md);
+  line-height: 1.6;
+}
+
+.transfer-card .player-price {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--green);
+  margin-bottom: var(--sp-sm);
+}
+
+.transfer-card .transfer-actions {
+  display: flex;
+  gap: var(--sp-sm);
+}
+
+/* --------------------------------------------------------------------------
+   22. Trophy Room
+   -------------------------------------------------------------------------- */
+.trophy-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--sp-md);
+}
+
+.trophy-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--sp-lg);
+  text-align: center;
+  transition: transform var(--transition-fast),
+              box-shadow var(--transition-fast);
+}
+
+.trophy-item:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+
+.trophy-icon {
+  font-size: 2.5rem;
+  margin-bottom: var(--sp-sm);
+}
+
+.trophy-icon.gold {
+  color: var(--gold);
+  text-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
+}
+
+.trophy-icon.silver {
+  color: var(--silver);
+  text-shadow: 0 2px 8px rgba(192, 192, 192, 0.4);
+}
+
+.trophy-icon.bronze {
+  color: var(--bronze);
+  text-shadow: 0 2px 8px rgba(205, 127, 50, 0.4);
+}
+
+.trophy-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.trophy-detail {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+/* Records display */
+.records-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-sm);
+}
+
+.record-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--sp-sm) var(--sp-md);
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+}
+
+.record-row .record-label {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.record-row .record-value {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------------------------------------------------------
+   23. Custom Scrollbar
+   -------------------------------------------------------------------------- */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-dim);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) var(--bg);
+}
+
+/* --------------------------------------------------------------------------
+   24. Utility Classes
+   -------------------------------------------------------------------------- */
+.text-accent { color: var(--accent); }
+.text-dim { color: var(--text-dim); }
+.text-green { color: var(--green); }
+.text-red { color: var(--red); }
+.text-yellow { color: var(--yellow); }
+.text-gold { color: var(--gold); }
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.text-sm { font-size: 0.82rem; }
+.text-xs { font-size: 0.72rem; }
+.text-lg { font-size: 1.15rem; }
+
+.fw-400 { font-weight: 400; }
+.fw-500 { font-weight: 500; }
+.fw-600 { font-weight: 600; }
+.fw-700 { font-weight: 700; }
+
+.mt-xs { margin-top: var(--sp-xs); }
+.mt-sm { margin-top: var(--sp-sm); }
+.mt-md { margin-top: var(--sp-md); }
+.mt-lg { margin-top: var(--sp-lg); }
+.mt-xl { margin-top: var(--sp-xl); }
+
+.mb-xs { margin-bottom: var(--sp-xs); }
+.mb-sm { margin-bottom: var(--sp-sm); }
+.mb-md { margin-bottom: var(--sp-md); }
+.mb-lg { margin-bottom: var(--sp-lg); }
+.mb-xl { margin-bottom: var(--sp-xl); }
+
+.p-sm { padding: var(--sp-sm); }
+.p-md { padding: var(--sp-md); }
+.p-lg { padding: var(--sp-lg); }
+
+.hidden { display: none !important; }
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------------------------------------------------------
+   25. Animations
+   -------------------------------------------------------------------------- */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes scoreFlash {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.15); color: var(--gold); }
+  100% { transform: scale(1); }
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.35s ease;
+}
+
+.animate-pulse {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.animate-score {
+  animation: scoreFlash 0.5s ease;
+}
+
+/* --------------------------------------------------------------------------
+   26. Notification / Toast
+   -------------------------------------------------------------------------- */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 24px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  opacity: 0;
+  transition: transform var(--transition-normal),
+              opacity var(--transition-normal);
+  pointer-events: none;
+}
+
+.toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.toast.toast-success {
+  border-left: 4px solid var(--green);
+}
+
+.toast.toast-error {
+  border-left: 4px solid var(--red);
+}
+
+.toast.toast-info {
+  border-left: 4px solid var(--accent);
+}
+
+/* --------------------------------------------------------------------------
+   27. Loading / Skeleton
+   -------------------------------------------------------------------------- */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--surface2) 25%,
+    var(--border) 50%,
+    var(--surface2) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* --------------------------------------------------------------------------
+   28. Tooltip
+   -------------------------------------------------------------------------- */
+[data-tooltip] {
+  position: relative;
+}
+
+[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) scale(0.9);
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  box-shadow: var(--shadow-md);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--transition-fast),
+              visibility var(--transition-fast),
+              transform var(--transition-fast);
+  pointer-events: none;
+  z-index: 200;
+}
+
+[data-tooltip]:hover::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) scale(1);
+}
+
+/* --------------------------------------------------------------------------
+   29. Responsive — Tablet (max-width: 768px)
+   -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+  html {
+    font-size: 15px;
+  }
+
+  /* Top Bar: compact */
+  .top-bar-inner {
+    flex-wrap: wrap;
+    gap: var(--sp-sm);
+  }
+
+  .top-bar-title {
+    font-size: 1rem;
+  }
+
+  .season-badge {
+    font-size: 0.72rem;
+    padding: 3px 8px;
+  }
+
+  /* Nav: wrap to multiple rows */
+  .nav-bar-inner {
+    flex-wrap: wrap;
+    gap: var(--sp-xs);
+  }
+
+  .nav-btn {
+    padding: 7px 10px;
+    font-size: 0.8rem;
+  }
+
+  .nav-btn .nav-icon {
+    font-size: 0.95rem;
+  }
+
+  /* Play Match button: full width on bottom row */
+  .nav-btn.play-match {
+    width: 100%;
+    justify-content: center;
+    margin-left: 0;
+    margin-top: var(--sp-xs);
+    order: 99;
+  }
+
+  /* Team Picker: 2 columns on tablet */
+  .tp-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Cards: full width */
+  .card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Transfer grid */
+  .transfer-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Trophy grid */
+  .trophy-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Match header */
+  .match-header {
+    gap: var(--sp-md);
+  }
+
+  .match-score {
+    font-size: 2.2rem;
+  }
+
+  .match-team {
+    min-width: 100px;
+  }
+
+  .match-team .team-badge {
+    font-size: 2rem;
+  }
+
+  /* Welcome card */
+  .welcome-card {
+    padding: var(--sp-xl) var(--sp-md);
+  }
+
+  .welcome-card h1 {
+    font-size: 1.7rem;
+  }
+
+  /* Manager input */
+  .manager-input-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .manager-input-group input {
+    width: 100%;
+  }
+
+  /* View header */
+  .view-header h2 {
+    font-size: 1.15rem;
+  }
+
+  /* Squad controls */
+  .squad-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .squad-controls select {
+    min-width: unset;
+    width: 100%;
+  }
+
+  /* Tables: ensure horizontal scroll works */
+  .table-wrapper {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Settings overlay */
+  .overlay-content {
+    padding: var(--sp-lg);
+    max-width: 100%;
+  }
+
+  .settings-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--sp-sm);
+  }
+
+  .volume-slider {
+    width: 100%;
+    min-width: unset;
+  }
+
+  /* Save slots */
+  .save-slot-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--sp-sm);
+  }
+
+  .save-slot-actions {
+    width: 100%;
+  }
+
+  .save-slot-actions .btn-load,
+  .save-slot-actions .btn-delete {
+    flex: 1;
+    text-align: center;
+    justify-content: center;
+    display: flex;
+  }
+
+  /* Container padding */
+  .container {
+    padding: 0 var(--sp-sm);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   30. Responsive — Phone (max-width: 480px)
+   -------------------------------------------------------------------------- */
+@media (max-width: 480px) {
+  html {
+    font-size: 14px;
+  }
+
+  /* Top Bar: compact single line */
+  .top-bar {
+    padding: var(--sp-xs) var(--sp-sm);
+  }
+
+  .top-bar-left {
+    gap: var(--sp-sm);
+  }
+
+  /* Hide manager info on very small screens */
+  .manager-badge {
+    display: none;
+  }
+
+  /* Nav: compact icons */
+  .nav-bar {
+    padding: var(--sp-xs) var(--sp-sm);
+  }
+
+  .nav-btn {
+    padding: 6px 8px;
+    font-size: 0.75rem;
+    gap: 4px;
+    min-height: 44px;
+  }
+
+  /* Hide nav text labels, show only icons on phones */
+  .nav-btn .nav-label {
+    display: none;
+  }
+
+  /* Keep play match text visible */
+  .nav-btn.play-match .nav-label {
+    display: inline;
+  }
+
+  /* Team Picker: single column on phone */
+  .tp-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Compact horizontal team card on phone */
+  .tp-card {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-sm);
+    text-align: left;
+    padding: var(--sp-sm) var(--sp-md);
+  }
+
+  .tp-card .tp-badge {
+    margin: 0;
+    font-size: 1.5rem;
+    width: 36px;
+    height: 36px;
+    line-height: 36px;
+    flex-shrink: 0;
+  }
+
+  /* Welcome card */
+  .welcome-card {
+    padding: var(--sp-lg) var(--sp-md);
+  }
+
+  .welcome-card h1 {
+    font-size: 1.4rem;
+  }
+
+  .welcome-card p {
+    font-size: 0.9rem;
+  }
+
+  .btn-start {
+    width: 100%;
+    padding: 14px;
+  }
+
+  /* Match view: stack vertically */
+  .match-header {
+    flex-direction: column;
+    gap: var(--sp-md);
+  }
+
+  .match-score {
+    font-size: 2.8rem;
+    order: -1; /* score on top */
+  }
+
+  .match-team {
+    min-width: unset;
+  }
+
+  /* Player row compact */
+  .player-row {
+    flex-wrap: wrap;
+    gap: var(--sp-xs);
+  }
+
+  .player-row .player-stats {
+    width: 100%;
+    margin-top: var(--sp-xs);
+  }
+
+  /* Trophy grid: single column */
+  .trophy-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Transfer grid */
+  .transfer-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Overlay: slide-up sheet on phone */
+  .overlay {
+    padding: var(--sp-sm);
+    align-items: flex-end;
+  }
+
+  .overlay-content {
+    max-height: 90vh;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    padding: var(--sp-md);
+  }
+
+  /* Card compact */
+  .card {
+    padding: var(--sp-md);
+  }
+
+  /* Table compact */
+  thead th {
+    padding: 8px;
+    font-size: 0.7rem;
+  }
+
+  tbody td {
+    padding: 8px;
+    font-size: 0.8rem;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   31. Touch-Friendly Overrides
+   -------------------------------------------------------------------------- */
+@media (pointer: coarse) {
+  /* Ensure minimum 44px tap targets for all interactive elements */
+  .nav-btn,
+  .btn,
+  .stoggle-opt,
+  .tp-card,
+  .top-bar-icon,
+  .overlay-close,
+  .save-slot-row .btn-load,
+  .save-slot-row .btn-delete,
+  .checkbox-wrap {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Slightly larger checkboxes for touch */
+  .checkbox-wrap input[type="checkbox"] {
+    width: 22px;
+    height: 22px;
+  }
+
+  /* Larger slider thumb for touch */
+  input[type="range"]::-webkit-slider-thumb {
+    width: 24px;
+    height: 24px;
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   32. Print Styles
+   -------------------------------------------------------------------------- */
+@media print {
+  .top-bar,
+  .nav-bar,
+  .overlay,
+  .toast {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+    color: #000;
+  }
+
+  .card {
+    box-shadow: none;
+    border: 1px solid #ccc;
+  }
+
+  a {
+    color: #000;
+    text-decoration: underline;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   33. Focus Visible (Accessibility)
+   -------------------------------------------------------------------------- */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   34. Reduced Motion (Accessibility)
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

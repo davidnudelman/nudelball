@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nudelball</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Source+Sans+3:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/src/styles/main.css">
+</head>
+<body>
+
+<!-- ===== WELCOME SCREEN ===== -->
+<div id="welcome">
+  <div class="welcome-box">
+    <h1><span data-i18n="welcomeTitle1">Nudel</span><span data-i18n="welcomeTitle2" style="color:var(--accent)">ball</span></h1>
+    <p class="subtitle" data-i18n="welcomeSubtitle">Manage your club to glory</p>
+    <div id="welcome-new">
+      <input type="text" id="manager-name" data-i18n-placeholder="managerPlaceholder" placeholder="Enter your name, Manager..." maxlength="24" autofocus>
+      <div class="team-picker" id="team-picker"></div>
+      <div class="team-assign" id="team-selected" style="display:none">
+        <div class="label" data-i18n="selectedTeam">Selected Team</div>
+        <div class="team" id="assigned-team">&mdash;</div>
+        <div class="rename-row">
+          <label data-i18n="renameLabel">Rename:</label>
+          <input type="text" id="team-rename" data-i18n-placeholder="teamRenamePlaceholder" placeholder="Custom team name..." maxlength="20">
+        </div>
+      </div>
+      <button class="wbtn primary" id="start-btn" disabled data-i18n="enterDugout">Enter The Dugout</button>
+    </div>
+    <div id="welcome-continue" style="display:none">
+      <button class="wbtn primary" id="continue-btn" data-i18n="continueGame">Continue Game</button>
+      <button class="wbtn secondary" id="newgame-btn" data-i18n="newGame">New Game</button>
+    </div>
+    <button class="welcome-settings-btn" onclick="toggleHelp()">&#128214; How to Play</button>
+    <button class="welcome-settings-btn" onclick="toggleSettings()">&#9881; <span data-i18n="settings">Settings</span></button>
+    <div class="welcome-footer">A Game by DAV<span class="footer-red">ID</span> NUDELMAN</div>
+  </div>
+</div>
+
+<!-- ===== TOP BAR ===== -->
+<div id="top-bar">
+  <div class="logo">NB</div>
+  <div class="manager-info" id="manager-info"></div>
+  <div class="season-badge" id="season-badge">Season 1</div>
+  <button id="mute-btn" onclick="toggleMute()" title="Mute/Unmute">&#128266;</button>
+  <button id="play-match-btn" onclick="playMatch()" data-i18n="playMatch">Play Match</button>
+  <button id="settings-btn" onclick="toggleSettings()" title="Settings">&#9881;</button>
+</div>
+
+<!-- ===== NAV BAR ===== -->
+<div id="nav">
+  <button class="nav-btn active" data-view="dashboard" data-i18n="dashboard" onclick="showView('dashboard')">Dashboard</button>
+  <button class="nav-btn" data-view="squad" data-i18n="squad" onclick="showView('squad')">Squad</button>
+  <button class="nav-btn" data-view="table" data-i18n="table" onclick="showView('table')">Table</button>
+  <button class="nav-btn" data-view="calendar" data-i18n="calendar" onclick="showView('calendar')">Calendar</button>
+  <button class="nav-btn" data-view="scorers" data-i18n="topScorers" onclick="showView('scorers')">Top Scorers</button>
+  <button class="nav-btn" data-view="market" data-i18n="market" onclick="showView('market')">Market</button>
+  <button class="nav-btn" data-view="cup" onclick="showView('cup')">&#127942; Cup</button>
+  <button class="nav-btn" data-view="history" data-i18n="history" onclick="showView('history')">History</button>
+  <button class="nav-btn" data-view="trophyroom" data-i18n="trophyRoom" onclick="showView('trophyroom')">Trophy Room</button>
+</div>
+
+<!-- ===== MAIN CONTENT ===== -->
+<div id="main">
+  <!-- Dashboard -->
+  <div id="view-dashboard" class="view active">
+    <div id="last-result"></div>
+    <div id="club-trophies-card" class="card" style="display:none">
+      <div class="card-title" data-i18n="yourClubHonours">Your Club Honours</div>
+      <div id="club-trophies-content"></div>
+    </div>
+    <div id="cup-status"></div>
+    <div id="next-fixture" class="card">
+      <div class="card-title">Next Fixture &mdash; <span id="next-week-label"></span></div>
+      <div id="next-fixture-content"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Division <span id="dash-div-num"></span> Standings</div>
+      <div id="dash-table-wrap"></div>
+    </div>
+  </div>
+
+  <!-- Squad -->
+  <div id="view-squad" class="view">
+    <div id="news-panel" class="news-panel" style="display:none"></div>
+    <!-- Tactic selector bar -->
+    <div class="card" id="tactic-card" style="margin-bottom:8px">
+      <div class="tactic-bar" id="tactic-bar"></div>
+    </div>
+    <!-- Training focus selector bar -->
+    <div class="card" id="training-card" style="margin-bottom:8px">
+      <div class="training-bar" id="training-bar"></div>
+    </div>
+    <div class="card">
+      <div class="card-title" data-i18n="squadManagement">Squad Management</div>
+      <div class="squad-controls">
+        <select id="formation-select" class="formation-select" onchange="onFormationChange()"></select>
+        <button class="btn btn-accent" onclick="autoPick()" data-i18n="autoPick">Auto-Pick</button>
+        <button class="btn btn-outline" onclick="clearSelection()" data-i18n="clear">Clear</button>
+        <button class="btn btn-outline" id="sort-btn" onclick="toggleSort()">Sort: Position</button>
+        <div class="selected-count"><span data-i18n="selected">Selected:</span> <span id="sel-count">0</span>/11</div>
+      </div>
+      <div id="formation-bar" class="formation-bar" style="display:none">
+        <span class="form-label" data-i18n="formation">Formation:</span>
+        <span class="form-display" id="formation-display">&mdash;</span>
+        <span id="formation-status"></span>
+      </div>
+      <div id="power-bar" class="power-bar" style="display:none"></div>
+      <div id="selection-warning" style="display:none;color:var(--yellow);font-size:.82rem;margin-bottom:8px"></div>
+      <div id="player-grid" class="squad-list"></div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div id="view-table" class="view">
+    <div class="div-tabs" id="table-div-tabs"></div>
+    <div class="card" id="table-card"></div>
+  </div>
+
+  <!-- Calendar -->
+  <div id="view-calendar" class="view">
+    <div class="div-tabs" id="cal-div-tabs"></div>
+    <div id="calendar-content"></div>
+  </div>
+
+  <!-- Top Scorers -->
+  <div id="view-scorers" class="view">
+    <div class="div-tabs" id="scorers-div-tabs"></div>
+    <div class="card" id="scorers-card"></div>
+  </div>
+
+  <!-- Market -->
+  <div id="view-market" class="view">
+    <div class="card" id="market-card"></div>
+  </div>
+
+  <!-- History -->
+  <div id="view-history" class="view">
+    <div class="card" id="history-card"></div>
+  </div>
+
+  <!-- Trophy Room -->
+  <div id="view-trophyroom" class="view">
+    <div id="trophyroom-content"></div>
+  </div>
+
+  <!-- Team Profile -->
+  <div id="view-teamprofile" class="view">
+    <div class="card" id="teamprofile-content"></div>
+  </div>
+
+  <!-- Cup -->
+  <div id="view-cup" class="view">
+    <div class="card" id="cup-content"></div>
+  </div>
+
+  <!-- Player Profile -->
+  <div id="view-playerprofile" class="view">
+    <div class="card" id="playerprofile-content"></div>
+  </div>
+
+  <!-- Match -->
+  <div id="view-match" class="view">
+    <div class="card" id="match-sim"></div>
+  </div>
+
+  <!-- Footer -->
+  <div class="app-footer" id="app-footer">A Game by DAV<span class="footer-red">ID</span> NUDELMAN<div class="footer-version" id="footer-version"></div></div>
+</div>
+
+<!-- ===== SEASON OVERLAY ===== -->
+<div class="season-overlay" id="season-overlay">
+  <div class="season-box" id="season-box"></div>
+</div>
+
+<!-- ===== SETTINGS OVERLAY ===== -->
+<div class="settings-overlay" id="settings-overlay">
+  <div class="settings-box">
+    <div class="settings-header">
+      <h3 data-i18n="settings">Settings</h3>
+      <button class="settings-close" onclick="toggleSettings()">&times;</button>
+    </div>
+    <div class="settings-row">
+      <span class="settings-label" data-i18n="theme">Theme</span>
+      <div class="settings-toggle" id="theme-toggle">
+        <button class="stoggle-opt" data-value="dark" onclick="setTheme('dark')">&#127769; <span data-i18n="dark">Dark</span></button>
+        <button class="stoggle-opt" data-value="light" onclick="setTheme('light')">&#9728;&#65039; <span data-i18n="light">Light</span></button>
+      </div>
+    </div>
+    <div class="settings-row">
+      <span class="settings-label" data-i18n="language">Language</span>
+      <div class="settings-toggle" id="lang-toggle">
+        <button class="stoggle-opt" data-value="en" onclick="setLang('en')">English</button>
+        <button class="stoggle-opt" data-value="pt" onclick="setLang('pt')">Portugu&ecirc;s</button>
+        <button class="stoggle-opt" data-value="es" onclick="setLang('es')">Espa&ntilde;ol</button>
+      </div>
+    </div>
+    <div class="settings-row">
+      <span class="settings-label" data-i18n="teamStrength">Team Strength</span>
+      <div class="settings-toggle" id="strength-toggle">
+        <button class="stoggle-opt" data-value="none" onclick="setStrengthDisplay('none')"><span data-i18n="strengthHide">Hidden</span></button>
+        <button class="stoggle-opt" data-value="avg" onclick="setStrengthDisplay('avg')"><span data-i18n="strengthAvg">AVG Rating</span></button>
+        <button class="stoggle-opt" data-value="power" onclick="setStrengthDisplay('power')"><span data-i18n="strengthPower">Power Level</span></button>
+      </div>
+    </div>
+    <div class="settings-row">
+      <span class="settings-label">&#128266; Volume</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <input type="range" class="volume-slider" id="volume-slider" min="0" max="100"
+               oninput="setVolume(this.value/100)">
+        <span id="volume-pct" style="font-family:'Oswald';font-size:.82rem;color:var(--text-dim);min-width:32px">50%</span>
+      </div>
+    </div>
+    <a class="settings-changelog-link" onclick="toggleSettings();toggleHelp()">&#128214; How to Play</a>
+    <a class="settings-changelog-link" onclick="toggleSettings();toggleChangelog()">&#128203; Changelog <span id="settings-version-label"></span></a>
+  </div>
+</div>
+
+<!-- ===== HELP OVERLAY ===== -->
+<div class="help-overlay" id="help-overlay">
+  <div class="help-box">
+    <div class="help-header">
+      <h3>&#128214; How to Play</h3>
+      <button class="help-close" onclick="toggleHelp()">&times;</button>
+    </div>
+    <div class="help-body" id="help-body"></div>
+  </div>
+</div>
+
+<!-- ===== CHANGELOG OVERLAY ===== -->
+<div class="changelog-overlay" id="changelog-overlay">
+  <div class="changelog-box">
+    <div class="changelog-header">
+      <h3>&#128203; Changelog</h3>
+      <button class="changelog-close" onclick="toggleChangelog()">&times;</button>
+    </div>
+    <div class="changelog-body" id="changelog-body"></div>
+  </div>
+</div>
+
+<!-- Vite module entry point -->
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>
