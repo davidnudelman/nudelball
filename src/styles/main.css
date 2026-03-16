@@ -3630,6 +3630,144 @@ html.light .league-table .player-row {
   background: var(--accent2);
 }
 
+/* Sub confirm panel */
+.sub-confirm {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-xs);
+  padding: var(--sp-sm);
+  background: var(--surface);
+  border-radius: var(--radius-sm);
+  margin-top: var(--sp-sm);
+  border: 1px solid var(--accent);
+}
+
+.sc-label {
+  width: 100%;
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  margin-bottom: var(--sp-xs);
+}
+
+.sc-starter {
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: var(--surface2);
+  color: var(--text);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.sc-starter:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* Match event items */
+.match-event {
+  padding: 6px 10px;
+  margin-bottom: 4px;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  color: var(--text);
+  animation: eventSlide 0.3s ease-out;
+}
+
+@keyframes eventSlide {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.match-event.goal {
+  background: rgba(76, 175, 80, 0.1);
+  border-left: 3px solid var(--green);
+}
+
+.match-event.player-goal {
+  background: rgba(79, 195, 247, 0.15);
+  border-left: 3px solid var(--accent);
+}
+
+.match-event.card-event {
+  background: rgba(255, 235, 59, 0.08);
+  border-left: 3px solid var(--yellow);
+}
+
+.match-event.card-event.red {
+  background: rgba(244, 67, 54, 0.08);
+  border-left: 3px solid var(--red);
+}
+
+.match-event.ht-event,
+.match-event.ft-event {
+  background: var(--surface2);
+  border-left: 3px solid var(--text-dim);
+  font-weight: 700;
+  text-align: center;
+}
+
+.me-min {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-weight: 700;
+  color: var(--accent);
+  min-width: 30px;
+  display: inline-block;
+}
+
+.me-team {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+/* Half-time panel */
+.ht-panel {
+  padding: var(--sp-md);
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  margin-top: var(--sp-md);
+}
+
+.coach-comment {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-sm);
+  padding: var(--sp-md);
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--sp-md);
+}
+
+.coach-icon {
+  font-size: 1.6rem;
+  flex-shrink: 0;
+}
+
+.coach-text {
+  font-style: italic;
+  font-size: 0.95rem;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.ht-actions {
+  text-align: center;
+}
+
+.ht-label {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  margin-bottom: var(--sp-sm);
+}
+
+.ht-continue-btn {
+  padding: 12px 32px;
+  font-size: 1rem;
+}
+
 /* --------------------------------------------------------------------------
    35j. Market View
    -------------------------------------------------------------------------- */

@@ -138,6 +138,8 @@ import { renderTeamProfile, openTeamProfile } from './ui/views/team-profile';
 import { renderPlayerProfile, showPlayerProfile } from './ui/views/player-profile';
 import { renderCup } from './ui/views/cup-view';
 import { setupMatchUI } from './ui/views/match-view';
+import { runAnimatedMatch } from './engine/match-animation';
+import type { RivalResult } from './ui/views/match-view';
 
 // ===========================================================================
 // 7. AUDIO
@@ -318,6 +320,9 @@ function wrappedRenderCup(): void {
  * After every action the game is auto-saved and the UI is refreshed.
  */
 function playMatch(): void {
+  /* Don't start a new match while animation is running */
+  if (G.matchInProgress) return;
+
   /* --- Phase 1: Season-end advancement --- */
   if (G.week > TOTAL_SEASON_WEEKS) {
     startNewSeason(G);
@@ -373,10 +378,20 @@ function playMatch(): void {
 
   /* Simulate all league fixtures for the current round across all divisions */
   const roundIdx = G.week - 1;
+  let playerFixture: import('./types').Fixture | null = null;
+  let playerFixtureDiv = 0;
+
   for (let d = 1; d <= 4; d++) {
     if (!G.fixtures[d] || !G.fixtures[d][roundIdx]) continue;
     for (const f of G.fixtures[d][roundIdx]) {
       if (f.homeGoals !== null) continue; /* Already played */
+
+      /* Identify the player's fixture — simulate it but animate later */
+      if (f.home === G.playerTeamId || f.away === G.playerTeamId) {
+        playerFixture = f;
+        playerFixtureDiv = d;
+      }
+
       simulateMatch(f, G, {
         difficulty: diffMult.aiStrengthMult,
       });
@@ -391,7 +406,73 @@ function playMatch(): void {
   /* Apply weekly training for the player's squad */
   applyTraining(G, diffMult.trainingMult);
 
-  /* Advance week counter */
+  /* If we have a player fixture, animate it before advancing the week */
+  if (playerFixture) {
+    /* Build rival results from same-division fixtures */
+    const rivalResults: RivalResult[] = [];
+    if (G.fixtures[playerFixtureDiv] && G.fixtures[playerFixtureDiv][roundIdx]) {
+      for (const rf of G.fixtures[playerFixtureDiv][roundIdx]) {
+        if (rf === playerFixture) continue;
+        if (rf.homeGoals === null) continue;
+        const ht = G.teams[rf.home];
+        const at = G.teams[rf.away];
+        if (!ht || !at) continue;
+
+        /* Build goal events from the fixture events for the live ticker */
+        const goalEvents = rf.events
+          .filter(ev => ev.type === 'goal')
+          .map(ev => ({ min: ev.minute, teamId: ev.teamId }));
+
+        rivalResults.push({
+          home: ht.name,
+          away: at.name,
+          homeC1: ht.c1,
+          homeC2: ht.c2,
+          awayC1: at.c1,
+          awayC2: at.c2,
+          finalH: rf.homeGoals!,
+          finalA: rf.awayGoals!,
+          goalEvents,
+          homeId: ht.id,
+          awayId: at.id,
+        });
+      }
+    }
+
+    /* Show the match view and run the animated simulation */
+    showView('match');
+
+    runAnimatedMatch(playerFixture, G, settings, {
+      rivalResults,
+      onComplete: () => {
+        /* Advance week counter after animation finishes */
+        G.week++;
+
+        /* Close the transfer window after week 1 */
+        if (G.week > 1) {
+          G.transferWindow = false;
+        }
+
+        /* Check if the full season (league + cup) is now over */
+        if (G.week > SEASON_WEEKS) {
+          if (G.cup && G.cup.active && G.cup.round < G.cup.rounds.length) {
+            /* Cup final still pending -- don't end season yet */
+          } else if (G.week > TOTAL_SEASON_WEEKS) {
+            const result = endOfSeason(G);
+            showSeasonEndOverlay(result);
+          }
+        }
+
+        /* Auto-save and refresh UI */
+        saveGame();
+        refreshAll();
+        showView('dashboard');
+      },
+    });
+    return;
+  }
+
+  /* No player fixture this week (shouldn't normally happen) — advance instantly */
   G.week++;
 
   /* Close the transfer window after week 1 */
@@ -1116,6 +1197,10 @@ declare global {
     startSub: typeof startSub;
     initSub: typeof initSub;
 
+    /* Match Animation */
+    continueMatch: () => void;
+    finishMatch: () => void;
+
     /* Save/Load */
     downloadSave: typeof globalDownloadSave;
     importSave: typeof globalImportSave;
@@ -1233,6 +1318,7 @@ registerViewRenderers({
   teamprofile: wrappedRenderTeamProfile,
   playerprofile: wrappedRenderPlayerProfile,
   cup: wrappedRenderCup,
+  match: () => { /* Match view is rendered by the animation engine */ },
 });
 
 // ===========================================================================
