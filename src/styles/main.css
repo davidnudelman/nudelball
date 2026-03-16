@@ -2727,7 +2727,7 @@ select:focus-visible {
 /* Player list header */
 .player-list-header {
   display: grid;
-  grid-template-columns: 36px 44px 1fr 100px 60px;
+  grid-template-columns: 36px 44px 1fr 60px;
   gap: var(--sp-sm);
   align-items: center;
   padding: var(--sp-sm) var(--sp-md);
@@ -2770,7 +2770,7 @@ select:focus-visible {
 /* Squad row — player card in list */
 .squad-row {
   display: grid;
-  grid-template-columns: 36px 44px 1fr 100px 60px;
+  grid-template-columns: 36px 44px 1fr 60px;
   gap: var(--sp-sm);
   align-items: center;
   padding: var(--sp-sm) var(--sp-md);
@@ -2986,37 +2986,6 @@ html.light .pr-pos.str {
 }
 
 /* Position select dropdown */
-.pos-select {
-  background: var(--surface2);
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 4px 8px;
-  font-size: 0.78rem;
-  cursor: pointer;
-  transition: border-color var(--transition-fast);
-}
-
-.pos-select:focus {
-  border-color: var(--accent);
-  outline: none;
-}
-
-.oop-select {
-  border-color: var(--yellow);
-}
-
-.oop-label {
-  color: var(--yellow);
-  font-weight: 600;
-}
-
-/* Assigned position column */
-.pr-assigned {
-  display: flex;
-  align-items: center;
-}
-
 /* Skill column */
 .pr-skill {
   font-family: 'Oswald', system-ui, sans-serif;
@@ -3024,11 +2993,6 @@ html.light .pr-pos.str {
   font-size: 1rem;
   color: var(--accent);
   text-align: center;
-}
-
-/* Mobile position select (hidden on desktop) */
-.pr-assign-mobile {
-  display: none;
 }
 
 /* Stamina classes */
@@ -3052,16 +3016,6 @@ html.light .pr-pos.str {
   margin-left: auto;
 }
 
-/* Formation select dropdown */
-.formation-select {
-  background: var(--surface2);
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 8px 12px;
-  min-width: 140px;
-}
-
 /* Formation bar */
 .formation-bar {
   display: flex;
@@ -3081,16 +3035,6 @@ html.light .pr-pos.str {
   font-weight: 700;
   font-size: 1.1rem;
   color: var(--accent);
-}
-
-.form-ok {
-  color: var(--green);
-  font-size: 0.82rem;
-}
-
-.form-penalty {
-  color: var(--yellow);
-  font-size: 0.82rem;
 }
 
 /* Power bar */
@@ -3383,17 +3327,14 @@ html.light .pr-pos.str {
   color: var(--accent);
 }
 
-.league-table .league-player-row {
+.league-table tr.league-player-row td {
   background: rgba(79, 195, 247, 0.1);
   font-weight: 600;
-}
-
-html.light .league-table .league-player-row {
-  background: rgba(2, 136, 209, 0.08);
-}
-
-.league-table .league-player-row td {
   color: var(--accent);
+}
+
+html.light .league-table tr.league-player-row td {
+  background: rgba(2, 136, 209, 0.08);
 }
 
 .league-table .promote td:first-child {
@@ -4681,15 +4622,6 @@ html.light .changelog-overlay {
 
   .player-list-header {
     grid-template-columns: 30px 36px 1fr 60px;
-  }
-
-  .pr-assigned {
-    display: none;
-  }
-
-  .pr-assign-mobile {
-    display: block;
-    margin-top: var(--sp-xs);
   }
 
   .pr-skill {

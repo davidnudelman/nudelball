@@ -168,7 +168,7 @@ export function updatePlayBtn(): void {
 
   const sel = pt.players.filter(p => p.selected);
   const selCount = sel.length;
-  const hasGK = sel.some(p => (p.assignedPos || p.pos) === 'GK');
+  const hasGK = sel.some(p => p.pos === 'GK');
 
   /* Cup-final-only week (after league ends, before season rolls) */
   if (G.week > SEASON_WEEKS && G.week <= TOTAL_SEASON_WEEKS) {

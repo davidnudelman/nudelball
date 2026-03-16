@@ -12,8 +12,6 @@ import {
   GENERIC_FIRST,
   GENERIC_LAST,
   DIV_RANGE,
-  POS_DISTANCE,
-  OOP_PENALTY_PER_STEP,
   FORM_OVR_PCT,
   DEVELOPMENT_CURVE_TABLE,
   RETIREMENT_AGE,
@@ -80,23 +78,10 @@ export const genSkill = (div: number): number => {
 // ---------------------------------------------------------------------------
 
 /**
- * Calculate the OOP (out-of-position) multiplier for a player.
- *
- * - If the player is in their natural position (or unassigned), returns 1.0.
- * - If a GK is assigned outfield or vice-versa, returns 0 (completely locked).
- * - Otherwise, each step away from the natural position costs 15% effectiveness.
- *
- * @param naturalPos - The player's natural position.
- * @param assignedPos - The position they are currently assigned to (null = natural).
- * @returns A multiplier in [0, 1].
+ * OOP penalty is no longer used — players always play their natural position.
+ * Kept as a no-op for any remaining callers during migration.
  */
-export const getOopPenalty = (naturalPos: Position, assignedPos: Position | null): number => {
-  if (!assignedPos || assignedPos === naturalPos) return 1.0;
-  /* GK is locked — cannot play outfield, outfield cannot play GK */
-  if (naturalPos === 'GK' || assignedPos === 'GK') return 0;
-  const steps = Math.abs(POS_DISTANCE[naturalPos] - POS_DISTANCE[assignedPos]);
-  return 1.0 - steps * OOP_PENALTY_PER_STEP;
-};
+export const getOopPenalty = (_naturalPos: Position, _assignedPos: Position | null): number => 1.0;
 
 // ---------------------------------------------------------------------------
 // Effective Overall Rating
@@ -108,7 +93,6 @@ export const getOopPenalty = (naturalPos: Position, assignedPos: Position | null
  * The formula accounts for:
  * - **Stamina**: performance scales from 50% to 100% of base skill.
  * - **Fresh bonus**: +10% if the player has rested for 3+ matches and is selected.
- * - **OOP penalty**: reduced effectiveness when playing out of natural position.
  * - **Form**: each form point (range -3 to +3) adjusts OVR by ±5%.
  *
  * The result is capped at the player's base skill (no exceeding 50).
@@ -118,12 +102,11 @@ export const getOopPenalty = (naturalPos: Position, assignedPos: Position | null
  */
 export const playerOvr = (p: Player): number => {
   const stam = p.stamina != null ? p.stamina : 100;
-  const base = p.skill * (0.5 + 0.5 * stam / 100); /* stamina impact: range 50%-100% */
+  const base = p.skill * (0.5 + 0.5 * stam / 100);
   const freshBonus = (p.benchStreak >= 3 && p.selected) ? 1.10 : 1.0;
-  const oopMult = getOopPenalty(p.pos, p.assignedPos);
-  const formMult = 1.0 + ((p.form || 0) * FORM_OVR_PCT); /* ±5% per form point */
-  const raw = Math.round(base * freshBonus * oopMult * formMult);
-  return Math.max(1, Math.min(raw, p.skill)); /* cap at base skill (50 max) */
+  const formMult = 1.0 + ((p.form || 0) * FORM_OVR_PCT);
+  const raw = Math.round(base * freshBonus * formMult);
+  return Math.max(1, Math.min(raw, p.skill));
 };
 
 // ---------------------------------------------------------------------------

@@ -12,8 +12,8 @@
 
 import type { GameState, Settings, Player, Position, TacticId, PowerLevels } from '../../types';
 import {
-  FORMATIONS, DEFAULT_FORMATION_IDX, TACTICS, TRAINING_FOCUSES,
-  POS_ORDER, POS_CSS, POS_DISTANCE, OOP_PENALTY_PER_STEP,
+  TACTICS, TRAINING_FOCUSES,
+  POS_ORDER, POS_CSS,
   FORM_OVR_PCT, YELLOW_ACCUMULATION, SEASON_WEEKS, RETIREMENT_AGE,
 } from '../../config';
 import { t } from '../../data/i18n';
@@ -23,22 +23,13 @@ import { isTopScorer, isPreviousTopScorer } from './scorers';
    HELPER FUNCTIONS (self-contained within this module)
    ================================================================ */
 
-/** OOP penalty multiplier */
-function getOopPenalty(naturalPos: Position, assignedPos: Position | null): number {
-  if (!assignedPos || assignedPos === naturalPos) return 1.0;
-  if (naturalPos === 'GK' || assignedPos === 'GK') return 0;
-  const steps = Math.abs(POS_DISTANCE[naturalPos] - POS_DISTANCE[assignedPos]);
-  return 1.0 - (steps * OOP_PENALTY_PER_STEP);
-}
-
-/** Effective overall rating */
+/** Effective overall rating (uses natural position — no OOP penalty) */
 export function playerOvr(p: Player): number {
   const stam = p.stamina != null ? p.stamina : 100;
   const base = p.skill * (0.5 + 0.5 * stam / 100);
   const freshBonus = (p.benchStreak >= 3 && p.selected) ? 1.10 : 1.0;
-  const oopMult = getOopPenalty(p.pos, p.assignedPos);
   const formMult = 1.0 + ((p.form || 0) * FORM_OVR_PCT);
-  const raw = Math.round(base * freshBonus * oopMult * formMult);
+  const raw = Math.round(base * freshBonus * formMult);
   return Math.max(1, Math.min(raw, p.skill));
 }
 
@@ -49,26 +40,24 @@ export function getTeamAvgRating(team: { players: Player[] }): number {
   return Math.round(starters.reduce((s, p) => s + playerOvr(p) * (p.subbedIn ? 1.10 : 1.0), 0) / starters.length);
 }
 
-/** Power levels per position group */
+/** Power levels per position group (uses natural position) */
 export function getTeamPowerLevels(team: { players: Player[] }): PowerLevels {
   const starters = team.players.filter(p => p.selected);
   const levels: PowerLevels = { GK: 0, DEF: 0, MID: 0, STR: 0, total: 0 };
   for (const p of starters) {
-    const pos = (p.assignedPos || p.pos) as Position;
     const eff = playerOvr(p) * (p.subbedIn ? 1.10 : 1.0);
-    levels[pos] = (levels[pos] || 0) + eff;
+    levels[p.pos] = (levels[p.pos] || 0) + eff;
     levels.total += eff;
   }
   return levels;
 }
 
-/** Formation slot counts for selected starters */
+/** Formation slot counts for selected starters (uses natural position) */
 export function getFormationCounts(team: { players: Player[] }): Record<Position, number> {
   const starters = team.players.filter(p => p.selected);
   const counts: Record<Position, number> = { GK: 0, DEF: 0, MID: 0, STR: 0 };
   for (const p of starters) {
-    const pos = (p.assignedPos || p.pos) as Position;
-    counts[pos] = (counts[pos] || 0) + 1;
+    counts[p.pos] = (counts[p.pos] || 0) + 1;
   }
   return counts;
 }
@@ -176,10 +165,10 @@ export function renderSquad(
   settings: Settings,
   callbacks?: {
     togglePlayer: string;
-    changePos: string;
+    changePos?: string;
     showPlayerProfile: string;
     setTrainingFocus: string;
-    onFormationChange: string;
+    onFormationChange?: string;
     saveGame: string;
   },
   dadJokes?: readonly string[],
@@ -189,7 +178,6 @@ export function renderSquad(
 
   const pt = G.teams[G.playerTeamId!];
   const toggleFn = callbacks?.togglePlayer ?? 'togglePlayer';
-  const changeFn = callbacks?.changePos ?? 'changePos';
   const profileFn = callbacks?.showPlayerProfile ?? 'showPlayerProfile';
   const trainingFn = callbacks?.setTrainingFocus ?? 'setTrainingFocus';
   const saveFn = callbacks?.saveGame ?? 'saveGame';
@@ -236,21 +224,9 @@ export function renderSquad(
   if (!grid) return;
 
   const selCount = pt.players.filter(p => p.selected).length;
-  const hasGK = pt.players.filter(p => p.selected).some(p => (p.assignedPos || p.pos) === 'GK');
+  const hasGK = pt.players.filter(p => p.selected).some(p => p.pos === 'GK');
 
-  /* ===== Formation Selector Dropdown ===== */
-  const formSelect = document.getElementById('formation-select') as HTMLSelectElement | null;
-  if (formSelect && formSelect.options.length === 0) {
-    FORMATIONS.forEach((f, i) => {
-      const opt = document.createElement('option');
-      opt.value = String(i);
-      opt.textContent = f.label;
-      formSelect.appendChild(opt);
-    });
-  }
-  if (formSelect) formSelect.value = String(G.selectedFormationIdx);
-
-  /* ===== Formation Bar ===== */
+  /* ===== Formation Bar (auto-derived from natural positions) ===== */
   const formBar = document.getElementById('formation-bar');
   const formDisp = document.getElementById('formation-display');
   const formStatus = document.getElementById('formation-status');
@@ -258,12 +234,7 @@ export function renderSquad(
     if (selCount >= 2) {
       formBar.style.display = 'flex';
       formDisp.textContent = getFormationString(pt);
-      const oopCount = pt.players.filter(p => p.selected && p.assignedPos && p.assignedPos !== p.pos).length;
-      if (oopCount > 0) {
-        formStatus.innerHTML = `<span class="form-penalty">${t(settings, 'oopWarning', { count: oopCount })}</span>`;
-      } else {
-        formStatus.innerHTML = `<span class="form-ok">&#10003; ${t(settings, 'balancedFormation')}</span>`;
-      }
+      formStatus.innerHTML = '';
     } else {
       formBar.style.display = 'none';
     }
@@ -317,7 +288,6 @@ export function renderSquad(
     <span></span>
     <span>POS</span>
     <span>${t(settings, 'name') || 'PLAYER'}</span>
-    <span>${t(settings, 'assigned') || 'ROLE'}</span>
     <span>${t(settings, 'skill') || 'SKILL'}</span>
   </div>`;
 
@@ -339,7 +309,6 @@ export function renderSquad(
       rowIdx = 0;
     }
 
-    const hasAssigned = !!p.assignedPos;
     const ovr = playerOvr(p);
     const stam = p.stamina != null ? p.stamina : 100;
     const isFresh = p.benchStreak >= 3;
@@ -347,9 +316,6 @@ export function renderSquad(
     const prevScorer = !starPlayer && isPreviousTopScorer(G, p.name, pt_id);
     const posCssClass = POS_CSS[p.pos] || '';
     const isInjured = p.injuredFor > 0;
-    const isOop = hasAssigned && p.assignedPos !== p.pos;
-    const oopSteps = isOop ? Math.abs(POS_DISTANCE[p.pos] - POS_DISTANCE[p.assignedPos!]) : 0;
-    const oopPct = oopSteps * 15;
     const stamClass = stam >= 70 ? 'stam-good' : stam >= 40 ? 'stam-warn' : 'stam-low';
     const retireYears = RETIREMENT_AGE - (p.age || 25);
 
@@ -362,21 +328,7 @@ export function renderSquad(
           ? `<span class="retire-icon" title="${t(settings, 'retiresIn', { n: 3 })}">&#9203;</span>`
           : '';
 
-    /* Position dropdown options */
-    let posOptions = `<option value=""${!hasAssigned ? ' selected' : ''}>--</option>`;
-    if (p.pos === 'GK') {
-      posOptions += `<option value="GK"${p.assignedPos === 'GK' ? ' selected' : ''}>GK</option>`;
-    } else {
-      for (const po of POS_ORDER) {
-        if (po === 'GK') continue;
-        const steps = Math.abs(POS_DISTANCE[p.pos] - POS_DISTANCE[po]);
-        const label = po === p.pos ? po : steps === 1 ? `${po} (-15%)` : `${po} (-30%)`;
-        posOptions += `<option value="${po}"${po === p.assignedPos ? ' selected' : ''}>${label}</option>`;
-      }
-    }
-    const selectCss = isOop ? 'pos-select oop-select' : 'pos-select';
-
-    const canSelect = hasAssigned && !isInjured && !(p.suspendedFor > 0);
+    const canSelect = !isInjured && !(p.suspendedFor > 0);
     const isChecked = p.selected;
     const isSuspended = p.suspendedFor > 0;
     const zebraClass = (rowIdx % 2 === 1) ? ' zebra' : '';
@@ -403,15 +355,11 @@ export function renderSquad(
          onclick="${toggleFn}(${p._idx},event)">
       <div class="pr-sel"><input type="checkbox" ${isChecked ? 'checked' : ''}
         ${!canSelect ? 'disabled' : ''} onclick="event.stopPropagation();${toggleFn}(${p._idx},event)"
-        title="${isInjured ? (t(settings, 'injuredMatches', { n: p.injuredFor }) || 'Injured') : isSuspended ? 'Suspended ' + p.suspendedFor + ' match(es)' : !hasAssigned ? 'Assign role first' : ''}"></div>
+        title="${isInjured ? (t(settings, 'injuredMatches', { n: p.injuredFor }) || 'Injured') : isSuspended ? 'Suspended ' + p.suspendedFor + ' match(es)' : ''}"></div>
       <span class="pr-pos ${posCssClass}">${p.pos}</span>
       <div class="pr-info">
         <span class="pr-name"><a class="player-link" onclick="event.stopPropagation();${profileFn}(${p._idx})" title="View profile">${p.name}</a>${retireIcon}${isInjured ? `<span class="injury-icon" title="${t(settings, 'injuredMatches', { n: p.injuredFor }) || ''}">${'&#10014;'.repeat(Math.min(p.injuredFor, 3))}</span>` : ''}${isFresh ? '<span class="fresh-icon" title="' + (t(settings, 'freshPlayer') || 'Fresh') + '">&#9889;</span>' : ''}${starPlayer ? '<span class="top-scorer-star" title="' + (t(settings, 'seasonTopScorer') || '') + '">&#9733;</span>' : ''}${prevScorer ? '<span class="prev-scorer-ball" title="' + (t(settings, 'prevTopScorer') || '') + '">&#9917;</span>' : ''}${formBadge}${suspBadge}${cardBadges}</span>
-        <span class="pr-secondary">${t(settings, 'age') || 'Age'} ${p.age || '?'} &middot; STA <span class="${stamClass}">${stam}%</span> &middot; OVR ${ovr}${isOop ? ` &middot; <span class="oop-label">${p.assignedPos} -${oopPct}%</span>` : ''}${(p.seasonGoals || 0) > 0 ? ` &middot; &#9917;${p.seasonGoals}` : ''}</span>
-        <select class="pr-assign-mobile ${selectCss}" onclick="event.stopPropagation()" onchange="event.stopPropagation();${changeFn}(${p._idx},this.value)">${posOptions}</select>
-      </div>
-      <div class="pr-assigned">
-        <select class="${selectCss}" onclick="event.stopPropagation()" onchange="event.stopPropagation();${changeFn}(${p._idx},this.value)">${posOptions}</select>
+        <span class="pr-secondary">${t(settings, 'age') || 'Age'} ${p.age || '?'} &middot; STA <span class="${stamClass}">${stam}%</span> &middot; OVR ${ovr}${(p.seasonGoals || 0) > 0 ? ` &middot; &#9917;${p.seasonGoals}` : ''}</span>
       </div>
       <span class="pr-skill">${p.skill}</span>
     </div>`;

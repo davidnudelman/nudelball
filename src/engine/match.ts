@@ -35,7 +35,7 @@ import {
   YELLOW_ACCUMULATION,
   YELLOW_CARD_CHANCE,
 } from '../config';
-import { getOopPenalty, playerOvr, rand, clamp } from './player';
+import { playerOvr, rand, clamp } from './player';
 
 // ---------------------------------------------------------------------------
 // Team Strength Calculations
@@ -74,9 +74,8 @@ export const getTeamPowerLevels = (team: Team): PowerLevels => {
   const levels: PowerLevels = { GK: 0, DEF: 0, MID: 0, STR: 0, total: 0 };
 
   for (const p of starters) {
-    const pos: Position = p.assignedPos || p.pos;
     const eff = playerOvr(p) * (p.subbedIn ? 1.10 : 1.0);
-    levels[pos] = (levels[pos] || 0) + eff;
+    levels[p.pos] = (levels[p.pos] || 0) + eff;
     levels.total += eff;
   }
 
@@ -126,8 +125,9 @@ export const autoSelectAI = (team: Team, playerTeamId: number): void => {
 };
 
 /**
- * Internal helper — pick players for each formation slot, prioritising
- * highest effective rating while respecting injury/suspension/stamina.
+ * Internal helper — pick best available players by natural position,
+ * respecting injury/suspension/stamina. Players always play their
+ * natural position (no OOP assignments).
  */
 const _autoPickByFormation = (team: Team, formation: Record<Position, number>): void => {
   const selected = new Set<number>();
@@ -140,9 +140,9 @@ const _autoPickByFormation = (team: Team, formation: Record<Position, number>): 
         if (p.injuredFor > 0) return null;
         if (p.suspendedFor > 0) return null;
         if (p.stamina < 30) return null;
-        const oop = getOopPenalty(p.pos, pos);
-        if (oop === 0) return null; /* GK mismatch */
-        const eff = Math.round(p.skill * (0.5 + 0.5 * p.stamina / 100) * oop);
+        /* Only pick players whose natural position matches */
+        if (p.pos !== pos) return null;
+        const eff = Math.round(p.skill * (0.5 + 0.5 * p.stamina / 100));
         const freshBonus = p.benchStreak >= 3 ? 5 : 0;
         return { p, i, score: eff + freshBonus };
       })
@@ -163,7 +163,7 @@ const _autoPickByFormation = (team: Team, formation: Record<Position, number>): 
   if (selCount < 11) {
     for (const pos of POS_ORDER) {
       const neededCount = formation[pos];
-      const currentCount = team.players.filter(p => p.selected && (p.assignedPos || p.pos) === pos).length;
+      const currentCount = team.players.filter(p => p.selected && p.pos === pos).length;
       if (currentCount >= neededCount) continue;
 
       const remaining = team.players
@@ -171,8 +171,7 @@ const _autoPickByFormation = (team: Team, formation: Record<Position, number>): 
           if (selected.has(i)) return null;
           if (p.injuredFor > 0) return null;
           if (p.suspendedFor > 0) return null;
-          const oop = getOopPenalty(p.pos, pos);
-          if (oop === 0) return null;
+          if (p.pos !== pos) return null;
           return { p, i, score: p.skill };
         })
         .filter(Boolean) as Array<{ p: Player; i: number; score: number }>;
@@ -228,8 +227,7 @@ export const pickScorer = (team: Team, forTeamId: number): { name: string; teamI
   if (!starters.length) return { name: 'Unknown', teamId: forTeamId };
 
   const weights = starters.map(p => {
-    const pos: Position = p.assignedPos || p.pos;
-    const posW = GOAL_POS_WEIGHT[pos] || 1;
+    const posW = GOAL_POS_WEIGHT[p.pos] || 1;
     return { player: p, w: posW * p.skill };
   });
 

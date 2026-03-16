@@ -158,8 +158,6 @@ import { initKeyboardShortcuts } from './ui/keyboard';
 import { DAD_JOKES } from './data/jokes';
 import { t } from './data/i18n';
 import {
-  FORMATIONS,
-  DEFAULT_FORMATION_IDX,
   SEASON_WEEKS,
   TOTAL_SEASON_WEEKS,
   CUP_WEEKS,
@@ -241,10 +239,8 @@ function wrappedRenderDashboard(): void {
 function wrappedRenderSquad(): void {
   renderSquad(G, settings, {
     togglePlayer: 'togglePlayer',
-    changePos: 'changePos',
     showPlayerProfile: 'showPlayerProfile',
     setTrainingFocus: 'setTrainingFocus',
-    onFormationChange: 'onFormationChange',
     saveGame: 'saveGame',
   }, DAD_JOKES);
   updatePlayBtn();
@@ -334,7 +330,7 @@ function playMatch(): void {
   /* --- Validate squad selection --- */
   const sel = pt.players.filter(p => p.selected);
   if (sel.length < 11) return;
-  if (!sel.some(p => (p.assignedPos || p.pos) === 'GK')) return;
+  if (!sel.some(p => p.pos === 'GK')) return;
 
   /* --- Phase 2: Cup-final-only week (league finished, cup final remains) --- */
   if (G.week > SEASON_WEEKS && G.week <= TOTAL_SEASON_WEEKS) {
@@ -493,18 +489,15 @@ function startNewSeasonAction(): void {
 // ===========================================================================
 
 /**
- * Auto-pick the best 11 players for the currently selected formation.
+ * Auto-pick the best 11 players sorted by skill.
  *
- * Prioritises natural-position matches (with a large scoring bonus),
- * then falls back to out-of-position candidates if needed. Injured
- * and suspended players are excluded.
+ * Ensures at least 1 GK is included. Players always play their
+ * natural position — the formation is auto-derived from the
+ * selected players' positions.
  */
 function autoPick(): void {
   const pt = G.teams[G.playerTeamId!];
   if (!pt) return;
-
-  const formIdx = G.selectedFormationIdx ?? DEFAULT_FORMATION_IDX;
-  const formation = FORMATIONS[formIdx];
 
   /* Clear current selection */
   for (const p of pt.players) {
@@ -512,55 +505,28 @@ function autoPick(): void {
     p.assignedPos = null;
   }
 
-  /* Pick best available players for each formation slot */
-  const posOrder: Array<{ pos: 'GK' | 'DEF' | 'MID' | 'STR'; count: number }> = [
-    { pos: 'GK', count: formation.slots.GK },
-    { pos: 'DEF', count: formation.slots.DEF },
-    { pos: 'MID', count: formation.slots.MID },
-    { pos: 'STR', count: formation.slots.STR },
-  ];
+  const available = pt.players
+    .map((p, i) => ({ p, i }))
+    .filter(({ p }) => p.injuredFor === 0 && p.suspendedFor === 0)
+    .sort((a, b) => b.p.skill - a.p.skill);
 
   const selected = new Set<number>();
 
-  for (const { pos, count } of posOrder) {
-    /* Sort candidates: natural position first, then by skill */
-    const candidates = pt.players
-      .map((p, i) => ({ p, i }))
-      .filter(({ p, i }) =>
-        !selected.has(i) &&
-        p.pos === pos &&
-        p.injuredFor === 0 &&
-        p.suspendedFor === 0
-      )
-      .sort((a, b) => b.p.skill - a.p.skill);
-
-    for (let j = 0; j < count && j < candidates.length; j++) {
-      const { p, i } = candidates[j];
-      p.selected = true;
-      p.assignedPos = pos;
-      selected.add(i);
-    }
+  /* Ensure at least 1 GK */
+  const bestGK = available.find(({ p }) => p.pos === 'GK');
+  if (bestGK) {
+    bestGK.p.selected = true;
+    bestGK.p.assignedPos = bestGK.p.pos;
+    selected.add(bestGK.i);
   }
 
-  /* Fill remaining slots with best available from any position */
-  let totalSelected = selected.size;
-  if (totalSelected < 11) {
-    const remaining = pt.players
-      .map((p, i) => ({ p, i }))
-      .filter(({ p, i }) =>
-        !selected.has(i) &&
-        p.injuredFor === 0 &&
-        p.suspendedFor === 0
-      )
-      .sort((a, b) => b.p.skill - a.p.skill);
-
-    for (const { p, i } of remaining) {
-      if (totalSelected >= 11) break;
-      p.selected = true;
-      p.assignedPos = p.pos;
-      selected.add(i);
-      totalSelected++;
-    }
+  /* Fill remaining with best available */
+  for (const { p, i } of available) {
+    if (selected.size >= 11) break;
+    if (selected.has(i)) continue;
+    p.selected = true;
+    p.assignedPos = p.pos;
+    selected.add(i);
   }
 
   saveGame();
@@ -600,16 +566,6 @@ function toggleSort(): void {
  * Reads the selected index from the `#formation-select` element
  * and updates the game state.
  */
-function onFormationChange(): void {
-  const sel = document.getElementById('formation-select') as HTMLSelectElement | null;
-  if (!sel) return;
-
-  G.selectedFormationIdx = parseInt(sel.value, 10);
-  saveGame();
-  wrappedRenderSquad();
-  updatePlayBtn();
-}
-
 /**
  * Toggle a player's selection in the starting 11.
  *
@@ -636,25 +592,9 @@ function togglePlayer(idx: number, event?: Event): void {
     const selCount = pt.players.filter(pl => pl.selected).length;
     if (selCount >= 11) return;
     p.selected = true;
-    p.assignedPos = p.pos;
+    p.assignedPos = p.pos; /* Always play natural position */
   }
 
-  saveGame();
-  wrappedRenderSquad();
-  updatePlayBtn();
-}
-
-/**
- * Change a player's assigned tactical position.
- *
- * @param idx    - Index into the player team's roster.
- * @param newPos - The new position string ('GK', 'DEF', 'MID', 'STR').
- */
-function changePos(idx: number, newPos: string): void {
-  const pt = G.teams[G.playerTeamId!];
-  if (!pt || !pt.players[idx]) return;
-
-  pt.players[idx].assignedPos = newPos as 'GK' | 'DEF' | 'MID' | 'STR';
   saveGame();
   wrappedRenderSquad();
   updatePlayBtn();
@@ -803,7 +743,7 @@ function initSub(benchIdx: number): void {
   for (let idx = 0; idx < pt.players.length; idx++) {
     const st = pt.players[idx];
     if (!st.selected) continue;
-    html += `<span class="sc-starter" onclick="confirmSub(${benchIdx},${idx})">${st.assignedPos || st.pos} ${st.name}</span>`;
+    html += `<span class="sc-starter" onclick="confirmSub(${benchIdx},${idx})">${st.pos} ${st.name}</span>`;
   }
   html += `<span class="sc-starter" onclick="document.getElementById('sub-confirm-area').innerHTML=''">Cancel</span>`;
   html += `</div>`;
@@ -827,13 +767,12 @@ function confirmSub(benchIdx: number, starterIdx: number): void {
   const starter = pt.players[starterIdx];
   if (!bench || !starter) return;
 
-  /* Swap selection */
+  /* Swap selection — bench player always plays their natural position */
   starter.selected = false;
-  const assignedPos = starter.assignedPos;
   starter.assignedPos = null;
 
   bench.selected = true;
-  bench.assignedPos = assignedPos;
+  bench.assignedPos = bench.pos;
   bench.subbedIn = true;
 
   G.matchSubs++;
@@ -1095,12 +1034,10 @@ declare global {
     autoPick: typeof autoPick;
     clearSelection: typeof clearSelection;
     toggleSort: typeof toggleSort;
-    onFormationChange: typeof onFormationChange;
     selectTeam: typeof globalSelectTeam;
 
     /* Squad Actions */
     togglePlayer: typeof togglePlayer;
-    changePos: typeof changePos;
     setTrainingFocus: typeof setTrainingFocus;
     changeTacticMidMatch: typeof changeTacticMidMatch;
     showPlayerProfile: typeof globalShowPlayerProfile;
@@ -1167,12 +1104,10 @@ window.playMatch = playMatch;
 window.autoPick = autoPick;
 window.clearSelection = clearSelection;
 window.toggleSort = toggleSort;
-window.onFormationChange = onFormationChange;
 window.selectTeam = globalSelectTeam;
 
 /* --- Squad Actions --- */
 window.togglePlayer = togglePlayer;
-window.changePos = changePos;
 window.setTrainingFocus = setTrainingFocus;
 window.changeTacticMidMatch = changeTacticMidMatch;
 window.showPlayerProfile = globalShowPlayerProfile;

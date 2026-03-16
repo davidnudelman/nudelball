@@ -144,11 +144,11 @@ describe('playerOvr()', () => {
     expect(playerOvr(p)).toBe(15);
   });
 
-  it('applies OOP penalty when playing out of position', () => {
-    /* DEF player assigned to STR: 2 steps away -> 0.70 multiplier */
+  it('does not apply OOP penalty (feature removed)', () => {
+    /* Players always play their natural position — no OOP penalty */
     const p = basePlayer({ pos: 'DEF', assignedPos: 'STR', skill: 30 });
     const ovr = playerOvr(p);
-    expect(ovr).toBeLessThan(30);
+    expect(ovr).toBe(30);
   });
 
   it('applies form bonus (positive form)', () => {
@@ -217,51 +217,17 @@ describe('playerOvr()', () => {
 });
 
 /* ================================================================
-   getOopPenalty() — out-of-position penalty multiplier
+   getOopPenalty() — OOP penalty removed (always returns 1.0)
    ================================================================ */
 describe('getOopPenalty()', () => {
-  it('returns 1.0 when playing in natural position', () => {
+  it('always returns 1.0 (OOP penalty removed)', () => {
     expect(getOopPenalty('MID', 'MID')).toBe(1.0);
     expect(getOopPenalty('DEF', 'DEF')).toBe(1.0);
     expect(getOopPenalty('GK', 'GK')).toBe(1.0);
-    expect(getOopPenalty('STR', 'STR')).toBe(1.0);
-  });
-
-  it('returns 1.0 when assignedPos is null (unassigned)', () => {
     expect(getOopPenalty('MID', null)).toBe(1.0);
-    expect(getOopPenalty('GK', null)).toBe(1.0);
-  });
-
-  it('returns 0.85 when one step away (DEF -> MID)', () => {
-    /* DEF(1) -> MID(2) = 1 step * 0.15 = 0.15 penalty -> 0.85 */
-    expect(getOopPenalty('DEF', 'MID')).toBe(0.85);
-  });
-
-  it('returns 0.85 when one step away (MID -> STR)', () => {
-    expect(getOopPenalty('MID', 'STR')).toBe(0.85);
-  });
-
-  it('returns 0.70 when two steps away (DEF -> STR)', () => {
-    /* DEF(1) -> STR(3) = 2 steps * 0.15 = 0.30 penalty -> 0.70 */
-    expect(getOopPenalty('DEF', 'STR')).toBe(0.7);
-  });
-
-  it('returns 0 when GK is assigned outfield', () => {
-    expect(getOopPenalty('GK', 'DEF')).toBe(0);
-    expect(getOopPenalty('GK', 'MID')).toBe(0);
-    expect(getOopPenalty('GK', 'STR')).toBe(0);
-  });
-
-  it('returns 0 when outfield player is assigned to GK', () => {
-    expect(getOopPenalty('DEF', 'GK')).toBe(0);
-    expect(getOopPenalty('MID', 'GK')).toBe(0);
-    expect(getOopPenalty('STR', 'GK')).toBe(0);
-  });
-
-  it('is symmetric for outfield positions', () => {
-    expect(getOopPenalty('DEF', 'MID')).toBe(getOopPenalty('MID', 'DEF'));
-    expect(getOopPenalty('DEF', 'STR')).toBe(getOopPenalty('STR', 'DEF'));
-    expect(getOopPenalty('MID', 'STR')).toBe(getOopPenalty('STR', 'MID'));
+    expect(getOopPenalty('DEF', 'STR')).toBe(1.0);
+    expect(getOopPenalty('GK', 'DEF')).toBe(1.0);
+    expect(getOopPenalty('DEF', 'GK')).toBe(1.0);
   });
 });
 
