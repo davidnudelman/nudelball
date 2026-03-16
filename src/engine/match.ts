@@ -499,6 +499,132 @@ export const updateMatchStats = (f: Fixture, G: GameState): void => {
 };
 
 // ---------------------------------------------------------------------------
+// Match Record Tracking
+// ---------------------------------------------------------------------------
+
+/**
+ * Update per-match records (Trophy Room) after each match involving the player.
+ *
+ * Tracks: biggest win, biggest defeat, most goals in a match, win/unbeaten
+ * streaks, clean sheets, and hall of fame (career goal scorers).
+ * Also updates league-wide match records for all teams.
+ *
+ * @param f - The completed fixture with results.
+ * @param G - The game state (records mutated in-place).
+ */
+export const updateMatchRecords = (f: Fixture, G: GameState): void => {
+  if (!G.records || G.playerTeamId == null) return;
+  if (f.homeGoals == null || f.awayGoals == null) return;
+
+  const r = G.records;
+  const hg = f.homeGoals;
+  const ag = f.awayGoals;
+  const totalGoals = hg + ag;
+  const diff = Math.abs(hg - ag);
+  const scoreStr = `${hg} - ${ag}`;
+
+  const isPlayerHome = f.home === G.playerTeamId;
+  const isPlayerAway = f.away === G.playerTeamId;
+
+  /* --- Player team records --- */
+  if (isPlayerHome || isPlayerAway) {
+    const myGoals = isPlayerHome ? hg : ag;
+    const theirGoals = isPlayerHome ? ag : hg;
+    const opponentId = isPlayerHome ? f.away : f.home;
+    const opponentName = G.teams[opponentId].name;
+    const playerWon = myGoals > theirGoals;
+    const playerLost = myGoals < theirGoals;
+    const playerDrew = myGoals === theirGoals;
+
+    /* Biggest Win */
+    if (playerWon && diff > r.biggestWin.diff) {
+      r.biggestWin = { score: scoreStr, opponent: opponentName, season: G.season, diff };
+    }
+
+    /* Biggest Defeat */
+    if (playerLost && diff > r.biggestDefeat.diff) {
+      r.biggestDefeat = { score: scoreStr, opponent: opponentName, season: G.season, diff };
+    }
+
+    /* Most Goals in a Match */
+    if (totalGoals > r.mostGoalsMatch.total) {
+      r.mostGoalsMatch = { score: scoreStr, opponent: opponentName, season: G.season, total: totalGoals };
+    }
+
+    /* Win streak */
+    if (playerWon) {
+      r.currentWinStreak++;
+      if (r.currentWinStreak > r.longestWinStreak) {
+        r.longestWinStreak = r.currentWinStreak;
+      }
+    } else {
+      r.currentWinStreak = 0;
+    }
+
+    /* Unbeaten streak */
+    if (!playerLost) {
+      r.currentUnbeaten++;
+      if (r.currentUnbeaten > r.longestUnbeaten) {
+        r.longestUnbeaten = r.currentUnbeaten;
+      }
+    } else {
+      r.currentUnbeaten = 0;
+    }
+
+    /* Clean sheets */
+    if (theirGoals === 0) {
+      r.totalCleanSheets++;
+    }
+
+    /* Hall of Fame — track career goals for player team scorers */
+    const playerTeam = G.teams[G.playerTeamId];
+    for (const p of playerTeam.players) {
+      if ((p.seasonGoals || 0) > 0) {
+        r.hallOfFame[p.name] = p.careerGoals || p.seasonGoals || 0;
+      }
+    }
+  }
+
+  /* --- League-wide match records (any team, any match) --- */
+  const homeTeam = G.teams[f.home];
+  const awayTeam = G.teams[f.away];
+
+  /* League biggest win — check from perspective of winning team */
+  if (hg > ag && diff > r.league.biggestWin.diff) {
+    r.league.biggestWin = {
+      score: scoreStr, team: homeTeam.name, opponent: awayTeam.name,
+      season: G.season, diff,
+    };
+  } else if (ag > hg && diff > r.league.biggestWin.diff) {
+    r.league.biggestWin = {
+      score: scoreStr, team: awayTeam.name, opponent: homeTeam.name,
+      season: G.season, diff,
+    };
+  }
+
+  /* League biggest defeat — from perspective of losing team */
+  if (hg > ag && diff > r.league.biggestDefeat.diff) {
+    r.league.biggestDefeat = {
+      score: scoreStr, team: awayTeam.name, opponent: homeTeam.name,
+      season: G.season, diff,
+    };
+  } else if (ag > hg && diff > r.league.biggestDefeat.diff) {
+    r.league.biggestDefeat = {
+      score: scoreStr, team: homeTeam.name, opponent: awayTeam.name,
+      season: G.season, diff,
+    };
+  }
+
+  /* League most goals in a match */
+  if (totalGoals > r.league.mostGoalsMatch.total) {
+    r.league.mostGoalsMatch = {
+      score: scoreStr, team: homeTeam.name, opponent: awayTeam.name,
+      season: G.season, total: totalGoals,
+    };
+  }
+};
+
+// ---------------------------------------------------------------------------
 // Core Match Simulation
 // ---------------------------------------------------------------------------
 
@@ -602,6 +728,9 @@ export const simulateMatch = (f: Fixture, G: GameState, options?: MatchSimOption
 
   /* Update standings */
   updateMatchStats(f, G);
+
+  /* Update Trophy Room records */
+  updateMatchRecords(f, G);
 
   /* Update form for player's team */
   if (isPlayerHome || isPlayerAway) {
