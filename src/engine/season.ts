@@ -527,6 +527,7 @@ export const endOfSeason = (G: GameState): {
   G.transferLog = [];
   aiDoTransfers(G);
   G.transferWindow = true;
+  G.transferReminderShown = false;
 
   return { awards: changes, moves, financialAwards };
 };

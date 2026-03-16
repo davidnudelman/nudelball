@@ -596,6 +596,8 @@ export interface GameState {
   budgets: Record<number, number>;
   /** Whether the transfer window is currently open */
   transferWindow: boolean;
+  /** Whether the week-1 transfer reminder has been shown */
+  transferReminderShown?: boolean;
   /** Log of transfers made this season */
   transferLog: TransferLogEntry[];
   /** Whether the one-time free first signing has been used */

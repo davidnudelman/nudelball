@@ -332,6 +332,7 @@ export const initNewGame = (): void => {
   G.freeAgents = [];
   G.budgets = {};
   G.transferWindow = true;
+  G.transferReminderShown = false;
   G.transferLog = [];
   G.usedFreeSign = false;
   G.records = defaultRecords();
