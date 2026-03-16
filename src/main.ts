@@ -350,11 +350,18 @@ function playMatch(): void {
 
   /* --- Phase 3: Regular match week --- */
 
-  /* Transfer window reminder on week 1 */
-  if (G.week === 1 && G.transferWindow) {
+  /* Transfer window reminder on week 1 (only shown once via showReminder flag) */
+  if (G.week === 1 && G.transferWindow && !G._transferReminderShown) {
+    G._transferReminderShown = true;
     showView('market');
     renderMarket(G, settings, true);
     return;
+  }
+
+  /* Close the transfer window once the player proceeds past the reminder */
+  if (G.week === 1 && G.transferWindow) {
+    G.transferWindow = false;
+    G._transferReminderShown = false;
   }
 
   /* Auto-select AI teams before simulation */
