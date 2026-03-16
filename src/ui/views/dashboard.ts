@@ -70,7 +70,7 @@ export function buildTableHTML(
   divTeams.forEach((tm, i) => {
     const pos = i + 1;
     const cls = (pos <= 2 ? 'promote' : '') + (pos >= divTeams.length - 1 ? ' relegate' : '');
-    const pr = tm.id === G.playerTeamId ? 'player-row' : '';
+    const pr = tm.id === G.playerTeamId ? 'league-player-row' : '';
     const st = tm.seasonStats;
     const gd = st.gf - st.ga;
     h += `<tr class="${cls} ${pr}">` +

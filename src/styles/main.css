@@ -3383,16 +3383,16 @@ html.light .pr-pos.str {
   color: var(--accent);
 }
 
-.league-table .player-row {
+.league-table .league-player-row {
   background: rgba(79, 195, 247, 0.1);
   font-weight: 600;
 }
 
-html.light .league-table .player-row {
+html.light .league-table .league-player-row {
   background: rgba(2, 136, 209, 0.08);
 }
 
-.league-table .player-row td {
+.league-table .league-player-row td {
   color: var(--accent);
 }
 
