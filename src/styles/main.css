@@ -4721,6 +4721,9 @@ html.light .league-table .player-row {
   align-items: center;
   justify-content: center;
   padding: var(--sp-md);
+  /* Override base .overlay opacity/visibility — these use display:flex/none toggling */
+  opacity: 1;
+  visibility: visible;
 }
 
 html.light .settings-overlay,

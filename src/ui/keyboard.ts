@@ -2,9 +2,10 @@
  * keyboard.ts -- Global keyboard shortcuts for Nudelball.
  *
  * Provides hotkeys for:
- * - View navigation (1-9 = Dashboard, Squad, Table, Calendar, Top Scorers, Market, Cup, History, Trophy Room)
- * - Game actions (Space = Play Match / Advance Week, Escape = Close overlays)
- * - Squad-specific actions (A = Auto-pick, C = Clear selection)
+ * - View navigation (D=Dashboard, S=Squad, T=Table, C=Calendar, G=Top Scorers,
+ *   M=Market, U=Cup, H=History, R=Trophy Room)
+ * - Game actions (P = Play Match, Space = Play Match / Continue, Escape = Close overlays)
+ * - Squad-specific actions (A = Auto-pick)
  *
  * Shortcuts are suppressed when the user is typing in an input, textarea,
  * or select element to avoid interfering with form interactions.
@@ -26,7 +27,7 @@ import { showView } from './components/nav';
  */
 export interface KeyboardCallbacks {
   /**
-   * Called when Space is pressed -- equivalent to clicking the play button.
+   * Called when Space/P is pressed -- equivalent to clicking the play button.
    * The caller is responsible for checking whether a match can actually be played.
    */
   onPlayMatch?: () => void;
@@ -54,7 +55,7 @@ export interface KeyboardCallbacks {
  * A single keyboard shortcut entry, used by `getShortcutsList()`.
  */
 export interface ShortcutEntry {
-  /** The key label displayed to the user (e.g. "1", "Space", "Escape") */
+  /** The key label displayed to the user (e.g. "D", "Space", "Escape") */
   key: string;
   /** A human-readable description of what the shortcut does */
   action: string;
@@ -65,21 +66,21 @@ export interface ShortcutEntry {
    ================================================================ */
 
 /**
- * Maps number keys 1-9 to their corresponding view identifiers.
+ * Maps letter keys to their corresponding view identifiers.
  *
  * These match the `data-view` attributes on the nav buttons in index.html
  * and the view IDs used by `showView()` in nav.ts.
  */
 const KEY_TO_VIEW: Record<string, string> = {
-  '1': 'dashboard',
-  '2': 'squad',
-  '3': 'table',
-  '4': 'calendar',
-  '5': 'scorers',
-  '6': 'market',
-  '7': 'cup',
-  '8': 'history',
-  '9': 'trophyroom',
+  d: 'dashboard',
+  s: 'squad',
+  t: 'table',
+  c: 'calendar',
+  g: 'scorers',
+  m: 'market',
+  u: 'cup',
+  h: 'history',
+  r: 'trophyroom',
 };
 
 /* ================================================================
@@ -173,6 +174,28 @@ function switchView(viewName: string): void {
   }
 }
 
+/**
+ * Try to click a "Continue" button in the match view (half-time or full-time).
+ * Returns true if a button was found and clicked.
+ */
+function tryClickContinueButton(): boolean {
+  /* Half-time or full-time continue button (both use ht-continue-btn class) */
+  const htBtn = document.querySelector<HTMLButtonElement>('.ht-continue-btn');
+  if (htBtn && htBtn.offsetParent !== null) {
+    htBtn.click();
+    return true;
+  }
+
+  /* Season-end overlay button */
+  const seasonBtn = document.querySelector<HTMLButtonElement>('#season-box .btn-accent');
+  if (seasonBtn && seasonBtn.offsetParent !== null) {
+    seasonBtn.click();
+    return true;
+  }
+
+  return false;
+}
+
 /* ================================================================
    KEYDOWN HANDLER
    ================================================================ */
@@ -193,21 +216,28 @@ function handleKeyDown(e: KeyboardEvent): void {
    * Shift is allowed since it does not conflict with standard browser shortcuts here. */
   if (e.ctrlKey || e.altKey || e.metaKey) return;
 
-  const key = e.key;
+  const key = e.key.toLowerCase();
 
-  /* --- Number keys: view navigation --- */
-  const viewName = KEY_TO_VIEW[key];
-  if (viewName) {
+  /* --- Space: continue button (half-time/full-time) OR play match --- */
+  if (key === ' ' || e.key === 'Spacebar') {
     e.preventDefault();
-    switchView(viewName);
+
+    /* First try to click a continue button in the match/overlay */
+    if (tryClickContinueButton()) return;
+
+    /* Otherwise trigger play match */
+    const playBtn = document.getElementById('play-match-btn') as HTMLButtonElement | null;
+    if (playBtn && !playBtn.disabled) {
+      playBtn.click();
+    } else if (_callbacks.onPlayMatch) {
+      _callbacks.onPlayMatch();
+    }
     return;
   }
 
-  /* --- Space: play match / advance week --- */
-  if (key === ' ' || key === 'Spacebar') {
+  /* --- P: Play match / advance week --- */
+  if (key === 'p') {
     e.preventDefault();
-
-    /* Click the play button if it exists and is not disabled */
     const playBtn = document.getElementById('play-match-btn') as HTMLButtonElement | null;
     if (playBtn && !playBtn.disabled) {
       playBtn.click();
@@ -218,7 +248,7 @@ function handleKeyDown(e: KeyboardEvent): void {
   }
 
   /* --- Escape: close overlays --- */
-  if (key === 'Escape') {
+  if (e.key === 'Escape') {
     const closed = closeOverlays();
     if (closed) {
       e.preventDefault();
@@ -231,7 +261,7 @@ function handleKeyDown(e: KeyboardEvent): void {
 
   if (activeView === 'squad') {
     /* A = Auto-pick squad */
-    if (key === 'a' || key === 'A') {
+    if (key === 'a') {
       e.preventDefault();
       if (_callbacks.onAutoPick) {
         _callbacks.onAutoPick();
@@ -242,19 +272,14 @@ function handleKeyDown(e: KeyboardEvent): void {
       }
       return;
     }
+  }
 
-    /* C = Clear selection */
-    if (key === 'c' || key === 'C') {
-      e.preventDefault();
-      if (_callbacks.onClearSelection) {
-        _callbacks.onClearSelection();
-      } else {
-        /* Fallback: try clicking the clear button in the DOM */
-        const clearBtn = document.querySelector<HTMLButtonElement>('[data-i18n="clear"]');
-        if (clearBtn) clearBtn.click();
-      }
-      return;
-    }
+  /* --- Letter keys: view navigation --- */
+  const viewName = KEY_TO_VIEW[key];
+  if (viewName) {
+    e.preventDefault();
+    switchView(viewName);
+    return;
   }
 }
 
@@ -278,7 +303,6 @@ function handleKeyDown(e: KeyboardEvent): void {
  * initKeyboardShortcuts({
  *   onPlayMatch: () => playMatch(),
  *   onAutoPick:  () => autoPick(),
- *   onClearSelection: () => clearSelection(),
  * });
  * ```
  */
@@ -313,36 +337,26 @@ export function destroyKeyboardShortcuts(): void {
  * navigation first, then game actions, then squad-specific.
  *
  * @returns Array of shortcut entries
- *
- * @example
- * ```ts
- * const shortcuts = getShortcutsList();
- * // [
- * //   { key: '1', action: 'Dashboard view' },
- * //   { key: '2', action: 'Squad view' },
- * //   ...
- * // ]
- * ```
  */
 export function getShortcutsList(): ShortcutEntry[] {
   return [
     /* Navigation */
-    { key: '1', action: 'Dashboard view' },
-    { key: '2', action: 'Squad view' },
-    { key: '3', action: 'Table view' },
-    { key: '4', action: 'Calendar view' },
-    { key: '5', action: 'Top Scorers view' },
-    { key: '6', action: 'Market view' },
-    { key: '7', action: 'Cup view' },
-    { key: '8', action: 'History view' },
-    { key: '9', action: 'Trophy Room view' },
+    { key: 'D', action: '[D]ashboard' },
+    { key: 'S', action: '[S]quad' },
+    { key: 'T', action: '[T]able' },
+    { key: 'C', action: '[C]alendar' },
+    { key: 'G', action: 'Top [G]oals / Scorers' },
+    { key: 'M', action: '[M]arket' },
+    { key: 'U', action: 'C[u]p' },
+    { key: 'H', action: '[H]istory' },
+    { key: 'R', action: 'T[R]ophy Room' },
 
     /* Game actions */
-    { key: 'Space', action: 'Play Match / Advance Week' },
-    { key: 'Escape', action: 'Close overlay (Settings, Help, Changelog)' },
+    { key: 'P', action: '[P]lay Week' },
+    { key: 'Space', action: 'Play / Continue (half-time & full-time)' },
+    { key: 'Escape', action: 'Close overlay' },
 
     /* Squad-specific */
-    { key: 'A', action: 'Auto-pick squad (Squad view only)' },
-    { key: 'C', action: 'Clear selection (Squad view only)' },
+    { key: 'A', action: '[A]uto-pick squad (Squad view)' },
   ];
 }
