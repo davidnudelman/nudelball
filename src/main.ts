@@ -137,7 +137,7 @@ import { renderTrophyRoom } from './ui/views/trophy-room';
 import { renderTeamProfile, openTeamProfile } from './ui/views/team-profile';
 import { renderPlayerProfile, showPlayerProfile } from './ui/views/player-profile';
 import { renderCup } from './ui/views/cup-view';
-import { setupMatchUI } from './ui/views/match-view';
+
 import { runAnimatedMatch } from './engine/match-animation';
 import type { RivalResult } from './ui/views/match-view';
 
@@ -398,20 +398,48 @@ function playMatch(): void {
             },
           });
           return;
+        } else if (awayTeam) {
+          /* Player not in the final — animate as neutral spectator */
+          const cupFixtureNeutral: import('./types').Fixture = {
+            home: cupFinal.home,
+            away: cupFinal.away!,
+            homeGoals: null,
+            awayGoals: null,
+            events: [],
+          };
+
+          const diffMultNeutral = getDifficultyMultipliers(settings);
+          simulateMatch(cupFixtureNeutral, G, { difficulty: diffMultNeutral.aiStrengthMult });
+
+          showView('match');
+          G.matchInProgress = true;
+
+          runAnimatedMatch(cupFixtureNeutral, G, settings, {
+            isCupFinal: true,
+            isNeutral: true,
+            rivalResults: [],
+            onComplete: () => {
+              resolveCupFinal(G, cupFixtureNeutral.homeGoals!, cupFixtureNeutral.awayGoals!);
+
+              G.week++;
+
+              if (G.week > TOTAL_SEASON_WEEKS) {
+                const result = endOfSeason(G);
+                saveGame();
+                refreshAll();
+                showSeasonEndOverlay(result);
+              } else {
+                saveGame();
+                refreshAll();
+                showView('dashboard');
+              }
+            },
+          });
+          return;
         } else {
-          /* Player not in the final — instant-sim the cup final */
+          /* No away team (shouldn't happen in a final) */
           if (cupFinal.away != null) {
-            const hs = engineTeamStrength(homeTeam);
-            const as_ = awayTeam ? engineTeamStrength(awayTeam) : 0;
-            let hg = 0, ag = 0;
-            const homeExp = Math.max(0.3, (hs - as_) / 15 + 1.15);
-            const awayExp = Math.max(0.3, (as_ - hs) / 15 + 1.0);
-            for (let i = 0; i < 90; i++) {
-              if (Math.random() < homeExp / 90) hg++;
-              if (Math.random() < awayExp / 90) ag++;
-            }
-            if (hg === ag) { if (Math.random() < 0.55) hg++; else ag++; }
-            resolveCupFinal(G, hg, ag);
+            resolveCupFinal(G, 1, 0);
           }
         }
       }
@@ -535,8 +563,7 @@ function playMatch(): void {
         }
 
         /* Check if the full season (league + cup) is now over */
-        const cupStillPending = G.cup && G.cup.active && !G.cup.playerEliminated &&
-          G.cup.round < G.cup.rounds.length;
+        const cupStillPending = G.cup && G.cup.active;
 
         if (G.week > SEASON_WEEKS && !cupStillPending) {
           /* No cup final remaining — end season now */
@@ -564,8 +591,7 @@ function playMatch(): void {
   }
 
   /* Check if the full season (league + cup) is now over */
-  const cupPending = G.cup && G.cup.active && !G.cup.playerEliminated &&
-    G.cup.round < G.cup.rounds.length;
+  const cupPending = G.cup && G.cup.active;
 
   if (G.week > SEASON_WEEKS && !cupPending) {
     const result = endOfSeason(G);
@@ -597,37 +623,97 @@ function showSeasonEndOverlay(result: ReturnType<typeof endOfSeason>): void {
   const box = document.getElementById('season-box');
   if (!overlay || !box) return;
 
+  const pt = G.teams[G.playerTeamId!];
   let h = `<h2 style="font-family:'Oswald';color:var(--accent);text-align:center;margin-bottom:16px">${t(settings, 'seasonComplete', { season: G.season })}</h2>`;
 
-  /* Awards section */
-  if (result.awards && result.awards.length) {
-    h += `<div style="margin-bottom:12px">`;
-    for (const a of result.awards) {
-      const icon = a.award === 'gold_trophy' ? '\u{1F3C6}' :
-                   a.award === 'silver_trophy' ? '\u{1F3C6}' :
-                   a.award === 'gold_medal' ? '\u{1F947}' :
-                   a.award === 'silver_medal' ? '\u{1F948}' :
-                   a.award === 'cup' ? '\u{1F3C6}' : '';
-      h += `<div style="padding:4px 0">${icon} <b>${teamLabel(a.team)}</b> -- ${a.award.replace(/_/g, ' ')}</div>`;
+  /* ---- Cup Winner (highest achievement, featured at the top) ---- */
+  if (G.cup && G.cup.winner != null) {
+    const cupWinner = G.teams[G.cup.winner];
+    if (cupWinner) {
+      h += `<div class="season-section season-cup-winner">` +
+        `<div style="font-size:2.5rem;margin-bottom:4px">\u{1F3C6}</div>` +
+        `<div style="font-family:'Oswald';font-size:1.1rem;text-transform:uppercase;letter-spacing:1px;color:var(--gold);margin-bottom:6px">Cup Winner</div>` +
+        `<div>${teamLabel(cupWinner)}</div>` +
+        `</div>`;
     }
-    h += `</div>`;
   }
 
-  /* Promotion / relegation moves section */
-  if (result.moves && result.moves.length) {
-    h += `<div style="margin-bottom:12px">`;
-    for (const m of result.moves) {
-      const arrow = m.type === 'promote' ? '\u2B06\uFE0F' :
-                    m.type === 'relegate' ? '\u2B07\uFE0F' :
-                    m.type === 'out' ? '\u274C' :
-                    m.type === 'enter' ? '\u2705' : '';
-      h += `<div style="padding:2px 0">${arrow} <b>${teamLabel(m.team)}</b> ${m.type} (Div ${m.from} \u2192 ${m.to})</div>`;
+  /* ---- Top Goal Scorer ---- */
+  const allScorers = Object.values(G.topScorers).sort((a, b) => b.goals - a.goals);
+  if (allScorers.length && allScorers[0].goals > 0) {
+    const top = allScorers[0];
+    const scorerTeam = G.teams[top.teamId];
+    h += `<div class="season-section" style="margin-bottom:12px">` +
+      `<div style="font-size:1.4rem;margin-bottom:2px">\u{26BD}</div>` +
+      `<div style="font-family:'Oswald';font-size:0.9rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim);margin-bottom:4px">Top Goal Scorer</div>` +
+      `<div style="font-weight:700;font-size:1rem">${top.name} <span style="color:var(--accent)">(${top.goals} goals)</span></div>` +
+      (scorerTeam ? `<div style="margin-top:2px">${teamLabel(scorerTeam)}</div>` : '') +
+      `</div>`;
+  }
+
+  /* ---- Division Champions & Runners-up (top 2 per division) ---- */
+  h += `<div class="season-section" style="margin-bottom:12px">` +
+    `<div style="font-family:'Oswald';font-size:0.9rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim);margin-bottom:8px">League Results</div>`;
+  for (let d = 1; d <= 4; d++) {
+    const sorted = getSortedDiv(G, d);
+    if (sorted.length < 2) continue;
+    const icon1 = d <= 2 ? '\u{1F3C6}' : '\u{1F947}';
+    const icon2 = '\u{1F948}';
+    h += `<div style="margin-bottom:8px">` +
+      `<div style="font-weight:700;font-size:0.82rem;color:var(--text-dim);margin-bottom:4px">Division ${d}</div>` +
+      `<div style="padding:2px 0">${icon1} ${teamLabel(sorted[0])} <span style="font-size:0.78rem;color:var(--text-dim)">${sorted[0].seasonStats.pts} pts</span></div>` +
+      `<div style="padding:2px 0">${icon2} ${teamLabel(sorted[1])} <span style="font-size:0.78rem;color:var(--text-dim)">${sorted[1].seasonStats.pts} pts</span></div>` +
+      `</div>`;
+  }
+  h += `</div>`;
+
+  /* ---- Personal Highlights (player's team) ---- */
+  if (pt) {
+    const st = pt.seasonStats;
+    const gd = st.gf - st.ga;
+
+    /* Determine player's fate: promoted, retained, or relegated */
+    let fateIcon = '\u{2796}';
+    let fateText = 'Retained';
+    const playerMove = result.moves.find(m => m.team.id === G.playerTeamId);
+    if (playerMove) {
+      if (playerMove.type === 'promote') {
+        fateIcon = '\u{2B06}\u{FE0F}';
+        fateText = `Promoted to Division ${playerMove.to}`;
+      } else if (playerMove.type === 'relegate') {
+        fateIcon = '\u{2B07}\u{FE0F}';
+        fateText = `Relegated to Division ${playerMove.to}`;
+      } else if (playerMove.type === 'out') {
+        fateIcon = '\u{274C}';
+        fateText = 'Exited the league';
+      }
     }
-    h += `</div>`;
+
+    /* Calculate total cash earned this season */
+    let totalCash = 0;
+    if (result.financialAwards) {
+      for (const fa of result.financialAwards) {
+        if (fa.team.id === G.playerTeamId && fa.type !== 'solidarityPaid') {
+          totalCash += fa.amount;
+        }
+      }
+    }
+
+    h += `<div class="season-section season-personal">` +
+      `<div style="font-family:'Oswald';font-size:0.9rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim);margin-bottom:8px">Your Season — ${teamLabel(pt)}</div>` +
+      `<div style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-bottom:8px">` +
+      `<div class="stat-badge"><span class="sb-value">${st.pts}</span><span class="sb-label">Points</span></div>` +
+      `<div class="stat-badge"><span class="sb-value">${st.w}-${st.d}-${st.l}</span><span class="sb-label">W-D-L</span></div>` +
+      `<div class="stat-badge"><span class="sb-value">${st.gf}-${st.ga}</span><span class="sb-label">GF-GA</span></div>` +
+      `<div class="stat-badge"><span class="sb-value">${gd >= 0 ? '+' : ''}${gd}</span><span class="sb-label">GD</span></div>` +
+      `</div>` +
+      `<div style="font-size:1rem;font-weight:700;margin-bottom:6px">${fateIcon} ${fateText}</div>` +
+      (totalCash > 0 ? `<div style="font-size:0.88rem;color:var(--green);font-weight:600">\u{1F4B0} Season earnings: $${totalCash.toLocaleString()}</div>` : '') +
+      `</div>`;
   }
 
   /* Start next season button */
-  h += `<button class="btn btn-accent" style="width:100%;margin-top:8px;padding:14px;font-size:1.1rem" onclick="startNewSeasonAction()">${t(settings, 'startSeason', { season: G.season + 1 })}</button>`;
+  h += `<button class="btn btn-accent" style="width:100%;margin-top:12px;padding:14px;font-size:1.1rem" onclick="startNewSeasonAction()">${t(settings, 'startSeason', { season: G.season + 1 })}</button>`;
 
   box.innerHTML = h;
   overlay.style.display = 'flex';

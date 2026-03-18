@@ -347,6 +347,48 @@ html.light .tp-card.selected {
   color: var(--text-dim);
 }
 
+/* Team color pickers */
+.color-picker-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-lg);
+  margin-top: var(--sp-sm);
+}
+
+.color-picker-group {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+}
+
+.color-picker-group label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.team-color-input {
+  width: 40px;
+  height: 32px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0;
+  cursor: pointer;
+  background: transparent;
+}
+
+.team-color-input::-webkit-color-swatch-wrapper {
+  padding: 2px;
+}
+
+.team-color-input::-webkit-color-swatch {
+  border: none;
+  border-radius: 2px;
+}
+
 /* Start Game button */
 .btn-start {
   margin-top: var(--sp-xl);
@@ -3701,10 +3743,35 @@ html.light .league-table .player-row {
   border-left: 3px solid var(--red);
 }
 
+/* Home team events aligned right, away team events aligned left */
+.match-event.me-home {
+  text-align: right;
+  border-left: none;
+  border-right: 3px solid var(--green);
+}
+
+.match-event.me-home.player-goal {
+  border-right-color: var(--accent);
+}
+
+.match-event.me-home.card-event {
+  border-right-color: var(--yellow);
+}
+
+.match-event.me-home.card-event.red {
+  border-right-color: var(--red);
+}
+
+.match-event.me-away {
+  text-align: left;
+}
+
+/* Half-time / full-time events are centered */
 .match-event.ht-event,
 .match-event.ft-event {
   background: var(--surface2);
-  border-left: 3px solid var(--text-dim);
+  border-left: none;
+  border-right: none;
   font-weight: 700;
   text-align: center;
 }
@@ -4604,16 +4671,22 @@ html.light .league-table .player-row {
 .team-plate {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 4px 12px;
+  padding: 4px 14px;
   border-radius: var(--radius-sm);
   font-weight: 600;
   font-size: 0.85rem;
+  min-width: 110px;
+  text-align: center;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
 
 .team-plate-sm {
   padding: 2px 8px;
   font-size: 0.78rem;
+  min-width: 90px;
 }
 
 .flag {
@@ -4655,6 +4728,26 @@ html.light .league-table .player-row {
   overflow-y: auto;
   box-shadow: var(--shadow-lg);
   text-align: center;
+}
+
+.season-section {
+  padding: var(--sp-md);
+  margin-bottom: var(--sp-md);
+  background: var(--surface2);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.season-cup-winner {
+  background: rgba(255, 215, 0, 0.08);
+  border-color: var(--gold);
+  padding: var(--sp-lg) var(--sp-md);
+  margin-bottom: var(--sp-md);
+}
+
+.season-personal {
+  background: rgba(79, 195, 247, 0.06);
+  border-color: var(--accent);
 }
 
 /* --------------------------------------------------------------------------

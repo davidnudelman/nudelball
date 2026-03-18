@@ -263,7 +263,7 @@ export function clearPlateCache(): void {
 export function teamPlate(c1: string, c2: string, name: string, sm?: boolean): string {
   const { bg, txt } = plateColors(c1, c2);
   const cls = sm ? 'team-plate team-plate-sm' : 'team-plate';
-  return `<span class="${cls}" style="background:${bg};color:${txt}">${name}</span>`;
+  return `<span class="${cls}" style="background:${bg};color:${txt}">${name.toUpperCase()}</span>`;
 }
 
 /**

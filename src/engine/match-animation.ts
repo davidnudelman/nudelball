@@ -43,6 +43,8 @@ const HALF_TIME = 45;
 export interface AnimatedMatchOptions {
   /** Whether this is a cup final */
   isCupFinal?: boolean;
+  /** Whether the player is a neutral spectator (not participating) */
+  isNeutral?: boolean;
   /** Pre-computed rival results to display live */
   rivalResults?: RivalResult[];
   /** Callback when the full animation completes */
@@ -74,7 +76,7 @@ export function runAnimatedMatch(
   /* Set up the match UI DOM */
   const sim = setupMatchUI(G, settings, homeTeam, awayTeam, {
     isCupFinal: options.isCupFinal,
-    isNeutral: false,
+    isNeutral: options.isNeutral ?? false,
   });
   if (!sim) {
     options.onComplete();
@@ -124,22 +126,24 @@ export function runAnimatedMatch(
    * Format and append a match event to the events feed.
    */
   function displayEvent(ev: MatchEvent, home: Team, away: Team): void {
-    const team = ev.teamId === home.id ? home : away;
+    const isHome = ev.teamId === home.id;
+    const team = isHome ? home : away;
     const teamName = team.name;
+    const sideClass = isHome ? 'me-home' : 'me-away';
     let html = '';
 
     if (ev.type === 'goal') {
       const isPlayerGoal = ev.teamId === G.playerTeamId;
       const icon = isPlayerGoal ? '\u26BD' : '\uD83D\uDFE0';
-      html = `<div class="match-event goal${isPlayerGoal ? ' player-goal' : ''}">` +
+      html = `<div class="match-event goal ${sideClass}${isPlayerGoal ? ' player-goal' : ''}">` +
         `<span class="me-min">${ev.minute}'</span> ${icon} ` +
         `<b>${ev.scorer}</b> <span class="me-team">(${teamName})</span></div>`;
     } else if (ev.type === 'yellow') {
-      html = `<div class="match-event card-event">` +
+      html = `<div class="match-event card-event ${sideClass}">` +
         `<span class="me-min">${ev.minute}'</span> \uD83D\uDFE8 ` +
         `<b>${ev.playerName}</b> <span class="me-team">(${teamName})</span></div>`;
     } else if (ev.type === 'red') {
-      html = `<div class="match-event card-event red">` +
+      html = `<div class="match-event card-event red ${sideClass}">` +
         `<span class="me-min">${ev.minute}'</span> \uD83D\uDFE5 ` +
         `<b>${ev.playerName}</b> <span class="me-team">(${teamName})</span></div>`;
     }
