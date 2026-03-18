@@ -3743,27 +3743,27 @@ html.light .league-table .player-row {
   border-left: 3px solid var(--red);
 }
 
-/* Home team events aligned right, away team events aligned left */
+/* Home team events aligned left, away team events aligned right */
 .match-event.me-home {
+  text-align: left;
+}
+
+.match-event.me-away {
   text-align: right;
   border-left: none;
   border-right: 3px solid var(--green);
 }
 
-.match-event.me-home.player-goal {
+.match-event.me-away.player-goal {
   border-right-color: var(--accent);
 }
 
-.match-event.me-home.card-event {
+.match-event.me-away.card-event {
   border-right-color: var(--yellow);
 }
 
-.match-event.me-home.card-event.red {
+.match-event.me-away.card-event.red {
   border-right-color: var(--red);
-}
-
-.match-event.me-away {
-  text-align: left;
 }
 
 /* Half-time / full-time events are centered */
