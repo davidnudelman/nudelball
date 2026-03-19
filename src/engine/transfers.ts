@@ -28,6 +28,8 @@ import {
   SQUAD_MAX,
   SQUAD_MIN,
   STARTING_BUDGET,
+  DEADLINE_DAY_DISCOUNT,
+  DEADLINE_DAY_EXTRA_AGENTS,
 } from '../config';
 import { clamp, genName, pick, rand } from './player';
 
@@ -720,4 +722,50 @@ export const getScoutedTeams = (G: GameState): number[] => {
     }
   }
   return teamIds;
+};
+
+// ---------------------------------------------------------------------------
+// Transfer Deadline Day Scramble (#excitement)
+// ---------------------------------------------------------------------------
+
+/**
+ * Apply deadline day effects — discount existing free agents and spawn extras.
+ * Called on TRANSFER_DEADLINE_WEEK before the window closes.
+ */
+export const applyDeadlineDayScramble = (G: GameState): void => {
+  /* Discount existing free agents */
+  for (const fa of G.freeAgents) {
+    fa.marketValue = Math.round(fa.marketValue * (1 - DEADLINE_DAY_DISCOUNT) / 100) * 100;
+    if (fa.marketValue < 100) fa.marketValue = 100;
+  }
+
+  /* Spawn extra free agents for deadline day frenzy */
+  const countries = Object.keys(COUNTRY_NAMES);
+  for (let i = 0; i < DEADLINE_DAY_EXTRA_AGENTS; i++) {
+    if (G.freeAgents.length >= MAX_FREE_AGENT_POOL + DEADLINE_DAY_EXTRA_AGENTS) break;
+    const [lo, hi] = FREE_AGENT_SKILL_RANGE;
+    /* Deadline day agents are slightly better quality */
+    const skill = clamp(rand(lo + 5, hi + 5), 1, 50);
+    const pos = POS_ORDER[rand(0, POS_ORDER.length - 1)];
+    const country = pick(countries);
+    const name = genName(country);
+    const age = rand(20, 30);
+    const mv = Math.round((skill * skill * 50) / 100) * 100;
+    /* Apply deadline day discount to new agents too */
+    const discountedMv = Math.round(mv * (1 - DEADLINE_DAY_DISCOUNT) / 100) * 100;
+    G.freeAgents.push({
+      name,
+      pos,
+      skill,
+      stamina: 100,
+      benchStreak: 0,
+      assignedPos: null,
+      selected: false,
+      age,
+      marketValue: Math.max(100, discountedMv),
+    });
+  }
+
+  /* AI teams make panic buys on deadline day */
+  aiDoTransfers(G);
 };

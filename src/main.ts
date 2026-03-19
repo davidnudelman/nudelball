@@ -83,6 +83,7 @@ import {
   sellPlayer as engineSellPlayer,
   buyFromTeam as engineBuyFromTeam,
   loanPlayer as engineLoanPlayer,
+  applyDeadlineDayScramble,
 } from './engine/transfers';
 import { makePlayer, genName, genSkill } from './engine/player';
 
@@ -172,6 +173,7 @@ import {
   FACILITY_COSTS,
   SPONSORSHIP_TIERS,
   SCOUT_COSTS,
+  TRANSFER_DEADLINE_WEEK,
 } from './config';
 import { teamLabel } from './utils/helpers';
 
@@ -343,8 +345,19 @@ function playMatch(): void {
       renderMarket(G, settings, true);
       return;
     }
+    /* Don't close yet — transfer window stays open until TRANSFER_DEADLINE_WEEK */
+  }
+
+  /* --- Transfer deadline day: trigger deadline scramble on the deadline week --- */
+  if (G.week === TRANSFER_DEADLINE_WEEK && G.transferWindow) {
+    applyDeadlineDayScramble(G);
+    G.transferWindow = false; /* Close window after deadline week */
+  } else if (G.week > TRANSFER_DEADLINE_WEEK) {
     G.transferWindow = false;
   }
+
+  /* Apply squad rules auto-rotation if enabled */
+  applySquadRules(G);
 
   /* Auto-select AI teams before simulation */
   for (const tm of G.teams) {
@@ -428,8 +441,8 @@ function playMatch(): void {
         /* Advance week counter after animation finishes */
         G.week++;
 
-        /* Close the transfer window after week 1 */
-        if (G.week > 1) {
+        /* Close the transfer window after deadline week */
+        if (G.week > TRANSFER_DEADLINE_WEEK) {
           G.transferWindow = false;
         }
 
@@ -453,8 +466,8 @@ function playMatch(): void {
   /* No player fixture this week (shouldn't normally happen) — advance instantly */
   G.week++;
 
-  /* Close the transfer window after week 1 */
-  if (G.week > 1) {
+  /* Close the transfer window after deadline week */
+  if (G.week > TRANSFER_DEADLINE_WEEK) {
     G.transferWindow = false;
   }
 
@@ -578,21 +591,32 @@ function showSeasonEndOverlay(result: ReturnType<typeof endOfSeason>): void {
       `</div>`;
   }
 
-  /* ---- Season Awards (#15) ---- */
+  /* ---- Season Awards Ceremony (#15) — enhanced with icons and detail ---- */
   const awards = calculateSeasonAwards(G);
   if (awards.length > 0) {
     h += `<div class="season-section" style="margin-bottom:12px">` +
-      `<div style="font-family:'Oswald';font-size:0.9rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim);margin-bottom:8px">${t(settings, 'seasonAwards')}</div>` +
-      `<div class="awards-grid">`;
+      `<div style="font-family:'Oswald';font-size:1.1rem;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:12px;text-align:center">\u{1F3C6} ${t(settings, 'seasonAwards')} \u{1F3C6}</div>` +
+      `<div class="awards-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px">`;
     for (const a of awards) {
+      const icon = a.type === 'goldenBoot' ? '\u{1F45F}'
+        : a.type === 'playerOfSeason' ? '\u{2B50}'
+        : a.type === 'bestYoung' ? '\u{1F331}'
+        : a.type === 'mvp' ? '\u{1F947}'
+        : '\u{1F3C5}';
       const typeLabel = a.type === 'goldenBoot' ? t(settings, 'goldenBootAward')
         : a.type === 'playerOfSeason' ? t(settings, 'playerOfSeasonAward')
         : a.type === 'bestYoung' ? t(settings, 'bestYoungAward')
+        : a.type === 'mvp' ? 'MVP'
         : a.type;
-      h += `<div class="award-card">` +
-        `<div class="aw-type">${typeLabel}</div>` +
-        `<div class="aw-name">${a.playerName}</div>` +
-        `<div class="aw-detail">${a.teamName} (${a.value} goals)</div>` +
+      const detail = a.type === 'goldenBoot' ? `${a.value} goals`
+        : a.type === 'bestYoung' ? `${a.value} goals, Youth`
+        : `${a.value} goals`;
+      h += `<div class="award-card" style="text-align:center;background:var(--surface2);padding:10px 8px;border-radius:8px">` +
+        `<div style="font-size:1.8rem;margin-bottom:4px">${icon}</div>` +
+        `<div class="aw-type" style="font-family:'Oswald';font-size:.78rem;text-transform:uppercase;letter-spacing:.5px;color:var(--text-dim);margin-bottom:4px">${typeLabel}</div>` +
+        `<div class="aw-name" style="font-weight:700;font-size:.9rem">${a.playerName}</div>` +
+        `<div class="aw-detail" style="font-size:.75rem;color:var(--text-dim)">${a.teamName}</div>` +
+        `<div style="font-size:.72rem;color:var(--accent);margin-top:2px">${detail}</div>` +
         `</div>`;
     }
     h += `</div></div>`;
@@ -622,14 +646,96 @@ function startNewSeasonAction(): void {
 }
 
 // ===========================================================================
+// SQUAD RULES — AUTO-ROTATION (#19)
+// ===========================================================================
+
+/**
+ * Apply squad rules before each match if enabled.
+ * - restBelowStamina: bench players below the threshold and replace with fresh subs.
+ * - alwaysStartBest: auto-pick highest-rated available players.
+ */
+function applySquadRules(state: GameState): void {
+  if (!state.squadRules || state.playerTeamId == null) return;
+  const pt = state.teams[state.playerTeamId];
+  const rules = state.squadRules;
+
+  /* Rest tired players */
+  if (rules.restBelowStamina != null) {
+    for (const p of pt.players) {
+      if (p.selected && p.stamina < rules.restBelowStamina && p.injuredFor === 0 && p.suspendedFor === 0) {
+        p.selected = false;
+        p.assignedPos = null;
+      }
+    }
+
+    /* Fill empty slots with best available bench players */
+    const selCount = pt.players.filter(p => p.selected).length;
+    if (selCount < 11) {
+      const formIdx = state.selectedFormationIdx ?? DEFAULT_FORMATION_IDX;
+      const formation = FORMATIONS[formIdx];
+      const selectedSet = new Set(pt.players.filter(p => p.selected).map((_, i) => i));
+
+      /* For each position that needs filling */
+      for (const pos of ['GK', 'DEF', 'MID', 'STR'] as const) {
+        const currentInPos = pt.players.filter(p => p.selected && (p.assignedPos || p.pos) === pos).length;
+        const needed = formation.slots[pos] - currentInPos;
+        if (needed <= 0) continue;
+
+        const candidates = pt.players
+          .map((p, i) => ({ p, i }))
+          .filter(({ p, i }) =>
+            !p.selected && !selectedSet.has(i) &&
+            p.pos === pos && p.injuredFor === 0 && p.suspendedFor === 0 &&
+            p.stamina >= (rules.restBelowStamina ?? 0),
+          )
+          .sort((a, b) => b.p.skill - a.p.skill);
+
+        for (let j = 0; j < needed && j < candidates.length; j++) {
+          candidates[j].p.selected = true;
+          candidates[j].p.assignedPos = pos;
+          selectedSet.add(candidates[j].i);
+        }
+      }
+    }
+  }
+
+  /* Always start best — re-pick using autoPick logic */
+  if (rules.alwaysStartBest) {
+    autoPick();
+  }
+}
+
+/**
+ * Toggle a squad rule on/off.
+ */
+function toggleSquadRule(rule: string, value?: number | boolean): void {
+  if (!G.squadRules) {
+    G.squadRules = { restBelowStamina: null, alwaysStartBest: false };
+  }
+
+  if (rule === 'restBelowStamina') {
+    if (G.squadRules.restBelowStamina != null) {
+      G.squadRules.restBelowStamina = null;
+    } else {
+      G.squadRules.restBelowStamina = typeof value === 'number' ? value : 40;
+    }
+  } else if (rule === 'alwaysStartBest') {
+    G.squadRules.alwaysStartBest = !G.squadRules.alwaysStartBest;
+  }
+
+  saveGame();
+  wrappedRenderSquad();
+}
+
+// ===========================================================================
 // SQUAD INTERACTION HANDLERS
 // ===========================================================================
 
 /**
  * Auto-pick the best 11 players for the currently selected formation.
  *
- * Prioritises natural-position matches (with a large scoring bonus),
- * then falls back to out-of-position candidates if needed. Injured
+ * Selects players with the highest combined skill and form ratings.
+ * Players are always assigned to their natural position. Injured
  * and suspended players are excluded.
  */
 function autoPick(): void {
@@ -645,6 +751,15 @@ function autoPick(): void {
     p.assignedPos = null;
   }
 
+  /**
+   * Combined score weighing both skill and form.
+   * Form (range -3 to +3) adjusts effective rating by ±5% per point,
+   * so a player in hot form is preferred over a slightly higher-skilled
+   * player in poor form.
+   */
+  const playerScore = (p: { skill: number; form: number }): number =>
+    p.skill * (1 + (p.form || 0) * 0.05);
+
   /* Pick best available players for each formation slot */
   const posOrder: Array<{ pos: 'GK' | 'DEF' | 'MID' | 'STR'; count: number }> = [
     { pos: 'GK', count: formation.slots.GK },
@@ -656,7 +771,7 @@ function autoPick(): void {
   const selected = new Set<number>();
 
   for (const { pos, count } of posOrder) {
-    /* Sort candidates: natural position first, then by skill */
+    /* Sort candidates by combined skill + form score (best first) */
     const candidates = pt.players
       .map((p, i) => ({ p, i }))
       .filter(({ p, i }) =>
@@ -665,7 +780,7 @@ function autoPick(): void {
         p.injuredFor === 0 &&
         p.suspendedFor === 0
       )
-      .sort((a, b) => b.p.skill - a.p.skill);
+      .sort((a, b) => playerScore(b.p) - playerScore(a.p));
 
     for (let j = 0; j < count && j < candidates.length; j++) {
       const { p, i } = candidates[j];
@@ -685,7 +800,7 @@ function autoPick(): void {
         p.injuredFor === 0 &&
         p.suspendedFor === 0
       )
-      .sort((a, b) => b.p.skill - a.p.skill);
+      .sort((a, b) => playerScore(b.p) - playerScore(a.p));
 
     for (const { p, i } of remaining) {
       if (totalSelected >= 11) break;
@@ -1374,6 +1489,7 @@ declare global {
     loanPlayerAction: typeof loanPlayerAction;
     upgradeScout: typeof upgradeScout;
     promoteProspect: typeof promoteProspect;
+    toggleSquadRule: typeof toggleSquadRule;
 
     /* Match Substitutions */
     confirmSub: typeof confirmSub;
@@ -1457,6 +1573,7 @@ window.selectSponsor = selectSponsor;
 window.loanPlayerAction = loanPlayerAction;
 window.upgradeScout = upgradeScout;
 window.promoteProspect = promoteProspect;
+window.toggleSquadRule = toggleSquadRule;
 
 /* --- Match Substitutions --- */
 window.confirmSub = confirmSub;

@@ -195,13 +195,11 @@ export const TRAINING_SKILL_CHANCE = 0.12;
 /** Extra training chance for players whose position matches the focus (8%) */
 export const TRAINING_FOCUS_BONUS = 0.08;
 
-/** Available training focus options */
+/** Available training focus options (simplified from 5 to 3) */
 export const TRAINING_FOCUSES: readonly string[] = [
-  'attack',
-  'defence',
-  'fitness',
-  'youth',
   'balanced',
+  'fitness',
+  'development',
 ] as const;
 
 /* ================================================================
@@ -582,6 +580,126 @@ export const NEGOTIATION_MARKUP_MIN = 0.10;
 export const NEGOTIATION_MARKUP_MAX = 0.30;
 /** Each counter-offer reduces the gap by this fraction */
 export const NEGOTIATION_REDUCTION = 0.50;
+
+/* ================================================================
+   MATCH NARRATIVE TEMPLATES (#excitement)
+   ================================================================ */
+
+/**
+ * Goal narrative templates by position.
+ * Placeholders: {name} = scorer name, {minute} = minute of goal.
+ */
+export const GOAL_NARRATIVES: Readonly<Record<Position, readonly string[]>> = {
+  STR: [
+    '{name} fires it into the bottom corner!',
+    '{name} beats the keeper with a clinical finish!',
+    '{name} volleys it home from close range!',
+    '{name} rounds the goalkeeper and slots it in!',
+    'A brilliant solo run by {name} — GOAL!',
+    '{name} rises highest and heads it in!',
+    '{name} smashes it into the roof of the net!',
+    'Cool as you like, {name} chips the keeper!',
+    '{name} pounces on a defensive error — GOAL!',
+    '{name} with a thunderbolt from 20 yards!',
+  ],
+  MID: [
+    '{name} unleashes a screamer from distance!',
+    '{name} curls one in from 25 yards!',
+    'A perfectly-timed run by {name} — taps it in!',
+    '{name} picks up a loose ball and drives it home!',
+    '{name} threads it through a crowd of defenders!',
+    '{name} with a stunning long-range strike!',
+    'Great link-up play and {name} finishes it off!',
+    '{name} arrives late in the box — what a goal!',
+  ],
+  DEF: [
+    '{name} heads in from a corner!',
+    '{name} rises above everyone at the set piece — GOAL!',
+    'A towering header from {name}!',
+    '{name} smashes it in from a free kick!',
+    '{name} ghosting in at the back post — unlikely scorer!',
+    'Nobody picked up {name} at the corner — 1-0!',
+  ],
+  GK: [
+    '{name} — yes the goalkeeper — scores from a free kick!',
+    'Incredible! {name} runs the length of the pitch and scores!',
+  ],
+} as const;
+
+/** Late-goal narrative suffixes (appended for goals 85'+) */
+export const LATE_GOAL_SUFFIXES: readonly string[] = [
+  ' A dramatic late goal!',
+  ' The stadium erupts!',
+  ' Scenes of delirium!',
+  ' Heartbreak for the opposition!',
+  ' What a time to score!',
+  ' It\'s a last-gasp thriller!',
+  ' Written in the stars!',
+  ' You couldn\'t script it!',
+] as const;
+
+/** Yellow card narrative templates */
+export const YELLOW_NARRATIVES: readonly string[] = [
+  '{name} is booked for a late challenge.',
+  '{name} picks up a yellow for persistent fouling.',
+  'The referee shows {name} a yellow card.',
+  '{name} goes into the book after a cynical foul.',
+  'A reckless tackle from {name} — yellow card.',
+] as const;
+
+/** Red card narrative templates */
+export const RED_NARRATIVES: readonly string[] = [
+  '{name} is sent off! A terrible challenge!',
+  'Straight red for {name} — violent conduct!',
+  '{name} sees red after a two-footed lunge!',
+  '{name} receives a second yellow — off you go!',
+  'The referee has no choice — {name} is dismissed!',
+] as const;
+
+/** Probability of a goal occurring in the final 10 minutes (85-93) — adds drama */
+export const LATE_GOAL_BIAS = 0.20;
+
+/* ================================================================
+   TITLE RACE / RELEGATION PRESSURE (#excitement)
+   ================================================================ */
+
+/** Weeks remaining in season when pressure kicks in */
+export const PRESSURE_THRESHOLD_WEEKS = 4;
+/** Form multiplier for teams in title race or relegation battle */
+export const PRESSURE_FORM_MULT = 1.5;
+/** Strength variance boost for pressure matches (more unpredictable) */
+export const PRESSURE_VARIANCE = 0.08;
+
+/* ================================================================
+   TRANSFER DEADLINE DAY (#excitement)
+   ================================================================ */
+
+/** Week number that acts as transfer deadline day (last chance to buy) */
+export const TRANSFER_DEADLINE_WEEK = 3;
+/** Price discount on deadline day */
+export const DEADLINE_DAY_DISCOUNT = 0.20;
+/** Extra free agents spawned on deadline day */
+export const DEADLINE_DAY_EXTRA_AGENTS = 4;
+
+/* ================================================================
+   HOT STREAK / ON FIRE (#excitement)
+   ================================================================ */
+
+/** Minimum form to trigger "On Fire" status */
+export const ON_FIRE_FORM_MIN = 3;
+/** Minimum recent goals to trigger "On Fire" status */
+export const ON_FIRE_GOALS_MIN = 3;
+/** OVR bonus multiplier when "On Fire" */
+export const ON_FIRE_BONUS = 1.08;
+
+/* ================================================================
+   MAN OF THE MATCH (#excitement)
+   ================================================================ */
+
+/** MOTM is tracked per fixture — stored transiently on the fixture */
+export const MOTM_GOAL_WEIGHT = 3;
+export const MOTM_FORM_WEIGHT = 1;
+export const MOTM_SKILL_WEIGHT = 1;
 
 /* ================================================================
    AGGREGATE CONFIG OBJECT
