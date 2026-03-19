@@ -92,6 +92,11 @@ export function refreshAll(): void {
   const dashRenderer = viewRenderers['dashboard'];
   if (dashRenderer) dashRenderer();
   updatePlayBtn();
+
+  /* Update market button blinking state based on transfer window */
+  if (_playBtnG) {
+    updateMarketBtn(!!_playBtnG.transferWindow);
+  }
 }
 
 /**
@@ -117,6 +122,21 @@ export function updateTopBar(G: GameState, settings: Settings): void {
   if (seasonEl) {
     seasonEl.textContent = t(settings, 'season') + ' ' + G.season + ' | \uD83D\uDCB0$' + budget.toLocaleString();
   }
+}
+
+/* ================================================================
+   MARKET BUTTON — TRANSFER WINDOW INDICATOR
+   ================================================================ */
+
+/**
+ * Toggle the bright-red blinking style on the Market nav button
+ * based on whether the transfer window is currently open.
+ *
+ * @param isOpen - Whether the transfer window is open
+ */
+export function updateMarketBtn(isOpen: boolean): void {
+  const btn = document.querySelector('.nav-btn[data-view="market"]');
+  if (btn) btn.classList.toggle('market-open', isOpen);
 }
 
 /* ================================================================
@@ -228,7 +248,15 @@ export function applyLanguage(settings: Settings): void {
 
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = (el as HTMLElement).dataset.i18n;
-    if (key) el.textContent = t(settings, key);
+    if (!key) return;
+
+    const shortcut = (el as HTMLElement).dataset.shortcut;
+    if (shortcut) {
+      /* Nav buttons: preserve the <kbd> shortcut badge before the label */
+      el.innerHTML = `<kbd class="nav-key">${shortcut}</kbd> ${t(settings, key)}`;
+    } else {
+      el.textContent = t(settings, key);
+    }
   });
 
   document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {

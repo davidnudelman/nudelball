@@ -179,6 +179,32 @@ export function renderHelp(_settings: Settings): void {
         <p>Adjust the volume using the slider in Settings, or click the \uD83D\uDD0A/\uD83D\uDD07 button in the top bar to mute/unmute.</p>
       `,
     },
+    {
+      title: '\u2328\uFE0F Keyboard Shortcuts',
+      content: `
+        <p>Use keyboard shortcuts to navigate and play faster:</p>
+        <table class="help-shortcuts-table">
+          <thead><tr><th>Key</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr><td><kbd>D</kbd></td><td>Dashboard</td></tr>
+            <tr><td><kbd>S</kbd></td><td>Squad</td></tr>
+            <tr><td><kbd>T</kbd></td><td>Table</td></tr>
+            <tr><td><kbd>C</kbd></td><td>Calendar</td></tr>
+            <tr><td><kbd>G</kbd></td><td>Top Goals / Scorers</td></tr>
+            <tr><td><kbd>M</kbd></td><td>Market</td></tr>
+            <tr><td><kbd>U</kbd></td><td>Cup</td></tr>
+            <tr><td><kbd>H</kbd></td><td>History</td></tr>
+            <tr><td><kbd>R</kbd></td><td>Trophy Room</td></tr>
+            <tr class="help-shortcuts-separator"><td colspan="2"></td></tr>
+            <tr><td><kbd>P</kbd></td><td>Play Week / Play Match</td></tr>
+            <tr><td><kbd>Space</kbd></td><td>Play Match / Continue (half-time & full-time)</td></tr>
+            <tr><td><kbd>Esc</kbd></td><td>Close overlay (Settings, Help, Changelog)</td></tr>
+            <tr class="help-shortcuts-separator"><td colspan="2"></td></tr>
+            <tr><td><kbd>A</kbd></td><td>Auto-pick squad (Squad view only)</td></tr>
+          </tbody>
+        </table>
+      `,
+    },
   ];
 
   let h = '';

@@ -560,6 +560,61 @@ html.light .tp-card.selected {
   font-weight: 600;
 }
 
+/* Keyboard shortcut badge inside nav buttons */
+.nav-key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.12);
+  color: inherit;
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-family: inherit;
+  line-height: 1;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.nav-btn:not(.active) .nav-key {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.light .nav-btn:not(.active) .nav-key {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+/* Market button — bright red blinking when transfer window is open */
+.nav-btn.market-open {
+  background: #e53935;
+  color: #fff;
+  font-weight: 700;
+  animation: market-blink 1.2s ease-in-out infinite;
+}
+
+.nav-btn.market-open .nav-key {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.nav-btn.market-open:hover {
+  background: #c62828;
+}
+
+.nav-btn.market-open.active {
+  background: #c62828;
+  animation: none;
+}
+
+@keyframes market-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
 /* Play Match button — prominent green */
 .nav-btn.play-match {
   background: var(--green);
@@ -1319,6 +1374,50 @@ html.light .overlay {
   list-style: disc;
 }
 
+/* Keyboard shortcuts table inside help */
+.help-shortcuts-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: var(--sp-sm);
+}
+
+.help-shortcuts-table th {
+  text-align: left;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.help-shortcuts-table td {
+  padding: 5px 8px;
+  font-size: 0.88rem;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.help-shortcuts-table kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-family: inherit;
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+.help-shortcuts-separator td {
+  padding: 2px;
+  border-bottom: 1px solid var(--border);
+}
+
 .changelog-entry {
   padding: var(--sp-md) 0;
   border-bottom: 1px solid var(--border);
@@ -2051,6 +2150,10 @@ html.light .overlay {
   .nav-btn {
     padding: 7px 10px;
     font-size: 0.8rem;
+  }
+
+  .nav-btn .nav-key {
+    display: none; /* Hide keyboard shortcut badges on mobile */
   }
 
   .nav-btn .nav-icon {
