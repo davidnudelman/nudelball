@@ -2,28 +2,15 @@
  * Training system module — handles weekly training effects for the
  * human player's squad.
  *
- * Training applies a chance-based skill improvement to each player,
- * with bonuses depending on the selected training focus. The difficulty
- * multiplier can scale the base training chance to make higher difficulties
- * harder (less skill growth) or lower difficulties easier (more growth).
+ * Simplified to 3 training focuses:
+ * - **Balanced**: All positions get a training bonus.
+ * - **Fitness**: Players recover stamina; skill training chance halved.
+ * - **Development**: Skill growth bonus, favours youth (under 22).
  */
 
 import type { GameState, Player, Position, TrainingFocus } from '../types';
 import { TRAINING_FOCUS_BONUS, TRAINING_SKILL_CHANCE, TRAINING_FACILITY_BONUS } from '../config';
 import { clamp, rand } from './player';
-
-// ---------------------------------------------------------------------------
-// Focus → Position Mapping
-// ---------------------------------------------------------------------------
-
-/** Maps each training focus to the position groups that receive a bonus chance. */
-const FOCUS_POSITIONS: Record<TrainingFocus, readonly Position[]> = {
-  attack: ['STR'],
-  defence: ['DEF', 'GK'],
-  fitness: [],       /* fitness focus recovers stamina instead of targeting positions */
-  youth: [],         /* youth focus targets age-based bonus instead of positions */
-  balanced: ['GK', 'DEF', 'MID', 'STR'],
-};
 
 // ---------------------------------------------------------------------------
 // Training Application
@@ -35,27 +22,21 @@ const FOCUS_POSITIONS: Record<TrainingFocus, readonly Position[]> = {
  * For each non-injured player, a base chance (`TRAINING_SKILL_CHANCE` = 12%)
  * determines whether they gain +1 skill. Additional modifiers:
  *
- * - **Position focus** (attack/defence/balanced): players matching the focus
- *   position get an extra 8% chance.
- * - **Youth focus**: players under 22 get an extra 8% chance (regardless of
- *   position).
- * - **Fitness focus**: players recover 5-12 extra stamina, but skill chance
- *   is halved (6%).
+ * - **Balanced**: All players get the focus bonus (+8%).
+ * - **Fitness**: Players recover 5-12 extra stamina; skill chance halved.
+ * - **Development**: All players get +8% bonus; youth (under 22) get
+ *   an additional +8% (total +16%).
  *
- * An optional `difficultyMultiplier` scales the base chance. At difficulty
- * 1.0 (normal), training is unchanged. At 0.75, training is 25% less
- * effective. At 1.25, 25% more effective.
+ * An optional `difficultyMultiplier` scales the base chance.
  *
  * @param G - The game state (mutated in-place — player skills may increase).
- * @param difficultyMultiplier - Optional multiplier on the base training chance
- *                               (default 1.0). Values > 1 = easier, < 1 = harder.
+ * @param difficultyMultiplier - Optional multiplier on the base training chance.
  */
 export const applyTraining = (G: GameState, difficultyMultiplier: number = 1.0): void => {
   if (G.playerTeamId == null) return;
 
   const pt = G.teams[G.playerTeamId];
   const focus: TrainingFocus = G.trainingFocus || 'balanced';
-  const bonusPos = FOCUS_POSITIONS[focus] || [];
 
   for (const p of pt.players) {
     /* Injured players don't train */
@@ -65,20 +46,19 @@ export const applyTraining = (G: GameState, difficultyMultiplier: number = 1.0):
     const facilityBonus = (G.facilities?.trainingFacility ?? 0) * TRAINING_FACILITY_BONUS;
     let chance = (TRAINING_SKILL_CHANCE + facilityBonus) * difficultyMultiplier;
 
-    /* Bonus chance for players matching the focus position */
-    if (bonusPos.includes(p.pos)) {
+    if (focus === 'balanced') {
+      /* Balanced: all positions get the focus bonus */
       chance += TRAINING_FOCUS_BONUS;
-    }
-
-    /* Youth focus: extra chance for players under 22 */
-    if (focus === 'youth' && (p.age || 25) < 22) {
-      chance += TRAINING_FOCUS_BONUS;
-    }
-
-    /* Fitness focus: recover extra stamina instead of skill */
-    if (focus === 'fitness') {
+    } else if (focus === 'fitness') {
+      /* Fitness: recover stamina, halve skill chance */
       p.stamina = Math.min(100, p.stamina + rand(5, 12));
-      chance *= 0.5; /* half skill chance when focusing on fitness */
+      chance *= 0.5;
+    } else if (focus === 'development') {
+      /* Development: all players get bonus; youth get double */
+      chance += TRAINING_FOCUS_BONUS;
+      if ((p.age || 25) < 22) {
+        chance += TRAINING_FOCUS_BONUS;
+      }
     }
 
     /* Roll for skill improvement */

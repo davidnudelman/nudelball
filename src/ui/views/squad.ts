@@ -23,12 +23,13 @@ import { isTopScorer, isPreviousTopScorer } from './scorers';
    HELPER FUNCTIONS (self-contained within this module)
    ================================================================ */
 
-/** OOP penalty multiplier */
+/** OOP penalty multiplier (simplified: natural=1.0, adjacent=-10%, 2+ steps=0) */
 function getOopPenalty(naturalPos: Position, assignedPos: Position | null): number {
   if (!assignedPos || assignedPos === naturalPos) return 1.0;
   if (naturalPos === 'GK' || assignedPos === 'GK') return 0;
   const steps = Math.abs(POS_DISTANCE[naturalPos] - POS_DISTANCE[assignedPos]);
-  return 1.0 - (steps * OOP_PENALTY_PER_STEP);
+  if (steps === 1) return 0.90;
+  return 0;
 }
 
 /** Effective overall rating */
@@ -214,21 +215,31 @@ export function renderSquad(
     tacticBar.innerHTML = tb;
   }
 
-  /* ===== Training Focus Bar ===== */
+  /* ===== Training Focus Bar (simplified: 3 focuses) ===== */
   const trainingBar = document.getElementById('training-bar');
   if (trainingBar) {
     const focuses = [
-      { key: 'balanced', label: 'Balanced', icon: '&#9878;&#65039;' },
-      { key: 'attack', label: 'Attack', icon: '&#9876;&#65039;' },
-      { key: 'defence', label: 'Defence', icon: '&#128737;&#65039;' },
-      { key: 'fitness', label: 'Fitness', icon: '&#128170;' },
-      { key: 'youth', label: 'Youth Dev', icon: '&#127793;' },
+      { key: 'balanced', label: 'Balanced', icon: '&#9878;&#65039;', desc: 'All positions +8%' },
+      { key: 'fitness', label: 'Fitness', icon: '&#128170;', desc: 'Stamina recovery' },
+      { key: 'development', label: 'Development', icon: '&#127793;', desc: 'Skill growth, youth bonus' },
     ];
-    let trb = '<span class="training-label">&#127919; Training Focus:</span>';
+    let trb = '<span class="training-label">&#127919; Training:</span>';
     for (const f of focuses) {
-      trb += `<button class="training-btn${(G.trainingFocus || 'balanced') === f.key ? ' active' : ''}" onclick="${trainingFn}('${f.key}')">${f.icon} ${f.label}</button>`;
+      trb += `<button class="training-btn${(G.trainingFocus || 'balanced') === f.key ? ' active' : ''}" onclick="${trainingFn}('${f.key}')" title="${f.desc}">${f.icon} ${f.label}</button>`;
     }
     trainingBar.innerHTML = trb;
+  }
+
+  /* ===== Squad Rules Panel ===== */
+  const rulesPanel = document.getElementById('squad-rules-panel');
+  if (rulesPanel) {
+    const rules = G.squadRules || { restBelowStamina: null, alwaysStartBest: false };
+    let rp = '<div class="squad-rules-bar">';
+    rp += '<span class="training-label">&#9881;&#65039; Auto:</span>';
+    rp += `<button class="training-btn${rules.restBelowStamina != null ? ' active' : ''}" onclick="toggleSquadRule('restBelowStamina', 40)" title="Auto-bench players below 40% stamina">Rest Tired</button>`;
+    rp += `<button class="training-btn${rules.alwaysStartBest ? ' active' : ''}" onclick="toggleSquadRule('alwaysStartBest')" title="Auto-pick best XI each week">Best XI</button>`;
+    rp += '</div>';
+    rulesPanel.innerHTML = rp;
   }
 
   const grid = document.getElementById('player-grid');
@@ -356,13 +367,16 @@ export function renderSquad(
     const isSuspended = p.suspendedFor > 0;
     const zebraClass = (rowIdx % 2 === 1) ? ' zebra' : '';
 
-    /* Form badge */
+    /* Form arrows — visual up/down indicators with On Fire status */
     const formVal = p.form || 0;
-    const formBadge = formVal >= 2 ? `<span class="form-badge form-hot" title="Hot streak (+${formVal})">&#128293;</span>`
-      : formVal >= 1 ? '<span class="form-badge form-warm" title="Good form (+1)">&#128200;</span>'
-      : formVal <= -2 ? `<span class="form-badge form-cold" title="Cold streak (${formVal})">&#129398;</span>`
-      : formVal <= -1 ? '<span class="form-badge form-cool" title="Poor form (-1)">&#128201;</span>'
-      : '';
+    const isOnFire = p.onFire === true;
+    const formBadge = isOnFire
+      ? `<span class="form-badge form-onfire" title="ON FIRE! Form +${formVal}, ${p.seasonGoals || 0} goals" style="color:#ff4500;font-weight:700">&#128293;&#128293;</span>`
+      : formVal >= 2 ? `<span class="form-badge" title="Hot form (+${formVal})" style="color:var(--green)">&#9650;&#9650;</span>`
+      : formVal >= 1 ? '<span class="form-badge" title="Good form (+1)" style="color:var(--green)">&#9650;</span>'
+      : formVal <= -2 ? `<span class="form-badge" title="Cold form (${formVal})" style="color:var(--red)">&#9660;&#9660;</span>`
+      : formVal <= -1 ? '<span class="form-badge" title="Poor form (-1)" style="color:var(--red)">&#9660;</span>'
+      : '<span class="form-badge" title="Neutral form" style="color:var(--text-dim)">&#9644;</span>';
 
     /* Suspension badge */
     const suspBadge = isSuspended

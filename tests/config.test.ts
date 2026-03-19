@@ -307,16 +307,14 @@ describe('POS_ORDER', () => {
    TRAINING
    ================================================================ */
 describe('TRAINING_FOCUSES', () => {
-  it('has 5 options', () => {
-    expect(TRAINING_FOCUSES).toHaveLength(5);
+  it('has 3 options', () => {
+    expect(TRAINING_FOCUSES).toHaveLength(3);
   });
 
-  it('includes attack, defence, fitness, youth, balanced', () => {
-    expect(TRAINING_FOCUSES).toContain('attack');
-    expect(TRAINING_FOCUSES).toContain('defence');
-    expect(TRAINING_FOCUSES).toContain('fitness');
-    expect(TRAINING_FOCUSES).toContain('youth');
+  it('includes balanced, fitness, development', () => {
     expect(TRAINING_FOCUSES).toContain('balanced');
+    expect(TRAINING_FOCUSES).toContain('fitness');
+    expect(TRAINING_FOCUSES).toContain('development');
   });
 });
 

@@ -83,20 +83,23 @@ export const genSkill = (div: number): number => {
 /**
  * Calculate the OOP (out-of-position) multiplier for a player.
  *
- * - If the player is in their natural position (or unassigned), returns 1.0.
- * - If a GK is assigned outfield or vice-versa, returns 0 (completely locked).
- * - Otherwise, each step away from the natural position costs 15% effectiveness.
+ * Simplified system:
+ * - Natural position (or unassigned) = 1.0 (full strength)
+ * - GK ↔ outfield = 0 (completely locked)
+ * - Adjacent position (1 step) = 0.90 (-10%)
+ * - 2+ steps away = 0 (can't play there)
  *
  * @param naturalPos - The player's natural position.
  * @param assignedPos - The position they are currently assigned to (null = natural).
- * @returns A multiplier in [0, 1].
+ * @returns A multiplier: 1.0, 0.90, or 0.
  */
 export const getOopPenalty = (naturalPos: Position, assignedPos: Position | null): number => {
   if (!assignedPos || assignedPos === naturalPos) return 1.0;
   /* GK is locked — cannot play outfield, outfield cannot play GK */
   if (naturalPos === 'GK' || assignedPos === 'GK') return 0;
   const steps = Math.abs(POS_DISTANCE[naturalPos] - POS_DISTANCE[assignedPos]);
-  return 1.0 - steps * OOP_PENALTY_PER_STEP;
+  if (steps === 1) return 0.90;
+  return 0; /* 2+ steps away = can't play */
 };
 
 // ---------------------------------------------------------------------------

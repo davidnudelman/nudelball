@@ -232,18 +232,18 @@ describe('getOopPenalty()', () => {
     expect(getOopPenalty('GK', null)).toBe(1.0);
   });
 
-  it('returns 0.85 when one step away (DEF -> MID)', () => {
-    /* DEF(1) -> MID(2) = 1 step * 0.15 = 0.15 penalty -> 0.85 */
-    expect(getOopPenalty('DEF', 'MID')).toBe(0.85);
+  it('returns 0.90 when one step away (DEF -> MID)', () => {
+    /* Simplified: adjacent position = -10% */
+    expect(getOopPenalty('DEF', 'MID')).toBe(0.90);
   });
 
-  it('returns 0.85 when one step away (MID -> STR)', () => {
-    expect(getOopPenalty('MID', 'STR')).toBe(0.85);
+  it('returns 0.90 when one step away (MID -> STR)', () => {
+    expect(getOopPenalty('MID', 'STR')).toBe(0.90);
   });
 
-  it('returns 0.70 when two steps away (DEF -> STR)', () => {
-    /* DEF(1) -> STR(3) = 2 steps * 0.15 = 0.30 penalty -> 0.70 */
-    expect(getOopPenalty('DEF', 'STR')).toBe(0.7);
+  it('returns 0 when two steps away (DEF -> STR)', () => {
+    /* Simplified: 2+ steps = can\'t play there */
+    expect(getOopPenalty('DEF', 'STR')).toBe(0);
   });
 
   it('returns 0 when GK is assigned outfield', () => {

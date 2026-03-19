@@ -42,8 +42,145 @@ import {
   MORALE_MIN,
   DERBY_FORM_MULT,
   DERBY_MORALE_BONUS,
+  SEASON_WEEKS,
+  GOAL_NARRATIVES,
+  LATE_GOAL_SUFFIXES,
+  LATE_GOAL_BIAS,
+  YELLOW_NARRATIVES,
+  RED_NARRATIVES,
+  PRESSURE_THRESHOLD_WEEKS,
+  PRESSURE_FORM_MULT,
+  PRESSURE_VARIANCE,
+  ON_FIRE_FORM_MIN,
+  ON_FIRE_GOALS_MIN,
+  ON_FIRE_BONUS,
+  MOTM_GOAL_WEIGHT,
+  MOTM_SKILL_WEIGHT,
 } from '../config';
-import { getOopPenalty, playerOvr, rand, clamp } from './player';
+import { getOopPenalty, playerOvr, rand, clamp, pick } from './player';
+
+// ---------------------------------------------------------------------------
+// Narrative Generation
+// ---------------------------------------------------------------------------
+
+/**
+ * Generate a narrative string for a goal event.
+ * Picks a random template based on the scorer's position, with special
+ * treatment for late goals (85'+).
+ */
+const generateGoalNarrative = (scorerName: string, pos: Position, minute: number): string => {
+  const templates = GOAL_NARRATIVES[pos] || GOAL_NARRATIVES.STR;
+  let text = pick(templates).replace('{name}', scorerName);
+  if (minute >= 85) {
+    text += pick(LATE_GOAL_SUFFIXES);
+  }
+  return text;
+};
+
+/** Generate a narrative for a yellow card event. */
+const generateYellowNarrative = (playerName: string): string =>
+  pick(YELLOW_NARRATIVES).replace('{name}', playerName);
+
+/** Generate a narrative for a red card event. */
+const generateRedNarrative = (playerName: string): string =>
+  pick(RED_NARRATIVES).replace('{name}', playerName);
+
+/**
+ * Generate a goal minute with late-game drama bias.
+ * ~20% of goals are pushed into the 85-93 minute range.
+ */
+const generateGoalMinute = (): number => {
+  if (Math.random() < LATE_GOAL_BIAS) {
+    return rand(85, 93);
+  }
+  return rand(1, 90);
+};
+
+// ---------------------------------------------------------------------------
+// Hot Streak Detection
+// ---------------------------------------------------------------------------
+
+/**
+ * Check if a player qualifies for "On Fire" status.
+ * Requires form >= ON_FIRE_FORM_MIN and recent goals >= ON_FIRE_GOALS_MIN.
+ */
+export const checkOnFire = (p: Player): boolean =>
+  (p.form || 0) >= ON_FIRE_FORM_MIN && (p.seasonGoals || 0) >= ON_FIRE_GOALS_MIN;
+
+/**
+ * Update onFire status for all players in a team.
+ */
+export const updateOnFireStatus = (team: Team): void => {
+  for (const p of team.players) {
+    p.onFire = checkOnFire(p);
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Pressure Detection (Title Race / Relegation Battle)
+// ---------------------------------------------------------------------------
+
+/**
+ * Check if a team is under pressure — fighting for the title or against relegation
+ * in the final weeks of the season.
+ */
+const isUnderPressure = (team: Team, G: GameState): boolean => {
+  const weeksLeft = SEASON_WEEKS - G.week;
+  if (weeksLeft > PRESSURE_THRESHOLD_WEEKS) return false;
+
+  const divTeams = G.teams.filter(t => t.div === team.div && t.div >= 1 && t.div <= 4);
+  const sorted = divTeams.sort((a, b) => {
+    if (b.seasonStats.pts !== a.seasonStats.pts) return b.seasonStats.pts - a.seasonStats.pts;
+    return (b.seasonStats.gf - b.seasonStats.ga) - (a.seasonStats.gf - a.seasonStats.ga);
+  });
+  const pos = sorted.findIndex(t => t.id === team.id);
+
+  /* Title race: top 3 within 6 points of leader */
+  if (pos <= 2) {
+    const leader = sorted[0].seasonStats.pts;
+    if (leader - team.seasonStats.pts <= 6) return true;
+  }
+
+  /* Relegation battle: bottom 4 within 6 points of safety */
+  if (pos >= sorted.length - 4) {
+    const safePos = Math.max(0, sorted.length - 3);
+    const safePoints = sorted[safePos]?.seasonStats.pts ?? 0;
+    if (safePoints - team.seasonStats.pts <= 6) return true;
+  }
+
+  return false;
+};
+
+// ---------------------------------------------------------------------------
+// Man of the Match
+// ---------------------------------------------------------------------------
+
+/**
+ * Select Man of the Match from both teams' starters.
+ * Score = goals_scored * MOTM_GOAL_WEIGHT + skill * MOTM_SKILL_WEIGHT.
+ */
+const selectMOTM = (
+  homeTeam: Team, awayTeam: Team, fixture: Fixture,
+): { name: string; teamId: number } | null => {
+  const candidates: Array<{ name: string; teamId: number; score: number }> = [];
+
+  for (const team of [homeTeam, awayTeam]) {
+    for (const p of team.players.filter(pl => pl.selected)) {
+      const goalsScored = fixture.events.filter(
+        e => e.type === 'goal' && e.scorer === p.name && e.teamId === team.id,
+      ).length;
+      const score = goalsScored * MOTM_GOAL_WEIGHT + p.skill * MOTM_SKILL_WEIGHT * 0.1;
+      candidates.push({ name: p.name, teamId: team.id, score });
+    }
+  }
+
+  if (!candidates.length) return null;
+  candidates.sort((a, b) => b.score - a.score);
+
+  /* Add some randomness — top 3 candidates have a chance */
+  const top = candidates.slice(0, Math.min(3, candidates.length));
+  return pick(top);
+};
 
 // ---------------------------------------------------------------------------
 // Team Strength Calculations
@@ -72,6 +209,10 @@ export const teamStrength = (team: Team, tactic?: TacticId): number => {
       if (synergy && synergy[tactic]) {
         eff *= (1 + synergy[tactic]!);
       }
+    }
+    /* On Fire bonus — hot streak players get a boost */
+    if (p.onFire) {
+      eff *= ON_FIRE_BONUS;
     }
     total += eff;
   }
@@ -291,24 +432,24 @@ export const poissonGoals = (lambda: number): number => {
  * @param forTeamId - Team ID for the returned scorer object.
  * @returns An object with the scorer's name and team ID.
  */
-export const pickScorer = (team: Team, forTeamId: number): { name: string; teamId: number } => {
+export const pickScorer = (team: Team, forTeamId: number): { name: string; teamId: number; pos: Position } => {
   const starters = team.players.filter(p => p.selected);
-  if (!starters.length) return { name: 'Unknown', teamId: forTeamId };
+  if (!starters.length) return { name: 'Unknown', teamId: forTeamId, pos: 'STR' };
 
   const weights = starters.map(p => {
     const pos: Position = p.assignedPos || p.pos;
     const posW = GOAL_POS_WEIGHT[pos] || 1;
-    return { player: p, w: posW * p.skill };
+    return { player: p, pos, w: posW * p.skill };
   });
 
   const total = weights.reduce((sum, x) => sum + x.w, 0);
   let r = Math.random() * total;
   for (const item of weights) {
     r -= item.w;
-    if (r <= 0) return { name: item.player.name, teamId: forTeamId };
+    if (r <= 0) return { name: item.player.name, teamId: forTeamId, pos: item.pos };
   }
 
-  return { name: starters[0].name, teamId: forTeamId };
+  return { name: starters[0].name, teamId: forTeamId, pos: starters[0].assignedPos || starters[0].pos };
 };
 
 /**
@@ -346,11 +487,17 @@ export const generateCardEvents = (team: Team, teamId: number, events: MatchEven
   for (const p of starters) {
     if (Math.random() * 100 < YELLOW_CARD_CHANCE) {
       p.seasonYellows = (p.seasonYellows || 0) + 1;
-      events.push({ type: 'yellow', teamId, minute: rand(1, 90), playerName: p.name });
+      events.push({
+        type: 'yellow', teamId, minute: rand(1, 90), playerName: p.name,
+        narrative: generateYellowNarrative(p.name),
+      });
     }
     if (Math.random() * 100 < RED_CARD_CHANCE) {
       p.seasonReds = (p.seasonReds || 0) + 1;
-      events.push({ type: 'red', teamId, minute: rand(1, 90), playerName: p.name });
+      events.push({
+        type: 'red', teamId, minute: rand(1, 90), playerName: p.name,
+        narrative: generateRedNarrative(p.name),
+      });
     }
   }
 };
@@ -476,7 +623,7 @@ export const applyStaminaChanges = (team: Team): MatchInjury[] => {
  * @param fixture - The completed fixture with goals and events.
  * @param G - The game state.
  */
-export const updatePlayerForm = (fixture: Fixture, G: GameState, isDerby: boolean = false): void => {
+export const updatePlayerForm = (fixture: Fixture, G: GameState, isDerby: boolean = false, isPressure: boolean = false): void => {
   if (G.playerTeamId == null) return;
   const pt = G.teams[G.playerTeamId];
   const isHome = fixture.home === G.playerTeamId;
@@ -499,6 +646,9 @@ export const updatePlayerForm = (fixture: Fixture, G: GameState, isDerby: boolea
 
     /* Derby matches double form changes (#13) */
     if (isDerby) delta *= DERBY_FORM_MULT;
+
+    /* Pressure amplifies form changes in title/relegation battles */
+    if (isPressure) delta = Math.round(delta * PRESSURE_FORM_MULT);
 
     p.form = clamp((p.form || 0) + delta, FORM_MIN, FORM_MAX);
   }
@@ -772,6 +922,10 @@ export const simulateMatch = (f: Fixture, G: GameState, options?: MatchSimOption
   const homeTac = TACTICS[homeTacId] || TACTICS.balanced;
   const awayTac = TACTICS[awayTacId] || TACTICS.balanced;
 
+  /* Update On Fire status before strength calculation */
+  updateOnFireStatus(homeTeam);
+  updateOnFireStatus(awayTeam);
+
   /* Calculate base strengths with tactic synergy */
   let hs = teamStrength(homeTeam, homeTacId);
   let as_ = teamStrength(awayTeam, awayTacId);
@@ -779,6 +933,12 @@ export const simulateMatch = (f: Fixture, G: GameState, options?: MatchSimOption
   /* Apply difficulty scaling to AI teams */
   if (f.home !== G.playerTeamId) hs *= difficulty;
   if (f.away !== G.playerTeamId) as_ *= difficulty;
+
+  /* Pressure mechanic — title race / relegation battle adds variance */
+  const homePressure = isUnderPressure(homeTeam, G);
+  const awayPressure = isUnderPressure(awayTeam, G);
+  if (homePressure) hs *= (1 + (Math.random() - 0.5) * PRESSURE_VARIANCE * 2);
+  if (awayPressure) as_ *= (1 + (Math.random() - 0.5) * PRESSURE_VARIANCE * 2);
 
   /* Calculate expected goals */
   const homeExp = Math.max(0.3, (hs - as_) / 15 + homeTac.homeBonus) * awayTac.defPenalty;
@@ -792,9 +952,10 @@ export const simulateMatch = (f: Fixture, G: GameState, options?: MatchSimOption
   /* Home team goals */
   for (let i = 0; i < f.homeGoals; i++) {
     const sc = pickScorer(homeTeam, f.home);
-    f.events.push({ type: 'goal', teamId: f.home, minute: rand(1, 90), scorer: sc.name });
+    const minute = generateGoalMinute();
+    const narrative = generateGoalNarrative(sc.name, sc.pos, minute);
+    f.events.push({ type: 'goal', teamId: f.home, minute, scorer: sc.name, narrative });
     recordGoal(G, f.home, sc.name);
-    /* Track player stats */
     const sp = homeTeam.players.find(p => p.name === sc.name);
     if (sp) {
       sp.seasonGoals = (sp.seasonGoals || 0) + 1;
@@ -805,7 +966,9 @@ export const simulateMatch = (f: Fixture, G: GameState, options?: MatchSimOption
   /* Away team goals */
   for (let i = 0; i < f.awayGoals; i++) {
     const sc = pickScorer(awayTeam, f.away);
-    f.events.push({ type: 'goal', teamId: f.away, minute: rand(1, 90), scorer: sc.name });
+    const minute = generateGoalMinute();
+    const narrative = generateGoalNarrative(sc.name, sc.pos, minute);
+    f.events.push({ type: 'goal', teamId: f.away, minute, scorer: sc.name, narrative });
     recordGoal(G, f.away, sc.name);
     const sp = awayTeam.players.find(p => p.name === sc.name);
     if (sp) {
@@ -822,13 +985,13 @@ export const simulateMatch = (f: Fixture, G: GameState, options?: MatchSimOption
   const homeReds = f.events.filter(e => e.type === 'red' && e.teamId === f.home);
   const awayReds = f.events.filter(e => e.type === 'red' && e.teamId === f.away);
   if (homeReds.length > 0) {
-    /* Team with red card concedes more — roughly proportional to time remaining */
     const earliestMin = Math.min(...homeReds.map(e => e.minute));
     const remainingPct = (90 - earliestMin) / 90;
     const extraGoals = poissonGoals(remainingPct * 0.4);
     for (let i = 0; i < extraGoals; i++) {
       const sc = pickScorer(awayTeam, f.away);
-      f.events.push({ type: 'goal', teamId: f.away, minute: rand(earliestMin, 90), scorer: sc.name });
+      const min = rand(earliestMin, 90);
+      f.events.push({ type: 'goal', teamId: f.away, minute: min, scorer: sc.name, narrative: generateGoalNarrative(sc.name, sc.pos, min) });
       f.awayGoals!++;
       recordGoal(G, f.away, sc.name);
       const sp = awayTeam.players.find(p => p.name === sc.name);
@@ -841,7 +1004,8 @@ export const simulateMatch = (f: Fixture, G: GameState, options?: MatchSimOption
     const extraGoals = poissonGoals(remainingPct * 0.4);
     for (let i = 0; i < extraGoals; i++) {
       const sc = pickScorer(homeTeam, f.home);
-      f.events.push({ type: 'goal', teamId: f.home, minute: rand(earliestMin, 90), scorer: sc.name });
+      const min = rand(earliestMin, 90);
+      f.events.push({ type: 'goal', teamId: f.home, minute: min, scorer: sc.name, narrative: generateGoalNarrative(sc.name, sc.pos, min) });
       f.homeGoals!++;
       recordGoal(G, f.home, sc.name);
       const sp = homeTeam.players.find(p => p.name === sc.name);
@@ -872,9 +1036,11 @@ export const simulateMatch = (f: Fixture, G: GameState, options?: MatchSimOption
   const isDerby = (homeTeam.rivals ?? []).includes(awayTeam.id) ||
     (awayTeam.rivals ?? []).includes(homeTeam.id);
 
-  /* Update form for player's team */
+  /* Update form for player's team — pressure amplifies form changes */
+  const playerTeam = isPlayerHome ? homeTeam : isPlayerAway ? awayTeam : null;
+  const pressureActive = playerTeam ? isUnderPressure(playerTeam, G) : false;
   if (isPlayerHome || isPlayerAway) {
-    updatePlayerForm(f, G, isDerby);
+    updatePlayerForm(f, G, isDerby, pressureActive);
   }
 
   /* Update morale (#4) */
@@ -889,4 +1055,15 @@ export const simulateMatch = (f: Fixture, G: GameState, options?: MatchSimOption
   /* Apply suspensions from cards */
   applyCardSuspensions(homeTeam, f.events);
   applyCardSuspensions(awayTeam, f.events);
+
+  /* Select Man of the Match */
+  const motm = selectMOTM(homeTeam, awayTeam, f);
+  if (motm) {
+    f.motm = motm.name;
+    f.motmTeamId = motm.teamId;
+  }
+
+  /* Update On Fire status after form changes */
+  updateOnFireStatus(homeTeam);
+  updateOnFireStatus(awayTeam);
 };

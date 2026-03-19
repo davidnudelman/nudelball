@@ -160,7 +160,15 @@ export function renderDashboard(
           for (const e of (pm.events || [])) {
             if (e.type === 'goal') {
               const side = e.teamId === pm.home ? 'rb-home' : 'rb-away';
-              detailHTML += `<div class="rb-event ${side}"><span class="rb-min">${e.minute}'</span> &#9917; <b>${e.scorer}</b></div>`;
+              /* Show narrative instead of just scorer name if available */
+              const desc = e.narrative || `&#9917; ${e.scorer}`;
+              detailHTML += `<div class="rb-event ${side}"><span class="rb-min">${e.minute}'</span> ${desc}</div>`;
+            } else if (e.type === 'yellow' && e.narrative) {
+              const side = e.teamId === pm.home ? 'rb-home' : 'rb-away';
+              detailHTML += `<div class="rb-event ${side}" style="font-size:.78rem;color:var(--text-dim)"><span class="rb-min">${e.minute}'</span> ${e.narrative}</div>`;
+            } else if (e.type === 'red' && e.narrative) {
+              const side = e.teamId === pm.home ? 'rb-home' : 'rb-away';
+              detailHTML += `<div class="rb-event ${side}" style="font-size:.78rem;color:var(--red)"><span class="rb-min">${e.minute}'</span> ${e.narrative}</div>`;
             }
           }
           for (const inj of (pm.injuries || [])) {
@@ -168,9 +176,17 @@ export function renderDashboard(
             detailHTML += `<div class="rb-event rb-injury ${side}"><span class="rb-min">&#10014;</span> <b>${inj.name}</b> (${inj.duration})</div>`;
           }
 
+          /* Man of the Match */
+          let motmHTML = '';
+          if (pm.motm) {
+            const motmTeam = pm.motmTeamId != null ? G.teams[pm.motmTeamId] : null;
+            motmHTML = `<div style="text-align:center;margin-top:6px;padding:4px 8px;background:var(--surface2);border-radius:6px;font-size:.82rem">` +
+              `&#11088; <b>Man of the Match:</b> ${pm.motm}${motmTeam ? ` (${teamLabel(motmTeam)})` : ''}</div>`;
+          }
+
           lr.innerHTML = `<div class="result-banner"><h3 style="color:${rc}">${t(settings, 'week')} ${prevWeek} — ${resultLabel}</h3>` +
             `<div class="score-line"><span>${teamLabel(ht)}</span><span class="score">${pm.homeGoals} — ${pm.awayGoals}</span><span>${teamLabel(at)}</span></div>` +
-            `${detailHTML ? `<div class="rb-details">${detailHTML}</div>` : ''}</div>`;
+            `${detailHTML ? `<div class="rb-details">${detailHTML}</div>` : ''}${motmHTML}</div>`;
         }
       }
     }
@@ -223,53 +239,61 @@ export function renderDashboard(
 
   const budget = G.budgets[pt.id] || 0;
 
-  let extraHtml = `<div class="card" style="margin-top:8px"><div class="card-title">&#128200; ${t(settings, 'teamStatus')}</div>`;
-  extraHtml += `<div style="display:flex;gap:16px;flex-wrap:wrap;padding:8px 0">`;
-  extraHtml += `<div><span style="color:var(--text-dim);font-size:.8rem">Morale:</span> <b style="color:${moraleColor}">${moraleLabel}</b> <span style="font-size:.75rem;color:var(--text-dim)">(${morale > 0 ? '+' : ''}${morale})</span></div>`;
+  let extraHtml = `<div class="card" style="margin-top:8px"><div class="card-title">&#127963;&#65039; Club Development</div>`;
+
+  /* ===== Morale & Transfer Window status ===== */
+  const windowStatus = G.transferWindow
+    ? `<span style="color:var(--green);font-weight:700">OPEN</span>`
+    : '<span style="color:var(--text-dim)">Closed</span>';
+  extraHtml += `<div style="display:flex;gap:16px;flex-wrap:wrap;padding:8px 0;font-size:.85rem">`;
+  extraHtml += `<div>Morale: <b style="color:${moraleColor}">${moraleLabel}</b> <span style="font-size:.75rem;color:var(--text-dim)">(${morale > 0 ? '+' : ''}${morale})</span></div>`;
+  extraHtml += `<div>Transfer Window: ${windowStatus}</div>`;
   extraHtml += `</div>`;
 
-  /* ===== Stadium Facilities — Upgrade Buttons ===== */
+  /* ===== Facilities + Sponsorship merged into upgrade tree ===== */
   const fac = G.facilities || { trainingFacility: 0, youthAcademy: 0, stadium: 0 };
-  extraHtml += `<div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px">`;
-  extraHtml += `<div style="font-size:.82rem;font-weight:700;color:var(--text-dim);margin-bottom:6px">&#127970; Stadium Facilities</div>`;
-  extraHtml += `<div style="display:flex;gap:10px;flex-wrap:wrap;font-size:.82rem">`;
+  extraHtml += `<div style="margin-top:4px;border-top:1px solid var(--border);padding-top:8px">`;
+  extraHtml += `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px">`;
 
-  const facTypes: Array<{ key: string; label: string; icon: string; level: number }> = [
-    { key: 'trainingFacility', label: 'Training', icon: '&#127947;', level: fac.trainingFacility || 0 },
-    { key: 'youthAcademy', label: 'Youth Academy', icon: '&#127891;', level: fac.youthAcademy || 0 },
-    { key: 'stadium', label: 'Stadium', icon: '&#127967;', level: fac.stadium || 0 },
+  const facTypes: Array<{ key: string; label: string; icon: string; level: number; effect: string }> = [
+    { key: 'trainingFacility', label: 'Training Ground', icon: '&#127947;', level: fac.trainingFacility || 0, effect: '+3% skill growth/lv' },
+    { key: 'youthAcademy', label: 'Youth Academy', icon: '&#127891;', level: fac.youthAcademy || 0, effect: '+2 regen skill/lv' },
+    { key: 'stadium', label: 'Stadium', icon: '&#127967;', level: fac.stadium || 0, effect: '+$500 income/lv' },
   ];
   for (const f of facTypes) {
     const costs = FACILITY_COSTS[f.key] || [];
     const nextCost = f.level < costs.length ? costs[f.level] : null;
     const canUpgrade = nextCost !== null && budget >= nextCost;
-    extraHtml += `<div style="background:var(--surface2);padding:6px 10px;border-radius:6px;min-width:140px">`;
-    extraHtml += `<div>${f.icon} <b>${f.label}</b> <span style="color:var(--accent)">Lv${f.level}</span></div>`;
+    const lvlPips = '&#9608;'.repeat(f.level) + '&#9617;'.repeat(3 - f.level);
+    extraHtml += `<div style="background:var(--surface2);padding:8px 10px;border-radius:6px">`;
+    extraHtml += `<div style="font-weight:700;font-size:.85rem">${f.icon} ${f.label}</div>`;
+    extraHtml += `<div style="font-size:.78rem;color:var(--accent);margin:2px 0">${lvlPips} Lv${f.level}/3</div>`;
+    extraHtml += `<div style="font-size:.72rem;color:var(--text-dim)">${f.effect}</div>`;
     if (nextCost !== null) {
-      extraHtml += `<button class="btn-sign" style="margin-top:4px;font-size:.75rem;padding:3px 8px" ${canUpgrade ? `onclick="upgradeFacility('${f.key}')"` : 'disabled'}>Upgrade $${nextCost.toLocaleString()}</button>`;
+      extraHtml += `<button class="btn-sign" style="margin-top:4px;font-size:.72rem;padding:2px 8px;width:100%" ${canUpgrade ? `onclick="upgradeFacility('${f.key}')"` : 'disabled'}>Upgrade $${nextCost.toLocaleString()}</button>`;
     } else {
-      extraHtml += `<span style="font-size:.72rem;color:var(--green)">MAX</span>`;
+      extraHtml += `<div style="font-size:.72rem;color:var(--green);font-weight:700;margin-top:4px">MAX LEVEL</div>`;
     }
     extraHtml += `</div>`;
   }
-  extraHtml += `</div></div>`;
 
-  /* ===== Sponsorship Deals ===== */
-  extraHtml += `<div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px">`;
-  extraHtml += `<div style="font-size:.82rem;font-weight:700;color:var(--text-dim);margin-bottom:6px">&#128176; Sponsorship</div>`;
-  if (G.sponsorship) {
-    extraHtml += `<div style="font-size:.82rem;margin-bottom:4px">Active: <b>${G.sponsorship.tier}</b> — $${G.sponsorship.incomePerSeason}/season</div>`;
-  } else {
-    extraHtml += `<div style="font-size:.82rem;margin-bottom:4px;color:var(--text-dim)">No sponsor — select one below:</div>`;
-  }
-  extraHtml += `<div style="display:flex;gap:8px;flex-wrap:wrap;font-size:.8rem">`;
+  /* Sponsorship as part of the upgrade grid */
+  const spLabel = G.sponsorship
+    ? `<b style="color:var(--green)">${G.sponsorship.tier}</b> $${G.sponsorship.incomePerSeason}/s`
+    : '<span style="color:var(--text-dim)">None</span>';
+  extraHtml += `<div style="background:var(--surface2);padding:8px 10px;border-radius:6px">`;
+  extraHtml += `<div style="font-weight:700;font-size:.85rem">&#128176; Sponsor</div>`;
+  extraHtml += `<div style="font-size:.78rem;margin:2px 0">${spLabel}</div>`;
+  extraHtml += `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">`;
   for (const sp of SPONSORSHIP_TIERS) {
     const eligible = pt.div <= sp.requiredDiv;
     const isActive = G.sponsorship?.tier === sp.tier;
-    extraHtml += `<button class="btn-sign" style="padding:4px 10px;font-size:.75rem;${isActive ? 'background:var(--green);color:#fff;' : ''}" `;
+    extraHtml += `<button class="btn-sign" style="padding:2px 6px;font-size:.68rem;${isActive ? 'background:var(--green);color:#fff;' : ''}" `;
     extraHtml += eligible && !isActive ? `onclick="selectSponsor('${sp.tier}')"` : 'disabled';
-    extraHtml += `>${sp.tier} ($${sp.incomePerSeason}/s)${!eligible ? ' — Div ' + sp.requiredDiv + '+' : ''}${isActive ? ' ✓' : ''}</button>`;
+    extraHtml += `>${sp.tier}${!eligible ? '*' : ''}${isActive ? '✓' : ''}</button>`;
   }
+  extraHtml += `</div></div>`;
+
   extraHtml += `</div></div>`;
 
   /* Pre-Match Scouting Report (#3) */
