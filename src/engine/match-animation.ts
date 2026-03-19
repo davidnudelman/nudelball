@@ -125,6 +125,7 @@ export function runAnimatedMatch(
 
   /**
    * Format and append a match event to the events feed.
+   * Shows rich narratives when available.
    */
   function displayEvent(ev: MatchEvent, home: Team, away: Team): void {
     const isHome = ev.teamId === home.id;
@@ -136,17 +137,30 @@ export function runAnimatedMatch(
     if (ev.type === 'goal') {
       const isPlayerGoal = ev.teamId === G.playerTeamId;
       const icon = isPlayerGoal ? '\u26BD' : '\uD83D\uDFE0';
+      /* Show narrative text if available, otherwise just scorer name */
+      const narrativeText = ev.narrative
+        ? `<div class="me-narrative">${ev.narrative}</div>`
+        : '';
       html = `<div class="match-event goal ${sideClass}${isPlayerGoal ? ' player-goal' : ''}">` +
         `<span class="me-min">${ev.minute}'</span> ${icon} ` +
-        `<b>${ev.scorer}</b> <span class="me-team">(${teamName})</span></div>`;
+        `<b>${ev.scorer}</b> <span class="me-team">(${teamName})</span>` +
+        `${narrativeText}</div>`;
     } else if (ev.type === 'yellow') {
+      const narrativeText = ev.narrative
+        ? `<div class="me-narrative">${ev.narrative}</div>`
+        : '';
       html = `<div class="match-event card-event ${sideClass}">` +
         `<span class="me-min">${ev.minute}'</span> \uD83D\uDFE8 ` +
-        `<b>${ev.playerName}</b> <span class="me-team">(${teamName})</span></div>`;
+        `<b>${ev.playerName}</b> <span class="me-team">(${teamName})</span>` +
+        `${narrativeText}</div>`;
     } else if (ev.type === 'red') {
+      const narrativeText = ev.narrative
+        ? `<div class="me-narrative">${ev.narrative}</div>`
+        : '';
       html = `<div class="match-event card-event red ${sideClass}">` +
         `<span class="me-min">${ev.minute}'</span> \uD83D\uDFE5 ` +
-        `<b>${ev.playerName}</b> <span class="me-team">(${teamName})</span></div>`;
+        `<b>${ev.playerName}</b> <span class="me-team">(${teamName})</span>` +
+        `${narrativeText}</div>`;
     }
 
     appendMatchEvent(html);
@@ -316,11 +330,15 @@ export function runAnimatedMatch(
     }, TICK_MS);
   }
 
+  /* Track whether onComplete has already been called to prevent double-fire */
+  let completeCalled = false;
+
   /* Expose continue/finish functions on window for onclick handlers */
   (window as unknown as Record<string, unknown>).continueMatch = continueMatch;
   (window as unknown as Record<string, unknown>).finishMatch = () => {
-    /* Prevent double-fire */
-    if (!G.matchInProgress) return;
+    /* Prevent double-fire using local flag (more reliable than matchInProgress) */
+    if (completeCalled) return;
+    completeCalled = true;
 
     /* Clean up all timers */
     if (timerId) { clearInterval(timerId); timerId = null; }

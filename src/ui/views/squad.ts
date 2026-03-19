@@ -236,7 +236,7 @@ export function renderSquad(
     const rules = G.squadRules || { restBelowStamina: null, alwaysStartBest: false };
     let rp = '<div class="squad-rules-bar">';
     rp += '<span class="training-label">&#9881;&#65039; Auto:</span>';
-    rp += `<button class="training-btn${rules.restBelowStamina != null ? ' active' : ''}" onclick="toggleSquadRule('restBelowStamina', 40)" title="Auto-bench players below 40% stamina">Rest Tired</button>`;
+    rp += `<button class="training-btn${rules.restBelowStamina != null ? ' active' : ''}" onclick="toggleSquadRule('restBelowStamina', 60)" title="Auto-bench players below 60% stamina">Rest Tired</button>`;
     rp += `<button class="training-btn${rules.alwaysStartBest ? ' active' : ''}" onclick="toggleSquadRule('alwaysStartBest')" title="Auto-pick best XI each week">Best XI</button>`;
     rp += '</div>';
     rulesPanel.innerHTML = rp;
