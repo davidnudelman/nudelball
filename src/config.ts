@@ -28,7 +28,7 @@ import type {
    ================================================================ */
 
 /** Current game version string */
-export const GAME_VERSION = '2.1.0';
+export const GAME_VERSION = '3.0.0';
 
 /** localStorage key for the main game save */
 export const SAVE_KEY = 'intlSoccerLeague_v1';

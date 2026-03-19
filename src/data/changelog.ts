@@ -9,10 +9,23 @@
 import type { ChangelogEntry } from '../types';
 
 /** Current game version string displayed in the footer and settings. */
-export const GAME_VERSION = "2.1.0";
+export const GAME_VERSION = "3.0.0";
 
 /** Full changelog, newest version first. */
 export const CHANGELOG: readonly ChangelogEntry[] = [
+  {
+    version: "3.0.0",
+    date: "2026-03-19",
+    title: "Coach Achievements & Game Improvements Plan",
+    changes: [
+      "\ud83c\udfc5 Coach Achievements \u2014 21 unlockable achievements tracking your managerial career milestones",
+      "\ud83c\udfc6 Achievement categories: victories, trophies, league titles, cup wins, perfect seasons, streaks, and longevity",
+      "\ud83d\udcca Progress tracking \u2014 locked achievements show progress bars toward completion (e.g. 42/100 wins)",
+      "\ud83c\udf0d Full i18n support \u2014 all 21 achievements translated to English, Portuguese, and Spanish",
+      "\ud83d\udcdd Implementation plan documented for 18 future game improvements",
+      "\u2699\ufe0f Quick-access link to Coach Achievements from Settings menu",
+    ],
+  },
   {
     version: "2.1.0",
     date: "2026-02-27",
