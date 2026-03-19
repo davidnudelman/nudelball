@@ -5,8 +5,8 @@
  * cup status, next fixture, and a mini league standings table.
  */
 
-import type { GameState, Settings, Team, Fixture, CupState } from '../../types';
-import { SEASON_WEEKS, TOTAL_SEASON_WEEKS, CUP_ROUNDS, CUP_WEEKS, FORMATIONS, MORALE_MAX } from '../../config';
+import type { GameState, Settings, Team, Fixture } from '../../types';
+import { SEASON_WEEKS, FORMATIONS, MORALE_MAX, FACILITY_COSTS, SPONSORSHIP_TIERS, SCOUT_COSTS } from '../../config';
 import { teamLabel, plateColors } from '../../utils/helpers';
 import { t } from '../../data/i18n';
 
@@ -190,32 +190,15 @@ export function renderDashboard(
         if (pm) {
           const ht = G.teams[pm.home];
           const at = G.teams[pm.away];
-          nfc.innerHTML = `<div class="fixture-card player-match"><div class="fixture-main">` +
+          const isDerby = (ht.rivals?.includes(at.id)) || (at.rivals?.includes(ht.id));
+          const derbyBadge = isDerby ? '<div style="text-align:center;font-size:.78rem;font-weight:700;color:var(--red);margin-bottom:4px">&#128293; DERBY MATCH &#128293;</div>' : '';
+          nfc.innerHTML = `<div class="fixture-card player-match">${derbyBadge}<div class="fixture-main">` +
             `<div class="team-name home">${teamLabel(ht)}</div>` +
             `<div class="vs">${t(settings, 'vs')}</div>` +
             `<div class="team-name away">${teamLabel(at)}</div></div></div>`;
         } else {
           nfc.innerHTML = '';
         }
-      }
-    } else if (G.week > SEASON_WEEKS && G.week <= TOTAL_SEASON_WEEKS) {
-      /* Cup final week */
-      nf.style.display = '';
-      nfl.textContent = 'Week ' + G.week + ' — Cup Final';
-      if (G.cup && G.cup.active) {
-        const fm = G.cup.rounds[G.cup.round] ? G.cup.rounds[G.cup.round][0] : null;
-        if (fm && !fm.played) {
-          const ht = G.teams[fm.home];
-          const at = fm.away != null ? G.teams[fm.away] : null;
-          nfc.innerHTML = `<div class="fixture-card cup-fixture"><div class="fixture-main">` +
-            `<div class="team-name home">${ht ? teamLabel(ht) : 'TBD'}</div>` +
-            `<div class="vs">&#127942; vs</div>` +
-            `<div class="team-name away">${at ? teamLabel(at) : 'TBD'}</div></div></div>`;
-        } else {
-          nfc.innerHTML = '<p style="color:var(--text-dim)">Cup Final</p>';
-        }
-      } else {
-        nfc.innerHTML = '<p style="color:var(--text-dim)">No cup final this season.</p>';
       }
     } else {
       nf.style.display = '';
@@ -224,25 +207,10 @@ export function renderDashboard(
     }
   }
 
-  /* ===== Cup Status ===== */
+  /* ===== Cup Status (disabled) ===== */
   const cupStatus = document.getElementById('cup-status');
   if (cupStatus) {
-    if (G.cup && G.cup.active) {
-      const roundName = CUP_ROUNDS[G.cup.round] || 'Cup';
-      const isCupWeek = CUP_WEEKS.includes(G.week);
-      if (G.cup.playerEliminated) {
-        cupStatus.innerHTML = '<div class="dash-cup">&#127942; Cup: <span style="color:var(--red)">Eliminated</span></div>';
-      } else {
-        cupStatus.innerHTML = `<div class="dash-cup">&#127942; Cup: <b>${roundName}</b>` +
-          `${isCupWeek ? ' <span style="color:var(--yellow)">(Cup match this week!)</span>' : ''}` +
-          ` <a style="cursor:pointer;color:var(--accent);text-decoration:underline" onclick="showView('cup')">View Bracket</a></div>`;
-      }
-    } else if (G.cup && G.cup.winner != null) {
-      const w = G.teams[G.cup.winner];
-      cupStatus.innerHTML = `<div class="dash-cup">&#127942; Cup Winner: <b>${w ? w.name : 'Unknown'}</b>${G.cup.winner === G.playerTeamId ? ' &#127881;' : ''}</div>`;
-    } else {
-      cupStatus.innerHTML = '';
-    }
+    cupStatus.innerHTML = '';
   }
 
   /* ===== Mini League Table (get reference early for status panel insertion) ===== */
@@ -253,30 +221,56 @@ export function renderDashboard(
   const moraleLabel = morale >= 7 ? 'Euphoric' : morale >= 3 ? 'Happy' : morale >= -2 ? 'Neutral' : morale >= -6 ? 'Low' : 'Crisis';
   const moraleColor = morale >= 3 ? 'var(--green)' : morale <= -3 ? 'var(--red)' : 'var(--text-dim)';
 
+  const budget = G.budgets[pt.id] || 0;
+
   let extraHtml = `<div class="card" style="margin-top:8px"><div class="card-title">&#128200; ${t(settings, 'teamStatus')}</div>`;
   extraHtml += `<div style="display:flex;gap:16px;flex-wrap:wrap;padding:8px 0">`;
   extraHtml += `<div><span style="color:var(--text-dim);font-size:.8rem">Morale:</span> <b style="color:${moraleColor}">${moraleLabel}</b> <span style="font-size:.75rem;color:var(--text-dim)">(${morale > 0 ? '+' : ''}${morale})</span></div>`;
-
-  /* Facilities */
-  const fac = G.facilities;
-  if (fac) {
-    const tl = fac.trainingFacility || 0;
-    const yl = fac.youthAcademy || 0;
-    const sl = fac.stadium || 0;
-    if (tl + yl + sl > 0) {
-      extraHtml += `<div><span style="color:var(--text-dim);font-size:.8rem">Facilities:</span> `;
-      if (tl) extraHtml += `Training Lv${tl} `;
-      if (yl) extraHtml += `Youth Lv${yl} `;
-      if (sl) extraHtml += `Stadium Lv${sl}`;
-      extraHtml += `</div>`;
-    }
-  }
-
-  /* Sponsorship */
-  if (G.sponsorship) {
-    extraHtml += `<div><span style="color:var(--text-dim);font-size:.8rem">Sponsor:</span> <b>${G.sponsorship.tier}</b> ($${G.sponsorship.incomePerSeason}/season)</div>`;
-  }
   extraHtml += `</div>`;
+
+  /* ===== Stadium Facilities — Upgrade Buttons ===== */
+  const fac = G.facilities || { trainingFacility: 0, youthAcademy: 0, stadium: 0 };
+  extraHtml += `<div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px">`;
+  extraHtml += `<div style="font-size:.82rem;font-weight:700;color:var(--text-dim);margin-bottom:6px">&#127970; Stadium Facilities</div>`;
+  extraHtml += `<div style="display:flex;gap:10px;flex-wrap:wrap;font-size:.82rem">`;
+
+  const facTypes: Array<{ key: string; label: string; icon: string; level: number }> = [
+    { key: 'trainingFacility', label: 'Training', icon: '&#127947;', level: fac.trainingFacility || 0 },
+    { key: 'youthAcademy', label: 'Youth Academy', icon: '&#127891;', level: fac.youthAcademy || 0 },
+    { key: 'stadium', label: 'Stadium', icon: '&#127967;', level: fac.stadium || 0 },
+  ];
+  for (const f of facTypes) {
+    const costs = FACILITY_COSTS[f.key] || [];
+    const nextCost = f.level < costs.length ? costs[f.level] : null;
+    const canUpgrade = nextCost !== null && budget >= nextCost;
+    extraHtml += `<div style="background:var(--surface2);padding:6px 10px;border-radius:6px;min-width:140px">`;
+    extraHtml += `<div>${f.icon} <b>${f.label}</b> <span style="color:var(--accent)">Lv${f.level}</span></div>`;
+    if (nextCost !== null) {
+      extraHtml += `<button class="btn-sign" style="margin-top:4px;font-size:.75rem;padding:3px 8px" ${canUpgrade ? `onclick="upgradeFacility('${f.key}')"` : 'disabled'}>Upgrade $${nextCost.toLocaleString()}</button>`;
+    } else {
+      extraHtml += `<span style="font-size:.72rem;color:var(--green)">MAX</span>`;
+    }
+    extraHtml += `</div>`;
+  }
+  extraHtml += `</div></div>`;
+
+  /* ===== Sponsorship Deals ===== */
+  extraHtml += `<div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px">`;
+  extraHtml += `<div style="font-size:.82rem;font-weight:700;color:var(--text-dim);margin-bottom:6px">&#128176; Sponsorship</div>`;
+  if (G.sponsorship) {
+    extraHtml += `<div style="font-size:.82rem;margin-bottom:4px">Active: <b>${G.sponsorship.tier}</b> — $${G.sponsorship.incomePerSeason}/season</div>`;
+  } else {
+    extraHtml += `<div style="font-size:.82rem;margin-bottom:4px;color:var(--text-dim)">No sponsor — select one below:</div>`;
+  }
+  extraHtml += `<div style="display:flex;gap:8px;flex-wrap:wrap;font-size:.8rem">`;
+  for (const sp of SPONSORSHIP_TIERS) {
+    const eligible = pt.div <= sp.requiredDiv;
+    const isActive = G.sponsorship?.tier === sp.tier;
+    extraHtml += `<button class="btn-sign" style="padding:4px 10px;font-size:.75rem;${isActive ? 'background:var(--green);color:#fff;' : ''}" `;
+    extraHtml += eligible && !isActive ? `onclick="selectSponsor('${sp.tier}')"` : 'disabled';
+    extraHtml += `>${sp.tier} ($${sp.incomePerSeason}/s)${!eligible ? ' — Div ' + sp.requiredDiv + '+' : ''}${isActive ? ' ✓' : ''}</button>`;
+  }
+  extraHtml += `</div></div>`;
 
   /* Pre-Match Scouting Report (#3) */
   if (G.week <= SEASON_WEEKS && G.fixtures[div]) {

@@ -14,7 +14,7 @@
  */
 
 import type { GameState, Settings, Team } from '../../types';
-import { SEASON_WEEKS, TOTAL_SEASON_WEEKS } from '../../config';
+import { SEASON_WEEKS } from '../../config';
 import { teamLabel } from '../../utils/helpers';
 import { t } from '../../data/i18n';
 
@@ -62,6 +62,11 @@ export function registerViewRenderers(renderers: Record<string, () => void>): vo
  * @param v - The view name to switch to (e.g. 'dashboard', 'squad', 'table')
  */
 export function showView(v: string): void {
+  /* Safety: if navigating away from match view, ensure matchInProgress is cleared */
+  if (v !== 'match' && _playBtnG && _playBtnG.matchInProgress) {
+    _playBtnG.matchInProgress = false;
+  }
+
   /* Hide all views and show the target */
   document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
   const target = document.getElementById('view-' + v);
@@ -92,6 +97,11 @@ export function refreshAll(): void {
   const dashRenderer = viewRenderers['dashboard'];
   if (dashRenderer) dashRenderer();
   updatePlayBtn();
+
+  /* Update market button blinking state based on transfer window */
+  if (_playBtnG) {
+    updateMarketBtn(!!_playBtnG.transferWindow);
+  }
 }
 
 /**
@@ -117,6 +127,21 @@ export function updateTopBar(G: GameState, settings: Settings): void {
   if (seasonEl) {
     seasonEl.textContent = t(settings, 'season') + ' ' + G.season + ' | \uD83D\uDCB0$' + budget.toLocaleString();
   }
+}
+
+/* ================================================================
+   MARKET BUTTON — TRANSFER WINDOW INDICATOR
+   ================================================================ */
+
+/**
+ * Toggle the bright-red blinking style on the Market nav button
+ * based on whether the transfer window is currently open.
+ *
+ * @param isOpen - Whether the transfer window is open
+ */
+export function updateMarketBtn(isOpen: boolean): void {
+  const btn = document.querySelector('.nav-btn[data-view="market"]');
+  if (btn) btn.classList.toggle('market-open', isOpen);
 }
 
 /* ================================================================
@@ -170,15 +195,8 @@ export function updatePlayBtn(): void {
   const selCount = sel.length;
   const hasGK = sel.some(p => (p.assignedPos || p.pos) === 'GK');
 
-  /* Cup-final-only week (after league ends, before season rolls) */
-  if (G.week > SEASON_WEEKS && G.week <= TOTAL_SEASON_WEEKS) {
-    btn.disabled = false;
-    btn.textContent = '\u26BD Play Cup Final';
-    return;
-  }
-
-  /* When the full season is over (league + cup), allow advancing */
-  if (G.week > TOTAL_SEASON_WEEKS) {
+  /* When the season is over, allow advancing to next season */
+  if (G.week > SEASON_WEEKS) {
     btn.disabled = false;
     btn.textContent = t(settings, 'startSeason', { season: G.season + 1 });
     return;
@@ -228,7 +246,15 @@ export function applyLanguage(settings: Settings): void {
 
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = (el as HTMLElement).dataset.i18n;
-    if (key) el.textContent = t(settings, key);
+    if (!key) return;
+
+    const shortcut = (el as HTMLElement).dataset.shortcut;
+    if (shortcut) {
+      /* Nav buttons: preserve the <kbd> shortcut badge before the label */
+      el.innerHTML = `<kbd class="nav-key">${shortcut}</kbd> ${t(settings, key)}`;
+    } else {
+      el.textContent = t(settings, key);
+    }
   });
 
   document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {

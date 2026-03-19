@@ -426,4 +426,36 @@ export function renderSquad(
 
   const sortBtn = document.getElementById('sort-btn');
   if (sortBtn) sortBtn.textContent = G.sortByPos ? t(settings, 'sortPosition') : t(settings, 'sortOverall');
+
+  /* ===== Youth Academy Pipeline (#14) ===== */
+  let youthContainer = document.getElementById('youth-prospects-panel');
+  if (!youthContainer) {
+    youthContainer = document.createElement('div');
+    youthContainer.id = 'youth-prospects-panel';
+    grid.parentElement?.appendChild(youthContainer);
+  }
+  if (G.youthProspects && G.youthProspects.length > 0) {
+    let yh = `<div class="card" style="margin-top:12px"><div class="card-title">&#127891; Youth Academy Prospects</div>`;
+    yh += `<div style="font-size:.78rem;color:var(--text-dim);padding:4px 0">Young players from your academy — promote to first team or release:</div>`;
+    yh += `<div class="player-grid">`;
+    G.youthProspects.forEach((yp, yi) => {
+      if (yp.promoted) return;
+      const p = yp.player;
+      const canPromote = pt.players.length < 25;
+      yh += `<div class="fa-card" style="border-left:3px solid var(--green)">`;
+      yh += `<div class="fa-header">`;
+      yh += `<span class="p-pos ${POS_CSS[p.pos]}">${p.pos}</span>`;
+      yh += `<span class="p-name" style="font-weight:600;font-size:.92rem">${p.name}</span>`;
+      yh += `<span class="p-skill-label">Skill: <b>${p.skill}</b></span>`;
+      yh += `<span style="font-size:.75rem;color:var(--text-muted)">Age: ${p.age || 16}</span>`;
+      yh += `</div>`;
+      yh += `<div class="fa-actions">`;
+      yh += `<button class="btn-sign" ${canPromote ? `onclick="promoteProspect(${yi})"` : 'disabled'}>${canPromote ? 'Promote' : 'Squad full'}</button>`;
+      yh += `</div></div>`;
+    });
+    yh += `</div></div>`;
+    youthContainer.innerHTML = yh;
+  } else {
+    youthContainer.innerHTML = '';
+  }
 }

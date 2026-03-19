@@ -62,7 +62,8 @@ import {
 // 4. ENGINE MODULES
 // ===========================================================================
 
-import { generateCupBracket, simulateCupWeek, resolveCupFinal } from './engine/cup';
+// Cup competition removed — too buggy, will be re-added later
+// import { generateCupBracket, simulateCupWeek, resolveCupFinal } from './engine/cup';
 import {
   simulateMatch,
   autoSelectAI,
@@ -74,13 +75,14 @@ import {
   applyCardSuspensions,
   getTeamPowerLevels as engineGetTeamPowerLevels,
 } from './engine/match';
-import { endOfSeason, startNewSeason, calculateSeasonAwards, assignRivals } from './engine/season';
+import { endOfSeason, startNewSeason, calculateSeasonAwards, assignRivals, generateYouthProspects } from './engine/season';
 import { decayMorale } from './engine/match';
 import { applyTraining } from './engine/training';
 import {
   signPlayer as engineSignPlayer,
   sellPlayer as engineSellPlayer,
   buyFromTeam as engineBuyFromTeam,
+  loanPlayer as engineLoanPlayer,
 } from './engine/transfers';
 import { makePlayer, genName, genSkill } from './engine/player';
 
@@ -137,7 +139,8 @@ import { renderHistory } from './ui/views/history';
 import { renderTrophyRoom } from './ui/views/trophy-room';
 import { renderTeamProfile, openTeamProfile } from './ui/views/team-profile';
 import { renderPlayerProfile, showPlayerProfile } from './ui/views/player-profile';
-import { renderCup } from './ui/views/cup-view';
+// Cup view removed — cup competition disabled
+// import { renderCup } from './ui/views/cup-view';
 
 import { runAnimatedMatch } from './engine/match-animation';
 import type { RivalResult } from './ui/views/match-view';
@@ -164,10 +167,11 @@ import {
   FORMATIONS,
   DEFAULT_FORMATION_IDX,
   SEASON_WEEKS,
-  TOTAL_SEASON_WEEKS,
-  CUP_WEEKS,
   SQUAD_MAX,
   SQUAD_MIN,
+  FACILITY_COSTS,
+  SPONSORSHIP_TIERS,
+  SCOUT_COSTS,
 } from './config';
 import { teamLabel } from './utils/helpers';
 
@@ -293,10 +297,6 @@ function wrappedRenderPlayerProfile(): void {
   renderPlayerProfile(G, settings);
 }
 
-/** Render the cup competition view. */
-function wrappedRenderCup(): void {
-  renderCup(G, settings);
-}
 
 // ===========================================================================
 // PLAY MATCH / ADVANCE WEEK
@@ -305,18 +305,11 @@ function wrappedRenderCup(): void {
 /**
  * The main game-loop action: play one week's matches and advance the season.
  *
- * Handles three distinct phases:
- *
- *   1. **End of season** (week > TOTAL_SEASON_WEEKS) -- run end-of-season
- *      processing via `endOfSeason()`, show the season summary overlay,
- *      then let the player click through to `startNewSeason()`.
- *
- *   2. **Cup final week** (week > SEASON_WEEKS but <= TOTAL_SEASON_WEEKS) --
- *      simulate the cup final (instant sim) and advance past it.
- *
- *   3. **Regular week** -- simulate all league fixtures across all 4
- *      divisions for the current round, apply training, simulate any
- *      scheduled cup round, then advance the week counter.
+ * Handles two phases:
+ *   1. **End of season** (week > SEASON_WEEKS) -- run end-of-season
+ *      processing via `endOfSeason()`, show the season summary overlay.
+ *   2. **Regular week** -- simulate all league fixtures across all 4
+ *      divisions for the current round, apply training, advance the week.
  *
  * After every action the game is auto-saved and the UI is refreshed.
  */
@@ -324,8 +317,8 @@ function playMatch(): void {
   /* Don't start a new match while animation is running */
   if (G.matchInProgress) return;
 
-  /* --- Phase 1: Season-end advancement --- */
-  if (G.week > TOTAL_SEASON_WEEKS) {
+  /* --- Season-end advancement --- */
+  if (G.week > SEASON_WEEKS) {
     startNewSeason(G);
     saveGame();
     updateTopBar(G, settings);
@@ -342,130 +335,7 @@ function playMatch(): void {
   if (sel.length < 11) return;
   if (!sel.some(p => (p.assignedPos || p.pos) === 'GK')) return;
 
-  /* --- Phase 2: Cup-final-only week (league finished, cup final remains) --- */
-  if (G.week > SEASON_WEEKS && G.week <= TOTAL_SEASON_WEEKS) {
-    if (G.cup && G.cup.active) {
-      const finalRoundIdx = G.cup.round;
-      const finalRound = G.cup.rounds[finalRoundIdx];
-
-      if (finalRound && finalRound.length > 0 && !finalRound[0].played) {
-        const cupFinal = finalRound[0];
-        const playerInFinal = cupFinal.home === G.playerTeamId || cupFinal.away === G.playerTeamId;
-
-        /* Auto-select AI teams for cup final */
-        const homeTeam = G.teams[cupFinal.home];
-        const awayTeam = cupFinal.away != null ? G.teams[cupFinal.away] : null;
-        if (homeTeam && homeTeam.id !== G.playerTeamId) autoSelectAI(homeTeam, G.playerTeamId!);
-        if (awayTeam && awayTeam.id !== G.playerTeamId) autoSelectAI(awayTeam, G.playerTeamId!);
-
-        if (playerInFinal && awayTeam) {
-          /* Create a Fixture-like object for the animated match */
-          const cupFixture: import('./types').Fixture = {
-            home: cupFinal.home,
-            away: cupFinal.away!,
-            homeGoals: null,
-            awayGoals: null,
-            events: [],
-          };
-
-          /* Simulate the cup final result (pre-compute for animation) */
-          const diffMult = getDifficultyMultipliers(settings);
-          simulateMatch(cupFixture, G, { difficulty: diffMult.aiStrengthMult });
-
-          /* Animate the cup final */
-          showView('match');
-          G.matchInProgress = true;
-
-          runAnimatedMatch(cupFixture, G, settings, {
-            rivalResults: [],
-            onComplete: () => {
-              /* Resolve the cup final and award the trophy */
-              resolveCupFinal(G, cupFixture.homeGoals!, cupFixture.awayGoals!);
-
-              /* Advance to end of season */
-              G.week++;
-
-              /* Run end-of-season processing */
-              if (G.week > TOTAL_SEASON_WEEKS) {
-                const result = endOfSeason(G);
-                saveGame();
-                refreshAll();
-                showSeasonEndOverlay(result);
-              } else {
-                saveGame();
-                refreshAll();
-                showView('dashboard');
-              }
-            },
-          });
-          return;
-        } else if (awayTeam) {
-          /* Player not in the final — animate as neutral spectator */
-          const cupFixtureNeutral: import('./types').Fixture = {
-            home: cupFinal.home,
-            away: cupFinal.away!,
-            homeGoals: null,
-            awayGoals: null,
-            events: [],
-          };
-
-          const diffMultNeutral = getDifficultyMultipliers(settings);
-          simulateMatch(cupFixtureNeutral, G, { difficulty: diffMultNeutral.aiStrengthMult });
-
-          showView('match');
-          G.matchInProgress = true;
-
-          runAnimatedMatch(cupFixtureNeutral, G, settings, {
-            isCupFinal: true,
-            isNeutral: true,
-            rivalResults: [],
-            onComplete: () => {
-              resolveCupFinal(G, cupFixtureNeutral.homeGoals!, cupFixtureNeutral.awayGoals!);
-
-              G.week++;
-
-              if (G.week > TOTAL_SEASON_WEEKS) {
-                const result = endOfSeason(G);
-                saveGame();
-                refreshAll();
-                showSeasonEndOverlay(result);
-              } else {
-                saveGame();
-                refreshAll();
-                showView('dashboard');
-              }
-            },
-          });
-          return;
-        } else {
-          /* No away team (shouldn't happen in a final) */
-          if (cupFinal.away != null) {
-            resolveCupFinal(G, 1, 0);
-          }
-        }
-      }
-    }
-
-    G.week++;
-
-    /* Check if season is now over */
-    if (G.week > TOTAL_SEASON_WEEKS) {
-      const result = endOfSeason(G);
-      saveGame();
-      refreshAll();
-      showSeasonEndOverlay(result);
-      return;
-    }
-
-    saveGame();
-    refreshAll();
-    showView('dashboard');
-    return;
-  }
-
-  /* --- Phase 3: Regular match week --- */
-
-  /* Transfer window reminder on week 1 — show once, then close on skip */
+  /* --- Transfer window reminder on week 1 — show once, then close on skip --- */
   if (G.week === 1 && G.transferWindow) {
     if (!G.transferReminderShown) {
       G.transferReminderShown = true;
@@ -506,11 +376,6 @@ function playMatch(): void {
         difficulty: diffMult.aiStrengthMult,
       });
     }
-  }
-
-  /* Simulate cup round if this is a cup week */
-  if (CUP_WEEKS.includes(G.week)) {
-    simulateCupWeek(G);
   }
 
   /* Apply weekly training for the player's squad */
@@ -568,11 +433,8 @@ function playMatch(): void {
           G.transferWindow = false;
         }
 
-        /* Check if the full season (league + cup) is now over */
-        const cupStillPending = G.cup && G.cup.active;
-
-        if (G.week > SEASON_WEEKS && !cupStillPending) {
-          /* No cup final remaining — end season now */
+        /* Check if the season is now over */
+        if (G.week > SEASON_WEEKS) {
           const result = endOfSeason(G);
           saveGame();
           refreshAll();
@@ -596,10 +458,8 @@ function playMatch(): void {
     G.transferWindow = false;
   }
 
-  /* Check if the full season (league + cup) is now over */
-  const cupPending = G.cup && G.cup.active;
-
-  if (G.week > SEASON_WEEKS && !cupPending) {
+  /* Check if the season is now over */
+  if (G.week > SEASON_WEEKS) {
     const result = endOfSeason(G);
     saveGame();
     refreshAll();
@@ -1054,6 +914,122 @@ function globalBuyAIPlayer(sellerTeamId: number, playerIdx: number): void {
 }
 
 // ===========================================================================
+// FACILITY UPGRADE (#7)
+// ===========================================================================
+
+/** Upgrade a facility (trainingFacility, youthAcademy, or stadium). */
+function upgradeFacility(facilityKey: string): void {
+  if (G.playerTeamId == null) return;
+  if (!G.facilities) G.facilities = { trainingFacility: 0, youthAcademy: 0, stadium: 0 };
+  const costs = FACILITY_COSTS[facilityKey];
+  if (!costs) return;
+  const fac = G.facilities as unknown as Record<string, number>;
+  const currentLevel = fac[facilityKey] || 0;
+  if (currentLevel >= costs.length) return;
+  const cost = costs[currentLevel];
+  const budget = G.budgets[G.playerTeamId] || 0;
+  if (budget < cost) return;
+  G.budgets[G.playerTeamId] -= cost;
+  fac[facilityKey] = currentLevel + 1;
+  SFX.click();
+  saveGame();
+  updateTopBar(G, settings);
+  refreshAll();
+}
+
+// ===========================================================================
+// SPONSORSHIP SELECTION (#6)
+// ===========================================================================
+
+/** Select a sponsorship deal. */
+function selectSponsor(tier: string): void {
+  const sp = SPONSORSHIP_TIERS.find(s => s.tier === tier);
+  if (!sp) return;
+  if (G.playerTeamId == null) return;
+  const pt = G.teams[G.playerTeamId];
+  if (pt.div > sp.requiredDiv) return;
+  G.sponsorship = { ...sp };
+  SFX.click();
+  saveGame();
+  refreshAll();
+}
+
+// ===========================================================================
+// LOAN PLAYER (#8)
+// ===========================================================================
+
+/** Execute a loan transfer. */
+function loanPlayerAction(fromTeamId: number, playerName: string, fee: number): void {
+  const success = engineLoanPlayer(G, fromTeamId, playerName, fee);
+  if (success) {
+    SFX.click();
+    saveGame();
+    wrappedRenderMarket();
+    wrappedRenderSquad();
+    updatePlayBtn();
+    updateTopBar(G, settings);
+  }
+}
+
+// ===========================================================================
+// SCOUT UPGRADE (#18)
+// ===========================================================================
+
+/** Upgrade the scout network level. */
+function upgradeScout(): void {
+  if (G.playerTeamId == null) return;
+  const currentLevel = G.scoutLevel ?? 0;
+  if (currentLevel >= SCOUT_COSTS.length - 1) return;
+  const cost = SCOUT_COSTS[currentLevel + 1];
+  const budget = G.budgets[G.playerTeamId] || 0;
+  if (budget < cost) return;
+  G.budgets[G.playerTeamId] -= cost;
+  G.scoutLevel = (currentLevel + 1) as import('./types').ScoutLevel;
+  SFX.click();
+  saveGame();
+  wrappedRenderMarket();
+  updateTopBar(G, settings);
+}
+
+// ===========================================================================
+// YOUTH ACADEMY PROMOTE (#14)
+// ===========================================================================
+
+/** Promote a youth prospect to the first team. */
+function promoteProspect(prospectIdx: number): void {
+  if (G.playerTeamId == null || !G.youthProspects) return;
+  const prospect = G.youthProspects[prospectIdx];
+  if (!prospect || prospect.promoted) return;
+  const pt = G.teams[G.playerTeamId];
+  if (pt.players.length >= SQUAD_MAX) return;
+
+  /* Add prospect to first team */
+  pt.players.push({
+    ...prospect.player,
+    selected: false,
+    assignedPos: null,
+    benchStreak: 0,
+    stamina: 100,
+    injuredFor: 0,
+    suspendedFor: 0,
+    form: 0,
+    formStreak: 0,
+    seasonGoals: 0,
+    seasonApps: 0,
+    seasonYellows: 0,
+    seasonReds: 0,
+    careerGoals: prospect.player.careerGoals || 0,
+    careerApps: prospect.player.careerApps || 0,
+    isAcademy: true,
+  });
+  prospect.promoted = true;
+  SFX.click();
+  saveGame();
+  wrappedRenderSquad();
+  updatePlayBtn();
+}
+
+// ===========================================================================
 // MATCH SUBSTITUTION HANDLERS
 // ===========================================================================
 
@@ -1316,7 +1292,12 @@ const welcomeCallbacks = {
   loadGame,
   deleteSave,
   initNewGame,
-  generateCupBracket: () => { generateCupBracket(G); assignRivals(G); },
+  generateCupBracket: () => {
+    /* Cup disabled */
+    assignRivals(G);
+    /* Generate initial youth prospects for season 1 */
+    generateYouthProspects(G);
+  },
   saveGame,
   enterGame: () => {
     initPlayBtn(G, settings);
@@ -1386,6 +1367,13 @@ declare global {
     signPlayer: typeof globalSignPlayer;
     sellPlayer: typeof globalSellPlayer;
     buyAIPlayer: typeof globalBuyAIPlayer;
+
+    /* New Feature Actions */
+    upgradeFacility: typeof upgradeFacility;
+    selectSponsor: typeof selectSponsor;
+    loanPlayerAction: typeof loanPlayerAction;
+    upgradeScout: typeof upgradeScout;
+    promoteProspect: typeof promoteProspect;
 
     /* Match Substitutions */
     confirmSub: typeof confirmSub;
@@ -1463,6 +1451,13 @@ window.signPlayer = globalSignPlayer;
 window.sellPlayer = globalSellPlayer;
 window.buyAIPlayer = globalBuyAIPlayer;
 
+/* --- New Feature Actions --- */
+window.upgradeFacility = upgradeFacility;
+window.selectSponsor = selectSponsor;
+window.loanPlayerAction = loanPlayerAction;
+window.upgradeScout = upgradeScout;
+window.promoteProspect = promoteProspect;
+
 /* --- Match Substitutions --- */
 window.confirmSub = confirmSub;
 window.startSub = startSub;
@@ -1512,7 +1507,6 @@ registerViewRenderers({
   trophyroom: wrappedRenderTrophyRoom,
   teamprofile: wrappedRenderTeamProfile,
   playerprofile: wrappedRenderPlayerProfile,
-  cup: wrappedRenderCup,
   match: () => { /* Match view is rendered by the animation engine */ },
 });
 

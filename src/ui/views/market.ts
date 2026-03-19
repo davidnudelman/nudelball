@@ -10,7 +10,7 @@
  */
 
 import type { GameState, Settings, Player, AIPlayerForSale } from '../../types';
-import { SQUAD_MAX, SQUAD_MIN, POS_CSS, SELL_VALUE_RATIO } from '../../config';
+import { SQUAD_MAX, SQUAD_MIN, POS_CSS, SELL_VALUE_RATIO, SCOUT_COSTS } from '../../config';
 import { t } from '../../data/i18n';
 import { teamLabel } from '../../utils/helpers';
 
@@ -85,6 +85,36 @@ export function getAIPlayersForSale(G: GameState): AIPlayerForSale[] {
   /* Sort by price ascending so cheapest options appear first */
   result.sort((a, b) => a.price - b.price);
   return result;
+}
+
+/* ================================================================
+   LOAN CANDIDATES HELPER
+   ================================================================ */
+
+/**
+ * Get available loan players from higher-division AI teams.
+ * Duplicates the engine logic inline to avoid circular imports.
+ */
+function getLoanCandidates(G: GameState): Array<{ player: Player; teamId: number; teamName: string; fee: number }> {
+  if (G.playerTeamId == null) return [];
+  const pt = G.teams[G.playerTeamId];
+  const results: Array<{ player: Player; teamId: number; teamName: string; fee: number }> = [];
+
+  for (const tm of G.teams) {
+    if (tm.id === G.playerTeamId) continue;
+    if (tm.div >= pt.div) continue; /* Only higher-division teams */
+    if (tm.div < 1 || tm.div > 4) continue;
+
+    const sorted = [...tm.players].sort((a, b) => a.skill - b.skill);
+    const count = Math.min(2, Math.floor(sorted.length * 0.3));
+    for (let i = 0; i < count; i++) {
+      const p = sorted[i];
+      const fee = Math.round(playerMarketValue(p) * 0.30 / 100) * 100;
+      results.push({ player: p, teamId: tm.id, teamName: tm.name, fee });
+    }
+  }
+  results.sort((a, b) => a.fee - b.fee);
+  return results;
 }
 
 /* ================================================================
@@ -217,6 +247,58 @@ export function renderMarket(
       }
       h += '</div>';
     }
+  }
+
+  /* ===== Loan Players Section (#8) ===== */
+  if (isOpen && G.loans !== undefined) {
+    h += `<div class="market-section-title">&#129309; Loan Players</div>`;
+    /* Show current loans */
+    if (G.loans && G.loans.length > 0) {
+      h += `<div style="font-size:.82rem;color:var(--text-dim);padding:4px 0">Active loans (returned at season end):</div>`;
+      for (const loan of G.loans) {
+        const fromTeam = G.teams[loan.fromTeamId];
+        h += `<div style="font-size:.82rem;padding:2px 8px">&#128100; <b>${loan.player.name}</b> (${loan.player.pos}, ${loan.player.skill}) from ${fromTeam ? fromTeam.name : 'Unknown'} — Fee: $${loan.loanFee.toLocaleString()}</div>`;
+      }
+    }
+    /* Available loans from higher-division teams */
+    h += `<div style="font-size:.78rem;color:var(--text-dim);padding:4px 0">Borrow players from higher-division teams for one season:</div>`;
+    h += `<div class="player-grid">`;
+    const loanCandidates = getLoanCandidates(G);
+    if (loanCandidates.length === 0) {
+      h += `<p style="color:var(--text-muted);font-size:.82rem">No loan players available (you must be in a lower division).</p>`;
+    }
+    for (const lc of loanCandidates.slice(0, 12)) {
+      const canAfford = budget >= lc.fee;
+      const canLoan = canAfford && squadSize < SQUAD_MAX;
+      h += `<div class="fa-card" style="border-left:3px solid var(--yellow)">`;
+      h += `<div class="fa-header">`;
+      h += `<span class="p-pos ${POS_CSS[lc.player.pos]}">${lc.player.pos}</span>`;
+      h += `<span class="p-name" style="font-weight:600;font-size:.92rem">${lc.player.name}</span>`;
+      h += `<span class="p-skill-label">Skill: <b>${lc.player.skill}</b></span>`;
+      h += `</div>`;
+      h += `<div style="font-size:.75rem;color:var(--text-dim);padding:2px 8px">From: ${lc.teamName} (Div ${G.teams[lc.teamId]?.div || '?'})</div>`;
+      h += `<div class="fa-actions">`;
+      h += `<span class="fa-price">Loan: $${lc.fee.toLocaleString()}</span>`;
+      h += `<button class="btn-sign" ${canLoan ? `onclick="loanPlayerAction(${lc.teamId},'${lc.player.name.replace(/'/g, "\\'")}',${lc.fee})"` : 'disabled'}>${!canAfford ? 'Too expensive' : squadSize >= SQUAD_MAX ? 'Squad full' : 'Loan'}</button>`;
+      h += `</div></div>`;
+    }
+    h += `</div>`;
+  }
+
+  /* ===== Scout Network (#18) ===== */
+  const scoutLevel = G.scoutLevel ?? 0;
+  h += `<div class="market-section-title">&#128301; Scout Network — Level ${scoutLevel}</div>`;
+  h += `<div style="font-size:.82rem;padding:4px 0;color:var(--text-dim)">`;
+  h += scoutLevel === 0 ? 'Basic scouting — only nearby divisions visible.' :
+       scoutLevel === 1 ? 'Advanced scouting — all divisions visible.' :
+       'Elite scouting — all divisions + hidden gems visible.';
+  h += `</div>`;
+  if (scoutLevel < SCOUT_COSTS.length - 1) {
+    const nextCost = SCOUT_COSTS[scoutLevel + 1];
+    const canUpgrade = budget >= nextCost;
+    h += `<button class="btn-sign" style="margin:4px 0" ${canUpgrade ? `onclick="upgradeScout()"` : 'disabled'}>Upgrade to Level ${scoutLevel + 1} — $${nextCost.toLocaleString()}</button>`;
+  } else {
+    h += `<span style="font-size:.78rem;color:var(--green);font-weight:700">MAX LEVEL</span>`;
   }
 
   /* ===== Sell Players Section ===== */
