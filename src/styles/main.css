@@ -4312,6 +4312,78 @@ html.light .league-table .player-row {
   letter-spacing: 0.5px;
 }
 
+/* Coach Achievements */
+.achievement-summary {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-bottom: var(--sp-sm);
+  font-weight: 600;
+}
+
+.achievement-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--sp-sm);
+}
+
+.achievement-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  transition: opacity 0.2s, border-color 0.2s;
+}
+
+.achievement-card.unlocked {
+  border-color: var(--gold);
+  background: rgba(255, 215, 0, 0.06);
+}
+
+.achievement-card.locked {
+  opacity: 0.45;
+}
+
+.ach-icon {
+  font-size: 1.6rem;
+  flex-shrink: 0;
+  width: 36px;
+  text-align: center;
+}
+
+.ach-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.ach-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+.achievement-card.unlocked .ach-name {
+  color: var(--gold);
+}
+
+.ach-desc {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  line-height: 1.3;
+  margin-top: 2px;
+}
+
+.ach-progress {
+  font-size: 0.7rem;
+  color: var(--accent);
+  font-weight: 600;
+  margin-top: 3px;
+}
+
 /* Badges */
 .badge-row {
   display: flex;
