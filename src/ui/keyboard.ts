@@ -78,6 +78,7 @@ const KEY_TO_VIEW: Record<string, string> = {
   c: 'calendar',
   g: 'scorers',
   m: 'market',
+  b: 'club',
   h: 'history',
   r: 'trophyroom',
 };
@@ -346,6 +347,7 @@ export function getShortcutsList(): ShortcutEntry[] {
     { key: 'C', action: '[C]alendar' },
     { key: 'G', action: 'Top [G]oals / Scorers' },
     { key: 'M', action: '[M]arket' },
+    { key: 'B', action: 'Clu[B] (Sponsors & Stadium)' },
     { key: 'H', action: '[H]istory' },
     { key: 'R', action: 'T[R]ophy Room' },
 

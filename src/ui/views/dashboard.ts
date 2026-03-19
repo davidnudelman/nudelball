@@ -11,6 +11,16 @@ import { teamLabel, plateColors } from '../../utils/helpers';
 import { t } from '../../data/i18n';
 
 /* ================================================================
+   HELPER: Ordinal suffix (1st, 2nd, 3rd, etc.)
+   ================================================================ */
+
+function ordinal(n: number): string {
+  const s = ['th', 'st', 'nd', 'rd'];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
+/* ================================================================
    HELPER: Build league standings table HTML for a given division
    ================================================================ */
 
@@ -206,12 +216,72 @@ export function renderDashboard(
         if (pm) {
           const ht = G.teams[pm.home];
           const at = G.teams[pm.away];
+          const oppId = pm.home === G.playerTeamId ? pm.away : pm.home;
+          const opp = G.teams[oppId];
           const isDerby = (ht.rivals?.includes(at.id)) || (at.rivals?.includes(ht.id));
           const derbyBadge = isDerby ? '<div style="text-align:center;font-size:.78rem;font-weight:700;color:var(--red);margin-bottom:4px">&#128293; DERBY MATCH &#128293;</div>' : '';
+
+          /* Opponent insights: league position, W-D-L, form, head-to-head */
+          let insightsHTML = '';
+          if (opp) {
+            /* League position */
+            const divTeams = getSortedDiv(G, div);
+            const oppPos = divTeams.findIndex(tm => tm.id === oppId) + 1;
+            const ptPos = divTeams.findIndex(tm => tm.id === G.playerTeamId) + 1;
+            const oppSt = opp.seasonStats;
+
+            /* Recent form from past fixture results (last 5 matches) */
+            let recentForm = '';
+            if (G.week > 1) {
+              for (let w = Math.max(0, G.week - 6); w < G.week - 1; w++) {
+                const wFix = G.fixtures[div]?.[w];
+                if (!wFix) continue;
+                const oppMatch = wFix.find(f => (f.home === oppId || f.away === oppId) && f.homeGoals !== null);
+                if (oppMatch) {
+                  const oppIsHome = oppMatch.home === oppId;
+                  const oppG = oppIsHome ? oppMatch.homeGoals! : oppMatch.awayGoals!;
+                  const otherG = oppIsHome ? oppMatch.awayGoals! : oppMatch.homeGoals!;
+                  if (oppG > otherG) recentForm += '<span style="color:var(--green);font-weight:700">W</span>';
+                  else if (oppG < otherG) recentForm += '<span style="color:var(--red);font-weight:700">L</span>';
+                  else recentForm += '<span style="color:var(--yellow);font-weight:700">D</span>';
+                }
+              }
+            }
+
+            /* Head-to-head record from this season's already-played fixtures */
+            let h2hW = 0, h2hD = 0, h2hL = 0;
+            if (G.fixtures[div]) {
+              for (const round of G.fixtures[div]) {
+                if (!round) continue;
+                for (const f of round) {
+                  if (f.homeGoals === null) continue;
+                  const isH2H = (f.home === G.playerTeamId && f.away === oppId) || (f.home === oppId && f.away === G.playerTeamId);
+                  if (!isH2H) continue;
+                  const ptIsHome = f.home === G.playerTeamId;
+                  const ptG = ptIsHome ? f.homeGoals! : f.awayGoals!;
+                  const opG = ptIsHome ? f.awayGoals! : f.homeGoals!;
+                  if (ptG > opG) h2hW++;
+                  else if (ptG < opG) h2hL++;
+                  else h2hD++;
+                }
+              }
+            }
+
+            insightsHTML = `<div style="display:flex;flex-wrap:wrap;gap:8px 16px;justify-content:center;font-size:.8rem;margin-top:6px;padding-top:6px;border-top:1px solid var(--border)">`;
+            insightsHTML += `<span>&#127942; League: <b>${oppPos ? ordinal(oppPos) : '?'}</b> <span style="color:var(--text-dim)">(You: ${ptPos ? ordinal(ptPos) : '?'})</span></span>`;
+            insightsHTML += `<span>Record: <b>${oppSt.w}W ${oppSt.d}D ${oppSt.l}L</b></span>`;
+            insightsHTML += `<span>GD: <b>${(oppSt.gf - oppSt.ga) >= 0 ? '+' : ''}${oppSt.gf - oppSt.ga}</b></span>`;
+            if (recentForm) insightsHTML += `<span>Form: ${recentForm}</span>`;
+            if (h2hW + h2hD + h2hL > 0) {
+              insightsHTML += `<span>H2H: <b style="color:var(--green)">${h2hW}W</b> ${h2hD}D <b style="color:var(--red)">${h2hL}L</b></span>`;
+            }
+            insightsHTML += `</div>`;
+          }
+
           nfc.innerHTML = `<div class="fixture-card player-match">${derbyBadge}<div class="fixture-main">` +
             `<div class="team-name home">${teamLabel(ht)}</div>` +
             `<div class="vs">${t(settings, 'vs')}</div>` +
-            `<div class="team-name away">${teamLabel(at)}</div></div></div>`;
+            `<div class="team-name away">${teamLabel(at)}</div></div>${insightsHTML}</div>`;
         } else {
           nfc.innerHTML = '';
         }

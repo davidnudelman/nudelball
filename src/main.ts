@@ -136,6 +136,7 @@ import { renderTableView } from './ui/views/table';
 import { renderCalendar } from './ui/views/calendar';
 import { renderScorers } from './ui/views/scorers';
 import { renderMarket } from './ui/views/market';
+import { renderClub } from './ui/views/club';
 import { renderHistory } from './ui/views/history';
 import { renderTrophyRoom } from './ui/views/trophy-room';
 import { renderTeamProfile, openTeamProfile } from './ui/views/team-profile';
@@ -279,6 +280,11 @@ function wrappedRenderMarket(): void {
   renderMarket(G, settings);
 }
 
+/** Render the club management view (sponsors & stadium). */
+function wrappedRenderClub(): void {
+  renderClub(G, settings);
+}
+
 /** Render the season history view. */
 function wrappedRenderHistory(): void {
   renderHistory(G, settings);
@@ -359,6 +365,16 @@ function playMatch(): void {
   /* Apply squad rules auto-rotation if enabled */
   applySquadRules(G);
 
+  /* --- Warn if any selected players have stamina below 60% --- */
+  const tiredStarters = pt.players.filter(p => p.selected && p.stamina < 60);
+  if (tiredStarters.length > 0) {
+    const names = tiredStarters.map(p => `${p.name} (${p.stamina}%)`).join(', ');
+    const proceed = confirm(
+      `Warning: ${tiredStarters.length} starter${tiredStarters.length > 1 ? 's have' : ' has'} low stamina:\n\n${names}\n\nProceed with match anyway?`
+    );
+    if (!proceed) return;
+  }
+
   /* Auto-select AI teams before simulation */
   for (const tm of G.teams) {
     if (tm.id !== G.playerTeamId) {
@@ -438,6 +454,9 @@ function playMatch(): void {
     runAnimatedMatch(playerFixture, G, settings, {
       rivalResults,
       onComplete: () => {
+        /* Always navigate away from match view first */
+        showView('dashboard');
+
         /* Advance week counter after animation finishes */
         G.week++;
 
@@ -456,7 +475,6 @@ function playMatch(): void {
           /* Auto-save and refresh UI */
           saveGame();
           refreshAll();
-          showView('dashboard');
         }
       },
     });
@@ -717,7 +735,7 @@ function toggleSquadRule(rule: string, value?: number | boolean): void {
     if (G.squadRules.restBelowStamina != null) {
       G.squadRules.restBelowStamina = null;
     } else {
-      G.squadRules.restBelowStamina = typeof value === 'number' ? value : 40;
+      G.squadRules.restBelowStamina = typeof value === 'number' ? value : 60;
     }
   } else if (rule === 'alwaysStartBest') {
     G.squadRules.alwaysStartBest = !G.squadRules.alwaysStartBest;
@@ -772,13 +790,15 @@ function autoPick(): void {
 
   for (const { pos, count } of posOrder) {
     /* Sort candidates by combined skill + form score (best first) */
+    /* Never auto-select players below 60% stamina */
     const candidates = pt.players
       .map((p, i) => ({ p, i }))
       .filter(({ p, i }) =>
         !selected.has(i) &&
         p.pos === pos &&
         p.injuredFor === 0 &&
-        p.suspendedFor === 0
+        p.suspendedFor === 0 &&
+        (p.stamina ?? 100) >= 60
       )
       .sort((a, b) => playerScore(b.p) - playerScore(a.p));
 
@@ -791,6 +811,7 @@ function autoPick(): void {
   }
 
   /* Fill remaining slots with best available from any position */
+  /* Prefer players with >= 60% stamina, but fall back to lower stamina if needed */
   let totalSelected = selected.size;
   if (totalSelected < 11) {
     const remaining = pt.players
@@ -800,7 +821,13 @@ function autoPick(): void {
         p.injuredFor === 0 &&
         p.suspendedFor === 0
       )
-      .sort((a, b) => playerScore(b.p) - playerScore(a.p));
+      .sort((a, b) => {
+        /* Prioritize players with adequate stamina */
+        const aOk = (a.p.stamina ?? 100) >= 60 ? 1 : 0;
+        const bOk = (b.p.stamina ?? 100) >= 60 ? 1 : 0;
+        if (bOk !== aOk) return bOk - aOk;
+        return playerScore(b.p) - playerScore(a.p);
+      });
 
     for (const { p, i } of remaining) {
       if (totalSelected >= 11) break;
@@ -1620,6 +1647,7 @@ registerViewRenderers({
   calendar: wrappedRenderCalendar,
   scorers: wrappedRenderScorers,
   market: wrappedRenderMarket,
+  club: wrappedRenderClub,
   history: wrappedRenderHistory,
   trophyroom: wrappedRenderTrophyRoom,
   teamprofile: wrappedRenderTeamProfile,
