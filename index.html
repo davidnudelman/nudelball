@@ -30,6 +30,16 @@
           <label data-i18n="renameLabel">Rename:</label>
           <input type="text" id="team-rename" data-i18n-placeholder="teamRenamePlaceholder" placeholder="Custom team name..." maxlength="20">
         </div>
+        <div class="color-picker-row">
+          <div class="color-picker-group">
+            <label>Primary</label>
+            <input type="color" id="team-color-c1" class="team-color-input" value="#ad1519">
+          </div>
+          <div class="color-picker-group">
+            <label>Secondary</label>
+            <input type="color" id="team-color-c2" class="team-color-input" value="#fcdd09">
+          </div>
+        </div>
       </div>
       <button class="btn btn-success btn-start" id="start-btn" disabled data-i18n="enterDugout">Enter The Dugout</button>
     </div>
@@ -229,6 +239,7 @@
         <span id="volume-pct" style="font-family:'Oswald';font-size:.82rem;color:var(--text-dim);min-width:32px">50%</span>
       </div>
     </div>
+    <a class="settings-changelog-link" onclick="toggleSettings();showView('trophyroom')">&#127894; Coach Achievements</a>
     <a class="settings-changelog-link" onclick="toggleSettings();toggleHelp()">&#128214; How to Play</a>
     <a class="settings-changelog-link" onclick="toggleSettings();toggleChangelog()">&#128203; Changelog <span id="settings-version-label"></span></a>
   </div>

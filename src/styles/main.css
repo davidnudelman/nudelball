@@ -347,6 +347,48 @@ html.light .tp-card.selected {
   color: var(--text-dim);
 }
 
+/* Team color pickers */
+.color-picker-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-lg);
+  margin-top: var(--sp-sm);
+}
+
+.color-picker-group {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+}
+
+.color-picker-group label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.team-color-input {
+  width: 40px;
+  height: 32px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0;
+  cursor: pointer;
+  background: transparent;
+}
+
+.team-color-input::-webkit-color-swatch-wrapper {
+  padding: 2px;
+}
+
+.team-color-input::-webkit-color-swatch {
+  border: none;
+  border-radius: 2px;
+}
+
 /* Start Game button */
 .btn-start {
   margin-top: var(--sp-xl);
@@ -3701,10 +3743,35 @@ html.light .league-table .player-row {
   border-left: 3px solid var(--red);
 }
 
+/* Home team events aligned left, away team events aligned right */
+.match-event.me-home {
+  text-align: left;
+}
+
+.match-event.me-away {
+  text-align: right;
+  border-left: none;
+  border-right: 3px solid var(--green);
+}
+
+.match-event.me-away.player-goal {
+  border-right-color: var(--accent);
+}
+
+.match-event.me-away.card-event {
+  border-right-color: var(--yellow);
+}
+
+.match-event.me-away.card-event.red {
+  border-right-color: var(--red);
+}
+
+/* Half-time / full-time events are centered */
 .match-event.ht-event,
 .match-event.ft-event {
   background: var(--surface2);
-  border-left: 3px solid var(--text-dim);
+  border-left: none;
+  border-right: none;
   font-weight: 700;
   text-align: center;
 }
@@ -4245,6 +4312,78 @@ html.light .league-table .player-row {
   letter-spacing: 0.5px;
 }
 
+/* Coach Achievements */
+.achievement-summary {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-bottom: var(--sp-sm);
+  font-weight: 600;
+}
+
+.achievement-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--sp-sm);
+}
+
+.achievement-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  transition: opacity 0.2s, border-color 0.2s;
+}
+
+.achievement-card.unlocked {
+  border-color: var(--gold);
+  background: rgba(255, 215, 0, 0.06);
+}
+
+.achievement-card.locked {
+  opacity: 0.45;
+}
+
+.ach-icon {
+  font-size: 1.6rem;
+  flex-shrink: 0;
+  width: 36px;
+  text-align: center;
+}
+
+.ach-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.ach-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+.achievement-card.unlocked .ach-name {
+  color: var(--gold);
+}
+
+.ach-desc {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  line-height: 1.3;
+  margin-top: 2px;
+}
+
+.ach-progress {
+  font-size: 0.7rem;
+  color: var(--accent);
+  font-weight: 600;
+  margin-top: 3px;
+}
+
 /* Badges */
 .badge-row {
   display: flex;
@@ -4604,16 +4743,22 @@ html.light .league-table .player-row {
 .team-plate {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 4px 12px;
+  padding: 4px 14px;
   border-radius: var(--radius-sm);
   font-weight: 600;
   font-size: 0.85rem;
+  min-width: 110px;
+  text-align: center;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
 
 .team-plate-sm {
   padding: 2px 8px;
   font-size: 0.78rem;
+  min-width: 90px;
 }
 
 .flag {
@@ -4655,6 +4800,26 @@ html.light .league-table .player-row {
   overflow-y: auto;
   box-shadow: var(--shadow-lg);
   text-align: center;
+}
+
+.season-section {
+  padding: var(--sp-md);
+  margin-bottom: var(--sp-md);
+  background: var(--surface2);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.season-cup-winner {
+  background: rgba(255, 215, 0, 0.08);
+  border-color: var(--gold);
+  padding: var(--sp-lg) var(--sp-md);
+  margin-bottom: var(--sp-md);
+}
+
+.season-personal {
+  background: rgba(79, 195, 247, 0.06);
+  border-color: var(--accent);
 }
 
 /* --------------------------------------------------------------------------
@@ -4954,4 +5119,136 @@ html.light .changelog-overlay {
   .div-tabs {
     flex-wrap: wrap;
   }
+}
+
+/* ================================================================
+   v3.0 Feature Styles
+   ================================================================ */
+
+/* Player role tag in squad list */
+.role-tag {
+  font-size: 0.7rem;
+  color: var(--accent);
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+/* Derby badge */
+.derby-badge {
+  background: var(--red);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Facility upgrade buttons */
+.facility-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--sp-sm);
+}
+
+.facility-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  text-align: center;
+}
+
+.facility-card .fac-name {
+  font-weight: 700;
+  font-size: 0.85rem;
+  margin-bottom: 4px;
+}
+
+.facility-card .fac-level {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+
+.facility-card .fac-btn {
+  font-size: 0.78rem;
+}
+
+/* Sponsor choice buttons */
+.sponsor-grid {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sponsor-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  transition: border-color 0.2s;
+}
+
+.sponsor-card:hover {
+  border-color: var(--accent);
+}
+
+.sponsor-card.active {
+  border-color: var(--gold);
+  background: rgba(255, 215, 0, 0.06);
+}
+
+/* Youth prospects */
+.youth-grid {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.youth-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px;
+  min-width: 180px;
+  font-size: 0.82rem;
+}
+
+/* Season awards */
+.awards-grid {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.award-card {
+  background: rgba(255, 215, 0, 0.06);
+  border: 1px solid var(--gold);
+  border-radius: var(--radius);
+  padding: 10px 16px;
+  text-align: center;
+  min-width: 160px;
+}
+
+.award-card .aw-type {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.award-card .aw-name {
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.award-card .aw-detail {
+  font-size: 0.78rem;
+  color: var(--text-dim);
 }

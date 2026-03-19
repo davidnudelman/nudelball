@@ -14,7 +14,7 @@
  */
 
 import type { GameState, Settings, SaveSlot } from '../../types';
-import { teamLabel } from '../../utils/helpers';
+import { teamLabel, clearPlateCache } from '../../utils/helpers';
 import { t } from '../../data/i18n';
 import { listSaveSlots } from '../../state/save-manager';
 
@@ -83,6 +83,12 @@ export function selectTeam(G: GameState, teamId: number, event?: Event): void {
     if (assignedEl) assignedEl.innerHTML = teamLabel(team);
     const renameInput = document.getElementById('team-rename') as HTMLInputElement | null;
     if (renameInput) renameInput.value = team.name;
+
+    /* Populate color pickers with team's current colors */
+    const c1Input = document.getElementById('team-color-c1') as HTMLInputElement | null;
+    const c2Input = document.getElementById('team-color-c2') as HTMLInputElement | null;
+    if (c1Input) c1Input.value = team.c1;
+    if (c2Input) c2Input.value = team.c2;
   }
 
   /* Check if start button should be enabled */
@@ -227,6 +233,20 @@ export function bootWelcome(
     });
   }
 
+  /* Color picker live preview */
+  const c1Input = document.getElementById('team-color-c1') as HTMLInputElement | null;
+  const c2Input = document.getElementById('team-color-c2') as HTMLInputElement | null;
+  const updateColorPreview = (): void => {
+    if (!c1Input || !c2Input || G.playerTeamId === null) return;
+    G.teams[G.playerTeamId].c1 = c1Input.value;
+    G.teams[G.playerTeamId].c2 = c2Input.value;
+    clearPlateCache();
+    const assignedEl = document.getElementById('assigned-team');
+    if (assignedEl) assignedEl.innerHTML = teamLabel(G.teams[G.playerTeamId]);
+  };
+  if (c1Input) c1Input.addEventListener('input', updateColorPreview);
+  if (c2Input) c2Input.addEventListener('input', updateColorPreview);
+
   /* Render save slots panel (NEW) */
   renderSaveSlots(settings, callbacks);
 }
@@ -264,6 +284,15 @@ function startNewGame(
     if (rename && rename !== G.teams[G.playerTeamId].name) {
       G.teams[G.playerTeamId].name = rename;
     }
+  }
+
+  /* Apply custom team colors if changed */
+  const c1Input = document.getElementById('team-color-c1') as HTMLInputElement | null;
+  const c2Input = document.getElementById('team-color-c2') as HTMLInputElement | null;
+  if (c1Input && c2Input) {
+    G.teams[G.playerTeamId].c1 = c1Input.value;
+    G.teams[G.playerTeamId].c2 = c2Input.value;
+    clearPlateCache();
   }
 
   /* Set initial UI state */
