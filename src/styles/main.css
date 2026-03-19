@@ -5120,3 +5120,135 @@ html.light .changelog-overlay {
     flex-wrap: wrap;
   }
 }
+
+/* ================================================================
+   v3.0 Feature Styles
+   ================================================================ */
+
+/* Player role tag in squad list */
+.role-tag {
+  font-size: 0.7rem;
+  color: var(--accent);
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+/* Derby badge */
+.derby-badge {
+  background: var(--red);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Facility upgrade buttons */
+.facility-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--sp-sm);
+}
+
+.facility-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  text-align: center;
+}
+
+.facility-card .fac-name {
+  font-weight: 700;
+  font-size: 0.85rem;
+  margin-bottom: 4px;
+}
+
+.facility-card .fac-level {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+
+.facility-card .fac-btn {
+  font-size: 0.78rem;
+}
+
+/* Sponsor choice buttons */
+.sponsor-grid {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sponsor-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  transition: border-color 0.2s;
+}
+
+.sponsor-card:hover {
+  border-color: var(--accent);
+}
+
+.sponsor-card.active {
+  border-color: var(--gold);
+  background: rgba(255, 215, 0, 0.06);
+}
+
+/* Youth prospects */
+.youth-grid {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.youth-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px;
+  min-width: 180px;
+  font-size: 0.82rem;
+}
+
+/* Season awards */
+.awards-grid {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.award-card {
+  background: rgba(255, 215, 0, 0.06);
+  border: 1px solid var(--gold);
+  border-radius: var(--radius);
+  padding: 10px 16px;
+  text-align: center;
+  min-width: 160px;
+}
+
+.award-card .aw-type {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.award-card .aw-name {
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.award-card .aw-detail {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
