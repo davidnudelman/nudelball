@@ -6,7 +6,7 @@
  */
 
 import type { GameState, Settings, Team, Fixture, CupState } from '../../types';
-import { SEASON_WEEKS, TOTAL_SEASON_WEEKS, CUP_ROUNDS, CUP_WEEKS } from '../../config';
+import { SEASON_WEEKS, TOTAL_SEASON_WEEKS, CUP_ROUNDS, CUP_WEEKS, FORMATIONS, MORALE_MAX } from '../../config';
 import { teamLabel, plateColors } from '../../utils/helpers';
 import { t } from '../../data/i18n';
 
@@ -245,8 +245,89 @@ export function renderDashboard(
     }
   }
 
-  /* ===== Mini League Table ===== */
+  /* ===== Mini League Table (get reference early for status panel insertion) ===== */
   const dashTableWrap = document.getElementById('dash-table-wrap');
+
+  /* ===== Morale & Scouting Panel (#3, #4) ===== */
+  const morale = pt.morale ?? 0;
+  const moraleLabel = morale >= 7 ? 'Euphoric' : morale >= 3 ? 'Happy' : morale >= -2 ? 'Neutral' : morale >= -6 ? 'Low' : 'Crisis';
+  const moraleColor = morale >= 3 ? 'var(--green)' : morale <= -3 ? 'var(--red)' : 'var(--text-dim)';
+
+  let extraHtml = `<div class="card" style="margin-top:8px"><div class="card-title">&#128200; ${t(settings, 'teamStatus')}</div>`;
+  extraHtml += `<div style="display:flex;gap:16px;flex-wrap:wrap;padding:8px 0">`;
+  extraHtml += `<div><span style="color:var(--text-dim);font-size:.8rem">Morale:</span> <b style="color:${moraleColor}">${moraleLabel}</b> <span style="font-size:.75rem;color:var(--text-dim)">(${morale > 0 ? '+' : ''}${morale})</span></div>`;
+
+  /* Facilities */
+  const fac = G.facilities;
+  if (fac) {
+    const tl = fac.trainingFacility || 0;
+    const yl = fac.youthAcademy || 0;
+    const sl = fac.stadium || 0;
+    if (tl + yl + sl > 0) {
+      extraHtml += `<div><span style="color:var(--text-dim);font-size:.8rem">Facilities:</span> `;
+      if (tl) extraHtml += `Training Lv${tl} `;
+      if (yl) extraHtml += `Youth Lv${yl} `;
+      if (sl) extraHtml += `Stadium Lv${sl}`;
+      extraHtml += `</div>`;
+    }
+  }
+
+  /* Sponsorship */
+  if (G.sponsorship) {
+    extraHtml += `<div><span style="color:var(--text-dim);font-size:.8rem">Sponsor:</span> <b>${G.sponsorship.tier}</b> ($${G.sponsorship.incomePerSeason}/season)</div>`;
+  }
+  extraHtml += `</div>`;
+
+  /* Pre-Match Scouting Report (#3) */
+  if (G.week <= SEASON_WEEKS && G.fixtures[div]) {
+    const fix = G.fixtures[div][G.week - 1];
+    if (fix) {
+      const pm = fix.find(f => f.home === G.playerTeamId || f.away === G.playerTeamId);
+      if (pm && pm.homeGoals === null) {
+        const oppId = pm.home === G.playerTeamId ? pm.away : pm.home;
+        const opp = G.teams[oppId];
+        if (opp) {
+          const oppForm = opp.seasonStats.w - opp.seasonStats.l;
+          const formStr = oppForm > 2 ? 'Hot streak' : oppForm < -2 ? 'Cold streak' : 'Steady';
+          const formColor = oppForm > 2 ? 'var(--red)' : oppForm < -2 ? 'var(--green)' : 'var(--text-dim)';
+          const oppFormation = FORMATIONS[opp.aiFormation]?.label || '4-4-2';
+          const bestPlayer = [...opp.players].sort((a, b) => b.skill - a.skill)[0];
+
+          extraHtml += `<div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px">`;
+          extraHtml += `<div style="font-size:.82rem;font-weight:700;color:var(--text-dim);margin-bottom:4px">&#128270; ${t(settings, 'scoutReport')} — ${teamLabel(opp)}</div>`;
+          extraHtml += `<div style="display:flex;gap:14px;flex-wrap:wrap;font-size:.82rem">`;
+          extraHtml += `<span>Form: <b style="color:${formColor}">${formStr}</b></span>`;
+          extraHtml += `<span>Formation: <b>${oppFormation}</b></span>`;
+          extraHtml += `<span>Record: ${opp.seasonStats.w}W ${opp.seasonStats.d}D ${opp.seasonStats.l}L</span>`;
+          if (bestPlayer) {
+            extraHtml += `<span>Key Player: <b>${bestPlayer.name}</b> (${bestPlayer.pos}, ${bestPlayer.skill})</span>`;
+          }
+          const oppMorale = opp.morale ?? 0;
+          if (oppMorale !== 0) {
+            extraHtml += `<span>Morale: ${oppMorale > 0 ? '+' : ''}${oppMorale}</span>`;
+          }
+          extraHtml += `</div></div>`;
+        }
+      }
+    }
+  }
+  extraHtml += `</div>`;
+
+  /* Insert the status card before the mini table */
+  if (dashTableWrap) {
+    const parent = dashTableWrap.parentElement;
+    if (parent) {
+      let statusCard = document.getElementById('team-status-card');
+      if (!statusCard) {
+        statusCard = document.createElement('div');
+        statusCard.id = 'team-status-card';
+        parent.insertBefore(statusCard, dashTableWrap.closest('.card'));
+      }
+      statusCard.innerHTML = extraHtml;
+    }
+  }
+
+  /* ===== Mini League Table ===== */
   if (dashTableWrap) {
     dashTableWrap.innerHTML = buildTableHTML(G, settings, div, teamLabelWithTrophiesFn);
   }

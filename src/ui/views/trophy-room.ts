@@ -6,6 +6,7 @@
  * - Season Records (scorer, match, power records)
  * - All-Time Stats (cumulative career stats)
  * - Milestones (promotions, streaks, clean sheets)
+ * - Coach Achievements (21 unlockable achievements)
  * - Badges & Hall of Fame (achievement badges, top scorers)
  */
 
@@ -13,6 +14,7 @@ import type { GameState, Settings, Team, Records, StatRecord, LeagueStatRecord,
   TopScorerRecord, LeagueTopScorerRecord, MatchResultRecord, LeagueMatchResultRecord,
   MostGoalsRecord, LeagueMostGoalsRecord } from '../../types';
 import { t } from '../../data/i18n';
+import { SEASON_WEEKS } from '../../config';
 
 /* ================================================================
    HELPER: Single-season record card (your best vs league record)
@@ -184,6 +186,249 @@ function trHallOfFame(settings: Settings, r: Records): string {
 }
 
 /* ================================================================
+   COACH ACHIEVEMENTS — 21 unlockable achievements
+   ================================================================ */
+
+/** Achievement definition: id, icon, i18n key, and check function */
+interface CoachAchievement {
+  id: string;
+  icon: string;
+  labelKey: string;
+  descKey: string;
+  check: (G: GameState, pt: Team, r: Records) => boolean;
+  progress?: (G: GameState, pt: Team, r: Records) => string;
+}
+
+/**
+ * All 21 coach achievements.
+ * Each is computed dynamically from existing game state — no new
+ * fields required in GameState or Records.
+ */
+const COACH_ACHIEVEMENTS: readonly CoachAchievement[] = [
+  /* 1. First Victory — Win your first match */
+  {
+    id: 'firstVictory',
+    icon: '&#9989;',
+    labelKey: 'achFirstVictory',
+    descKey: 'achFirstVictoryDesc',
+    check: (_G, pt) => pt.stats.w >= 1,
+  },
+  /* 2. First Trophy — Win any trophy */
+  {
+    id: 'firstTrophy',
+    icon: '&#127942;',
+    labelKey: 'achFirstTrophy',
+    descKey: 'achFirstTrophyDesc',
+    check: (_G, pt) => (pt.trophies?.length ?? 0) >= 1,
+  },
+  /* 3. Top of the World — Reach Division 1 */
+  {
+    id: 'topOfWorld',
+    icon: '&#127757;',
+    labelKey: 'achTopOfWorld',
+    descKey: 'achTopOfWorldDesc',
+    check: (_G, _pt, r) => r.highestDiv === 1,
+  },
+  /* 4. League Champion — Win the Division 1 title */
+  {
+    id: 'leagueChampion',
+    icon: '&#128081;',
+    labelKey: 'achLeagueChampion',
+    descKey: 'achLeagueChampionDesc',
+    check: (_G, pt) => (pt.trophies ?? []).some(tr => tr.type === 'gold_trophy'),
+  },
+  /* 5. Cup Winner — Win the Cup competition */
+  {
+    id: 'cupWinner',
+    icon: '&#127941;',
+    labelKey: 'achCupWinner',
+    descKey: 'achCupWinnerDesc',
+    check: (_G, pt) => (pt.trophies ?? []).some(tr => tr.type === 'gold_medal' || tr.type === 'cup'),
+  },
+  /* 6. The Double — Win Div 1 and Cup in the same season */
+  {
+    id: 'theDouble',
+    icon: '&#11088;',
+    labelKey: 'achTheDouble',
+    descKey: 'achTheDoubleDesc',
+    check: (_G, pt) => {
+      const trophies = pt.trophies ?? [];
+      const leagueSeasons = new Set(trophies.filter(tr => tr.type === 'gold_trophy').map(tr => tr.season));
+      return trophies.some(tr => (tr.type === 'gold_medal' || tr.type === 'cup') && leagueSeasons.has(tr.season));
+    },
+  },
+  /* 7. Invincible Season — Complete a season with 0 losses */
+  {
+    id: 'invincible',
+    icon: '&#128737;',
+    labelKey: 'achInvincible',
+    descKey: 'achInvincibleDesc',
+    check: (_G, _pt, r) => r.fewestDefeats.value === 0 && r.fewestDefeats.season > 0,
+  },
+  /* 8. Perfect Season — Win all league matches in a season */
+  {
+    id: 'perfectSeason',
+    icon: '&#128175;',
+    labelKey: 'achPerfectSeason',
+    descKey: 'achPerfectSeasonDesc',
+    check: (_G, _pt, r) => r.bestWins.value >= SEASON_WEEKS && r.bestWins.season > 0,
+  },
+  /* 9. Promotion Master — Achieve 3 promotions */
+  {
+    id: 'promotionMaster',
+    icon: '&#128640;',
+    labelKey: 'achPromotionMaster',
+    descKey: 'achPromotionMasterDesc',
+    check: (_G, _pt, r) => r.totalPromotions >= 3,
+    progress: (_G, _pt, r) => `${Math.min(r.totalPromotions, 3)}/3`,
+  },
+  /* 10. Comeback Kid — Get promoted after being relegated */
+  {
+    id: 'comebackKid',
+    icon: '&#128260;',
+    labelKey: 'achComebackKid',
+    descKey: 'achComebackKidDesc',
+    check: (_G, _pt, r) => r.totalRelegations >= 1 && r.totalPromotions >= 1,
+  },
+  /* 11. Dynasty Builder — 5 consecutive seasons in Division 1 */
+  {
+    id: 'dynastyBuilder',
+    icon: '&#127984;',
+    labelKey: 'achDynastyBuilder',
+    descKey: 'achDynastyBuilderDesc',
+    check: (_G, _pt, r) => r.maxConsecutiveDiv1 >= 5,
+    progress: (_G, _pt, r) => `${Math.min(r.maxConsecutiveDiv1, 5)}/5`,
+  },
+  /* 12. Centurion Wins — 100 career wins */
+  {
+    id: 'centurionWins',
+    icon: '&#128170;',
+    labelKey: 'achCenturionWins',
+    descKey: 'achCenturionWinsDesc',
+    check: (_G, pt) => pt.stats.w >= 100,
+    progress: (_G, pt) => `${Math.min(pt.stats.w, 100)}/100`,
+  },
+  /* 13. Centurion Goals — 100 career goals scored */
+  {
+    id: 'centurionGoals',
+    icon: '&#9917;',
+    labelKey: 'achCenturionGoals',
+    descKey: 'achCenturionGoalsDesc',
+    check: (_G, pt) => pt.stats.gf >= 100,
+    progress: (_G, pt) => `${Math.min(pt.stats.gf, 100)}/100`,
+  },
+  /* 14. Goal Machine — 500 career goals scored */
+  {
+    id: 'goalMachine',
+    icon: '&#128293;',
+    labelKey: 'achGoalMachine',
+    descKey: 'achGoalMachineDesc',
+    check: (_G, pt) => pt.stats.gf >= 500,
+    progress: (_G, pt) => `${Math.min(pt.stats.gf, 500)}/500`,
+  },
+  /* 15. Win Streak — 10-match winning streak */
+  {
+    id: 'winStreak10',
+    icon: '&#128293;',
+    labelKey: 'achWinStreak10',
+    descKey: 'achWinStreak10Desc',
+    check: (_G, _pt, r) => r.longestWinStreak >= 10,
+    progress: (_G, _pt, r) => `${Math.min(r.longestWinStreak, 10)}/10`,
+  },
+  /* 16. Unbeaten Run — 20-match unbeaten streak */
+  {
+    id: 'unbeatenRun',
+    icon: '&#127968;',
+    labelKey: 'achUnbeatenRun',
+    descKey: 'achUnbeatenRunDesc',
+    check: (_G, _pt, r) => r.longestUnbeaten >= 20,
+    progress: (_G, _pt, r) => `${Math.min(r.longestUnbeaten, 20)}/20`,
+  },
+  /* 17. Clean Sheet King — 50 career clean sheets */
+  {
+    id: 'cleanSheetKing',
+    icon: '&#129351;',
+    labelKey: 'achCleanSheetKing',
+    descKey: 'achCleanSheetKingDesc',
+    check: (_G, _pt, r) => r.totalCleanSheets >= 50,
+    progress: (_G, _pt, r) => `${Math.min(r.totalCleanSheets, 50)}/50`,
+  },
+  /* 18. Fortress — Concede 5 or fewer goals in a season */
+  {
+    id: 'fortress',
+    icon: '&#127984;',
+    labelKey: 'achFortress',
+    descKey: 'achFortressDesc',
+    check: (_G, _pt, r) => r.bestDefence.value <= 5 && r.bestDefence.season > 0,
+  },
+  /* 19. Marathon Manager — Manage 10 seasons */
+  {
+    id: 'marathonManager',
+    icon: '&#128197;',
+    labelKey: 'achMarathonManager',
+    descKey: 'achMarathonManagerDesc',
+    check: (G) => G.season > 10,
+    progress: (G) => `${Math.min(G.season - 1, 10)}/10`,
+  },
+  /* 20. Veteran Manager — Manage 20 seasons */
+  {
+    id: 'veteranManager',
+    icon: '&#128188;',
+    labelKey: 'achVeteranManager',
+    descKey: 'achVeteranManagerDesc',
+    check: (G) => G.season > 20,
+    progress: (G) => `${Math.min(G.season - 1, 20)}/20`,
+  },
+  /* 21. Hall of Fame Legend — Have a player score 50+ career goals */
+  {
+    id: 'hofLegend',
+    icon: '&#127775;',
+    labelKey: 'achHoFLegend',
+    descKey: 'achHoFLegendDesc',
+    check: (_G, _pt, r) => {
+      const hof = r.hallOfFame || {};
+      return Object.values(hof).some(goals => goals >= 50);
+    },
+    progress: (_G, _pt, r) => {
+      const hof = r.hallOfFame || {};
+      const best = Math.max(0, ...Object.values(hof));
+      return `${Math.min(best, 50)}/50`;
+    },
+  },
+];
+
+/**
+ * Render the Coach Achievements section — 21 unlockable achievements
+ * displayed as a grid of cards with unlocked/locked state.
+ */
+function trCoachAchievements(settings: Settings, G: GameState, pt: Team, r: Records): string {
+  const unlocked = COACH_ACHIEVEMENTS.filter(a => a.check(G, pt, r)).length;
+  let h = `<div class="trophy-room-section">`;
+  h += `<div class="section-title">&#127894; ${t(settings, 'trCoachAchievements')}</div>`;
+  h += `<div class="achievement-summary">${t(settings, 'trAchProgress', { unlocked: String(unlocked), total: String(COACH_ACHIEVEMENTS.length) })}</div>`;
+  h += `<div class="achievement-grid">`;
+
+  for (const ach of COACH_ACHIEVEMENTS) {
+    const isUnlocked = ach.check(G, pt, r);
+    const cls = isUnlocked ? 'achievement-card unlocked' : 'achievement-card locked';
+    const icon = isUnlocked ? ach.icon : '&#128274;';
+
+    h += `<div class="${cls}">`;
+    h += `<div class="ach-icon">${icon}</div>`;
+    h += `<div class="ach-info">`;
+    h += `<div class="ach-name">${t(settings, ach.labelKey)}</div>`;
+    h += `<div class="ach-desc">${t(settings, ach.descKey)}</div>`;
+    if (!isUnlocked && ach.progress) {
+      h += `<div class="ach-progress">${ach.progress(G, pt, r)}</div>`;
+    }
+    h += `</div></div>`;
+  }
+
+  h += `</div></div>`;
+  return h;
+}
+
+/* ================================================================
    MAIN TROPHY ROOM RENDERER
    ================================================================ */
 
@@ -258,7 +503,10 @@ export function renderTrophyRoom(
   h += trMilestone('&#128272;', r.totalCleanSheets, t(settings, 'trCleanSheets'));
   h += `</div></div>`;
 
-  /* Section E: Badges & Hall of Fame */
+  /* Section E: Coach Achievements */
+  h += trCoachAchievements(settings, G, pt, r);
+
+  /* Section F: Badges & Hall of Fame */
   h += `<div class="trophy-room-section"><div class="section-title">&#127775; ${t(settings, 'trBadgesHoF')}</div>`;
   h += trBadges(settings, pt, r);
   h += trHallOfFame(settings, r);

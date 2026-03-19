@@ -11,12 +11,15 @@ import type {
   FinancialAward,
   GameState,
   Player,
+  PlayerRole,
   Records,
   SeasonAward,
+  SeasonAwardEntry,
   SeasonHistory,
   SeasonMove,
   Team,
   TrophyType,
+  YouthProspect,
 } from '../types';
 import {
   FORMATIONS,
@@ -27,6 +30,14 @@ import {
   DIV_SEASON_INCOME,
   DIV_WIN_BONUS,
   DIV_DRAW_BONUS,
+  MORALE_PROMOTION,
+  MORALE_RELEGATION,
+  MORALE_MAX,
+  MORALE_MIN,
+  RIVAL_PAIRS,
+  STADIUM_INCOME_BONUS,
+  YOUTH_ACADEMY_SKILL_BONUS,
+  ROLES_BY_POSITION,
 } from '../config';
 import { applyDevelopmentCurve, agePlayer, genName, genSkill, makePlayer, rand } from './player';
 import { getTeamPowerLevels } from './match';
@@ -352,6 +363,15 @@ export const endOfSeason = (G: GameState): {
     }
   }
 
+  /* ---- Morale changes for promoted/relegated teams (#4) ---- */
+  for (const m of moves) {
+    if (m.type === 'promote') {
+      m.team.morale = Math.min(MORALE_MAX, (m.team.morale ?? 0) + MORALE_PROMOTION);
+    } else if (m.type === 'relegate' || m.type === 'out') {
+      m.team.morale = Math.max(MORALE_MIN, (m.team.morale ?? 0) + MORALE_RELEGATION);
+    }
+  }
+
   /* ---- Bring in teams from return pool and waiting pool ---- */
   const enteringTeams: Array<{
     name: string;
@@ -663,7 +683,201 @@ export const startNewSeason = (G: GameState): void => {
     }
   }
 
+  /* ---- Assign rival relationships (#13) ---- */
+  assignRivals(G);
+
+  /* ---- Generate youth prospects (#14) ---- */
+  generateYouthProspects(G);
+
+  /* ---- Return loaned players (#8) ---- */
+  returnLoans(G);
+
+  /* ---- Decay morale toward 0 (#4) ---- */
+  for (const tm of G.teams) {
+    if (tm.div >= 1 && tm.div <= 4) {
+      const m = tm.morale ?? 0;
+      if (m > 0) tm.morale = m - 1;
+      else if (m < 0) tm.morale = m + 1;
+    }
+  }
+
+  /* ---- Apply sponsorship income (#6) ---- */
+  applySponsorshipIncome(G);
+
+  /* ---- Apply stadium income bonus (#7) ---- */
+  applyFacilityIncome(G);
+
   /* ---- Generate new fixtures and cup bracket ---- */
   generateFixtures(G);
   generateCupBracket(G);
+};
+
+// ---------------------------------------------------------------------------
+// Rival Assignment (#13)
+// ---------------------------------------------------------------------------
+
+/**
+ * Assign rival team IDs based on configured rival pairs.
+ */
+export const assignRivals = (G: GameState): void => {
+  for (const [nameA, nameB] of RIVAL_PAIRS) {
+    const teamA = G.teams.find(t => t.name === nameA);
+    const teamB = G.teams.find(t => t.name === nameB);
+    if (teamA && teamB) {
+      if (!teamA.rivals) teamA.rivals = [];
+      if (!teamB.rivals) teamB.rivals = [];
+      if (!teamA.rivals.includes(teamB.id)) teamA.rivals.push(teamB.id);
+      if (!teamB.rivals.includes(teamA.id)) teamB.rivals.push(teamA.id);
+    }
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Youth Academy Pipeline (#14)
+// ---------------------------------------------------------------------------
+
+/**
+ * Generate 1-2 youth prospects at the start of each season.
+ * Quality scales with division and youth academy facility level.
+ */
+export const generateYouthProspects = (G: GameState): void => {
+  if (G.playerTeamId == null) return;
+  const pt = G.teams[G.playerTeamId];
+  const cty = pt.country || '';
+  const academyLevel = G.facilities?.youthAcademy ?? 0;
+  const count = 1 + (Math.random() < 0.5 ? 1 : 0);
+
+  const prospects: YouthProspect[] = [];
+  for (let i = 0; i < count; i++) {
+    const baseSkill = genSkill(pt.div) + (academyLevel * YOUTH_ACADEMY_SKILL_BONUS);
+    const age = 16 + rand(0, 1);
+    const pos = (['DEF', 'MID', 'STR'] as const)[rand(0, 2)];
+    const role = (ROLES_BY_POSITION[pos] || [null])[rand(0, ROLES_BY_POSITION[pos].length - 1)] as PlayerRole;
+    const player = makePlayer(genName(cty), pos, baseSkill, age, { role });
+    prospects.push({ player, promoted: false });
+  }
+  G.youthProspects = prospects;
+};
+
+// ---------------------------------------------------------------------------
+// Loan System (#8)
+// ---------------------------------------------------------------------------
+
+/**
+ * Return all loaned players to their parent clubs at season end.
+ */
+export const returnLoans = (G: GameState): void => {
+  if (!G.loans || G.loans.length === 0) return;
+  if (G.playerTeamId == null) return;
+
+  const pt = G.teams[G.playerTeamId];
+  for (const loan of G.loans) {
+    /* Remove loaned player from player's squad */
+    const idx = pt.players.findIndex(p => p.name === loan.player.name);
+    if (idx >= 0) pt.players.splice(idx, 1);
+  }
+  G.loans = [];
+};
+
+// ---------------------------------------------------------------------------
+// Sponsorship Income (#6)
+// ---------------------------------------------------------------------------
+
+/**
+ * Apply sponsorship income at season start.
+ * Checks if team still qualifies for their sponsor tier.
+ */
+export const applySponsorshipIncome = (G: GameState): void => {
+  if (G.playerTeamId == null || !G.sponsorship) return;
+  const pt = G.teams[G.playerTeamId];
+
+  /* Check if team still qualifies */
+  if (pt.div > G.sponsorship.requiredDiv) {
+    G.sponsorship = null; /* Lost sponsor due to relegation */
+    return;
+  }
+
+  G.budgets[G.playerTeamId] = (G.budgets[G.playerTeamId] || 0) + G.sponsorship.incomePerSeason;
+};
+
+// ---------------------------------------------------------------------------
+// Facility Income (#7)
+// ---------------------------------------------------------------------------
+
+/**
+ * Apply stadium upgrade income bonus at season start.
+ */
+export const applyFacilityIncome = (G: GameState): void => {
+  if (G.playerTeamId == null) return;
+  const stadiumLevel = G.facilities?.stadium ?? 0;
+  if (stadiumLevel > 0) {
+    G.budgets[G.playerTeamId] = (G.budgets[G.playerTeamId] || 0) + (stadiumLevel * STADIUM_INCOME_BONUS);
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Season Awards (#15)
+// ---------------------------------------------------------------------------
+
+/**
+ * Calculate season awards from existing data.
+ * Returns awards for display in the season-end overlay.
+ */
+export const calculateSeasonAwards = (G: GameState): SeasonAwardEntry[] => {
+  const awards: SeasonAwardEntry[] = [];
+
+  /* Golden Boot — top scorer per division (already tracked) */
+  const allScorers = Object.values(G.topScorers).sort((a, b) => b.goals - a.goals);
+  if (allScorers.length && allScorers[0].goals > 0) {
+    const top = allScorers[0];
+    const tm = G.teams[top.teamId];
+    awards.push({
+      type: 'goldenBoot',
+      playerName: top.name,
+      teamName: tm ? tm.name : '',
+      value: top.goals,
+    });
+  }
+
+  /* Player of the Season — highest goals+apps combo on player's team */
+  if (G.playerTeamId != null) {
+    const pt = G.teams[G.playerTeamId];
+    let best: Player | null = null;
+    let bestScore = 0;
+    for (const p of pt.players) {
+      const score = (p.seasonGoals || 0) * 3 + (p.seasonApps || 0);
+      if (score > bestScore) {
+        bestScore = score;
+        best = p;
+      }
+    }
+    if (best) {
+      awards.push({
+        type: 'playerOfSeason',
+        playerName: best.name,
+        teamName: pt.name,
+        value: best.seasonGoals || 0,
+      });
+    }
+
+    /* Best Young Player — under 21 with most skill improvement */
+    let bestYoung: Player | null = null;
+    let bestYoungGoals = 0;
+    for (const p of pt.players) {
+      if ((p.age || 25) <= 21 && (p.seasonGoals || 0) > bestYoungGoals) {
+        bestYoungGoals = p.seasonGoals || 0;
+        bestYoung = p;
+      }
+    }
+    if (bestYoung) {
+      awards.push({
+        type: 'bestYoung',
+        playerName: bestYoung.name,
+        teamName: pt.name,
+        value: bestYoungGoals,
+      });
+    }
+  }
+
+  return awards;
 };

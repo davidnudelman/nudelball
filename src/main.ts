@@ -74,7 +74,8 @@ import {
   applyCardSuspensions,
   getTeamPowerLevels as engineGetTeamPowerLevels,
 } from './engine/match';
-import { endOfSeason, startNewSeason } from './engine/season';
+import { endOfSeason, startNewSeason, calculateSeasonAwards, assignRivals } from './engine/season';
+import { decayMorale } from './engine/match';
 import { applyTraining } from './engine/training';
 import {
   signPlayer as engineSignPlayer,
@@ -515,6 +516,11 @@ function playMatch(): void {
   /* Apply weekly training for the player's squad */
   applyTraining(G, diffMult.trainingMult);
 
+  /* Decay morale toward 0 for all teams (#4) */
+  for (const tm of G.teams) {
+    if (tm.div >= 1 && tm.div <= 4) decayMorale(tm);
+  }
+
   /* If we have a player fixture, animate it before advancing the week */
   if (playerFixture) {
     /* Build rival results from same-division fixtures */
@@ -710,6 +716,26 @@ function showSeasonEndOverlay(result: ReturnType<typeof endOfSeason>): void {
       `<div style="font-size:1rem;font-weight:700;margin-bottom:6px">${fateIcon} ${fateText}</div>` +
       (totalCash > 0 ? `<div style="font-size:0.88rem;color:var(--green);font-weight:600">\u{1F4B0} Season earnings: $${totalCash.toLocaleString()}</div>` : '') +
       `</div>`;
+  }
+
+  /* ---- Season Awards (#15) ---- */
+  const awards = calculateSeasonAwards(G);
+  if (awards.length > 0) {
+    h += `<div class="season-section" style="margin-bottom:12px">` +
+      `<div style="font-family:'Oswald';font-size:0.9rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim);margin-bottom:8px">${t(settings, 'seasonAwards')}</div>` +
+      `<div class="awards-grid">`;
+    for (const a of awards) {
+      const typeLabel = a.type === 'goldenBoot' ? t(settings, 'goldenBootAward')
+        : a.type === 'playerOfSeason' ? t(settings, 'playerOfSeasonAward')
+        : a.type === 'bestYoung' ? t(settings, 'bestYoungAward')
+        : a.type;
+      h += `<div class="award-card">` +
+        `<div class="aw-type">${typeLabel}</div>` +
+        `<div class="aw-name">${a.playerName}</div>` +
+        `<div class="aw-detail">${a.teamName} (${a.value} goals)</div>` +
+        `</div>`;
+    }
+    h += `</div></div>`;
   }
 
   /* Start next season button */
@@ -1290,7 +1316,7 @@ const welcomeCallbacks = {
   loadGame,
   deleteSave,
   initNewGame,
-  generateCupBracket: () => generateCupBracket(G),
+  generateCupBracket: () => { generateCupBracket(G); assignRivals(G); },
   saveGame,
   enterGame: () => {
     initPlayBtn(G, settings);

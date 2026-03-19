@@ -7,14 +7,22 @@
  * `getAITeamPlayersForSale()` and `buyFromTeam()`.
  */
 
-import type { AIPlayerForSale, FreeAgent, GameState, Player, Position, Team, TransferLogEntry } from '../types';
+import type {
+  AIPlayerForSale, FreeAgent, GameState, LoanPlayer, NegotiationState,
+  Player, Position, Team, TransferLogEntry,
+} from '../types';
 import {
   AI_TARGET_SQUAD,
   COUNTRY_NAMES,
   DIV_RANGE,
   FREE_AGENT_SKILL_RANGE,
   FREE_AGENTS_PER_SEASON,
+  LOAN_FEE_RATIO,
   MAX_FREE_AGENT_POOL,
+  NEGOTIATION_MARKUP_MAX,
+  NEGOTIATION_MARKUP_MIN,
+  NEGOTIATION_MAX_ROUNDS,
+  NEGOTIATION_REDUCTION,
   POS_ORDER,
   SELL_VALUE_RATIO,
   SQUAD_MAX,
@@ -573,4 +581,143 @@ export const buyFromTeam = (
   });
 
   return true;
+};
+
+// ---------------------------------------------------------------------------
+// Loan System (#8)
+// ---------------------------------------------------------------------------
+
+/**
+ * Get available loan players from higher-division AI teams.
+ * Can't loan from same-division teams.
+ */
+export const getAvailableLoans = (G: GameState): Array<{ player: Player; teamId: number; teamName: string; fee: number }> => {
+  if (G.playerTeamId == null) return [];
+  const pt = G.teams[G.playerTeamId];
+  const results: Array<{ player: Player; teamId: number; teamName: string; fee: number }> = [];
+
+  for (const tm of G.teams) {
+    if (tm.id === G.playerTeamId) continue;
+    if (tm.div === pt.div) continue;
+    if (tm.div < 1 || tm.div > 4) continue;
+    if (tm.div >= pt.div) continue;
+
+    const sorted = [...tm.players].sort((a, b) => a.skill - b.skill);
+    const count = Math.min(2, Math.floor(sorted.length * 0.3));
+    for (let i = 0; i < count; i++) {
+      const p = sorted[i];
+      const fee = Math.round(playerMarketValue(p) * LOAN_FEE_RATIO / 100) * 100;
+      results.push({ player: p, teamId: tm.id, teamName: tm.name, fee });
+    }
+  }
+  return results;
+};
+
+/**
+ * Execute a loan transfer.
+ */
+export const loanPlayer = (G: GameState, fromTeamId: number, playerName: string, fee: number): boolean => {
+  if (G.playerTeamId == null) return false;
+  const pt = G.teams[G.playerTeamId];
+  const seller = G.teams[fromTeamId];
+  if (!seller) return false;
+  if (pt.players.length >= SQUAD_MAX) return false;
+  if ((G.budgets[pt.id] || 0) < fee) return false;
+
+  const pIdx = seller.players.findIndex(p => p.name === playerName);
+  if (pIdx < 0) return false;
+  const p = seller.players[pIdx];
+
+  pt.players.push({
+    name: p.name, pos: p.pos, skill: p.skill, stamina: 100,
+    benchStreak: 0, assignedPos: null, selected: false,
+    age: p.age || 25, injuredFor: 0,
+    careerGoals: p.careerGoals || 0, careerApps: p.careerApps || 0,
+    seasonGoals: 0, seasonApps: 0, seasonYellows: 0, seasonReds: 0,
+    form: 0, formStreak: 0, suspendedFor: 0, isAcademy: false,
+  });
+
+  if (!G.loans) G.loans = [];
+  G.loans.push({ player: p, fromTeamId, loanFee: fee });
+  G.budgets[pt.id] -= fee;
+
+  if (!G.transferLog) G.transferLog = [];
+  G.transferLog.push({
+    season: G.season, type: 'buy', playerName: p.name,
+    teamId: pt.id, teamName: pt.name, amount: fee,
+  });
+
+  return true;
+};
+
+// ---------------------------------------------------------------------------
+// Transfer Negotiation (#17)
+// ---------------------------------------------------------------------------
+
+/**
+ * Start a negotiation with an AI team for a player.
+ */
+export const startNegotiation = (
+  G: GameState, sellerTeamId: number, playerIdx: number,
+): NegotiationState | null => {
+  const seller = G.teams[sellerTeamId];
+  if (!seller || !seller.players[playerIdx]) return null;
+
+  const p = seller.players[playerIdx];
+  const baseValue = playerMarketValue(p);
+  const markup = NEGOTIATION_MARKUP_MIN + Math.random() * (NEGOTIATION_MARKUP_MAX - NEGOTIATION_MARKUP_MIN);
+  const askingPrice = Math.round(baseValue * (1 + markup) / 100) * 100;
+
+  return {
+    sellerTeamId, playerIdx, askingPrice,
+    minimumPrice: baseValue,
+    roundsLeft: NEGOTIATION_MAX_ROUNDS,
+  };
+};
+
+/**
+ * Submit a counter-offer in a negotiation.
+ */
+export const counterOffer = (
+  neg: NegotiationState, offer: number,
+): { accepted: boolean; newState: NegotiationState | null } => {
+  if (offer >= neg.askingPrice) {
+    return { accepted: true, newState: null };
+  }
+  neg.roundsLeft--;
+  if (neg.roundsLeft <= 0) {
+    if (offer >= neg.minimumPrice && Math.random() < 0.30) {
+      return { accepted: true, newState: null };
+    }
+    return { accepted: false, newState: null };
+  }
+  const gap = neg.askingPrice - neg.minimumPrice;
+  neg.askingPrice = Math.round((neg.askingPrice - gap * NEGOTIATION_REDUCTION) / 100) * 100;
+  neg.askingPrice = Math.max(neg.askingPrice, neg.minimumPrice);
+  return { accepted: false, newState: neg };
+};
+
+// ---------------------------------------------------------------------------
+// Scout Filtering (#18)
+// ---------------------------------------------------------------------------
+
+/**
+ * Filter available AI team IDs based on scout level.
+ */
+export const getScoutedTeams = (G: GameState): number[] => {
+  if (G.playerTeamId == null) return [];
+  const pt = G.teams[G.playerTeamId];
+  const scoutLevel = G.scoutLevel ?? 0;
+  const teamIds: number[] = [];
+
+  for (const tm of G.teams) {
+    if (tm.id === G.playerTeamId) continue;
+    if (tm.div < 1 || tm.div > 4) continue;
+    if (scoutLevel >= 1) {
+      teamIds.push(tm.id);
+    } else if (Math.abs(tm.div - pt.div) <= 1) {
+      teamIds.push(tm.id);
+    }
+  }
+  return teamIds;
 };
