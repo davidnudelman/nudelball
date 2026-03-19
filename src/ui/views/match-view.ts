@@ -162,6 +162,10 @@ export function setupMatchUI(
   /* Cup final banner */
   const cupBanner = isCupFinal ? '<div class="cup-final-banner">&#127942; CUP FINAL</div>' : '';
 
+  /* Derby banner (#13) */
+  const isDerby = (homeTeam.rivals?.includes(awayTeam.id)) || (awayTeam.rivals?.includes(homeTeam.id));
+  const derbyBanner = isDerby ? '<div class="cup-final-banner" style="background:linear-gradient(90deg,#e53935,#ff6f00)">&#128293; DERBY MATCH &#128293;</div>' : '';
+
   /* Tactic buttons for mid-match adjustments */
   const tacticBtns = Object.entries(TACTICS)
     .map(([k, v]) => `<button class="match-tactic-btn${G.tactic === k ? ' active' : ''}" onclick="changeTacticMidMatch('${k}')">${v.icon} ${v.label}</button>`)
@@ -195,7 +199,7 @@ export function setupMatchUI(
 
   /* Build the full match UI */
   sim.innerHTML =
-    cupBanner +
+    cupBanner + derbyBanner +
     `<div class="match-header-area">` +
     `<div class="mh-team home">${teamLabel(homeTeam)}</div>` +
     `<div class="match-score-big" id="live-score">0 — 0</div>` +

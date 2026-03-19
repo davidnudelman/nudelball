@@ -75,13 +75,14 @@ import {
   applyCardSuspensions,
   getTeamPowerLevels as engineGetTeamPowerLevels,
 } from './engine/match';
-import { endOfSeason, startNewSeason, calculateSeasonAwards, assignRivals } from './engine/season';
+import { endOfSeason, startNewSeason, calculateSeasonAwards, assignRivals, generateYouthProspects } from './engine/season';
 import { decayMorale } from './engine/match';
 import { applyTraining } from './engine/training';
 import {
   signPlayer as engineSignPlayer,
   sellPlayer as engineSellPlayer,
   buyFromTeam as engineBuyFromTeam,
+  loanPlayer as engineLoanPlayer,
 } from './engine/transfers';
 import { makePlayer, genName, genSkill } from './engine/player';
 
@@ -168,6 +169,9 @@ import {
   SEASON_WEEKS,
   SQUAD_MAX,
   SQUAD_MIN,
+  FACILITY_COSTS,
+  SPONSORSHIP_TIERS,
+  SCOUT_COSTS,
 } from './config';
 import { teamLabel } from './utils/helpers';
 
@@ -910,6 +914,122 @@ function globalBuyAIPlayer(sellerTeamId: number, playerIdx: number): void {
 }
 
 // ===========================================================================
+// FACILITY UPGRADE (#7)
+// ===========================================================================
+
+/** Upgrade a facility (trainingFacility, youthAcademy, or stadium). */
+function upgradeFacility(facilityKey: string): void {
+  if (G.playerTeamId == null) return;
+  if (!G.facilities) G.facilities = { trainingFacility: 0, youthAcademy: 0, stadium: 0 };
+  const costs = FACILITY_COSTS[facilityKey];
+  if (!costs) return;
+  const fac = G.facilities as unknown as Record<string, number>;
+  const currentLevel = fac[facilityKey] || 0;
+  if (currentLevel >= costs.length) return;
+  const cost = costs[currentLevel];
+  const budget = G.budgets[G.playerTeamId] || 0;
+  if (budget < cost) return;
+  G.budgets[G.playerTeamId] -= cost;
+  fac[facilityKey] = currentLevel + 1;
+  SFX.click();
+  saveGame();
+  updateTopBar(G, settings);
+  refreshAll();
+}
+
+// ===========================================================================
+// SPONSORSHIP SELECTION (#6)
+// ===========================================================================
+
+/** Select a sponsorship deal. */
+function selectSponsor(tier: string): void {
+  const sp = SPONSORSHIP_TIERS.find(s => s.tier === tier);
+  if (!sp) return;
+  if (G.playerTeamId == null) return;
+  const pt = G.teams[G.playerTeamId];
+  if (pt.div > sp.requiredDiv) return;
+  G.sponsorship = { ...sp };
+  SFX.click();
+  saveGame();
+  refreshAll();
+}
+
+// ===========================================================================
+// LOAN PLAYER (#8)
+// ===========================================================================
+
+/** Execute a loan transfer. */
+function loanPlayerAction(fromTeamId: number, playerName: string, fee: number): void {
+  const success = engineLoanPlayer(G, fromTeamId, playerName, fee);
+  if (success) {
+    SFX.click();
+    saveGame();
+    wrappedRenderMarket();
+    wrappedRenderSquad();
+    updatePlayBtn();
+    updateTopBar(G, settings);
+  }
+}
+
+// ===========================================================================
+// SCOUT UPGRADE (#18)
+// ===========================================================================
+
+/** Upgrade the scout network level. */
+function upgradeScout(): void {
+  if (G.playerTeamId == null) return;
+  const currentLevel = G.scoutLevel ?? 0;
+  if (currentLevel >= SCOUT_COSTS.length - 1) return;
+  const cost = SCOUT_COSTS[currentLevel + 1];
+  const budget = G.budgets[G.playerTeamId] || 0;
+  if (budget < cost) return;
+  G.budgets[G.playerTeamId] -= cost;
+  G.scoutLevel = (currentLevel + 1) as import('./types').ScoutLevel;
+  SFX.click();
+  saveGame();
+  wrappedRenderMarket();
+  updateTopBar(G, settings);
+}
+
+// ===========================================================================
+// YOUTH ACADEMY PROMOTE (#14)
+// ===========================================================================
+
+/** Promote a youth prospect to the first team. */
+function promoteProspect(prospectIdx: number): void {
+  if (G.playerTeamId == null || !G.youthProspects) return;
+  const prospect = G.youthProspects[prospectIdx];
+  if (!prospect || prospect.promoted) return;
+  const pt = G.teams[G.playerTeamId];
+  if (pt.players.length >= SQUAD_MAX) return;
+
+  /* Add prospect to first team */
+  pt.players.push({
+    ...prospect.player,
+    selected: false,
+    assignedPos: null,
+    benchStreak: 0,
+    stamina: 100,
+    injuredFor: 0,
+    suspendedFor: 0,
+    form: 0,
+    formStreak: 0,
+    seasonGoals: 0,
+    seasonApps: 0,
+    seasonYellows: 0,
+    seasonReds: 0,
+    careerGoals: prospect.player.careerGoals || 0,
+    careerApps: prospect.player.careerApps || 0,
+    isAcademy: true,
+  });
+  prospect.promoted = true;
+  SFX.click();
+  saveGame();
+  wrappedRenderSquad();
+  updatePlayBtn();
+}
+
+// ===========================================================================
 // MATCH SUBSTITUTION HANDLERS
 // ===========================================================================
 
@@ -1172,7 +1292,12 @@ const welcomeCallbacks = {
   loadGame,
   deleteSave,
   initNewGame,
-  generateCupBracket: () => { /* Cup disabled */ assignRivals(G); },
+  generateCupBracket: () => {
+    /* Cup disabled */
+    assignRivals(G);
+    /* Generate initial youth prospects for season 1 */
+    generateYouthProspects(G);
+  },
   saveGame,
   enterGame: () => {
     initPlayBtn(G, settings);
@@ -1242,6 +1367,13 @@ declare global {
     signPlayer: typeof globalSignPlayer;
     sellPlayer: typeof globalSellPlayer;
     buyAIPlayer: typeof globalBuyAIPlayer;
+
+    /* New Feature Actions */
+    upgradeFacility: typeof upgradeFacility;
+    selectSponsor: typeof selectSponsor;
+    loanPlayerAction: typeof loanPlayerAction;
+    upgradeScout: typeof upgradeScout;
+    promoteProspect: typeof promoteProspect;
 
     /* Match Substitutions */
     confirmSub: typeof confirmSub;
@@ -1318,6 +1450,13 @@ window.showTeamProfile = globalOpenTeamProfile;
 window.signPlayer = globalSignPlayer;
 window.sellPlayer = globalSellPlayer;
 window.buyAIPlayer = globalBuyAIPlayer;
+
+/* --- New Feature Actions --- */
+window.upgradeFacility = upgradeFacility;
+window.selectSponsor = selectSponsor;
+window.loanPlayerAction = loanPlayerAction;
+window.upgradeScout = upgradeScout;
+window.promoteProspect = promoteProspect;
 
 /* --- Match Substitutions --- */
 window.confirmSub = confirmSub;

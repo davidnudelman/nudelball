@@ -343,6 +343,11 @@ export const initNewGame = (): void => {
   G.matchSubs = 0;
   G.matchRedCards = [];
   G.viewingPlayerId = null;
+  G.facilities = { trainingFacility: 0, youthAcademy: 0, stadium: 0 };
+  G.sponsorship = null;
+  G.scoutLevel = 0;
+  G.loans = [];
+  G.youthProspects = [];
 
   /* Create all 32 teams from the data table */
   for (const td of TEAMS_DATA) {
