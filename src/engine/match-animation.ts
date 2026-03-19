@@ -93,6 +93,7 @@ export function runAnimatedMatch(
   let awayGoals = 0;
   let isPaused = false;
   let timerId: ReturnType<typeof setInterval> | null = null;
+  let countdownTimerId: ReturnType<typeof setInterval> | null = null;
 
   /* Play kick-off whistle */
   SFX.whistle();
@@ -247,7 +248,7 @@ export function runAnimatedMatch(
       updateRivalResults(options.rivalResults, 90);
     }
 
-    /* Show coach comment and back-to-dashboard button */
+    /* Show coach comment and back-to-dashboard button with auto-exit countdown */
     const htContainer = document.getElementById('ht-continue-container');
     if (htContainer) {
       htContainer.style.display = 'block';
@@ -258,9 +259,26 @@ export function runAnimatedMatch(
         `<span class="coach-text">"${comment}"</span>` +
         `</div>` +
         `<button class="btn btn-success ht-continue-btn" style="margin-top:12px" ` +
-        `onclick="finishMatch()">\u2705 Continue</button>` +
+        `onclick="finishMatch()">\u2705 Continue <span id="ft-countdown">(40s)</span></button>` +
         `</div>`;
     }
+
+    /* Auto-exit countdown: 40 seconds then auto-call finishMatch */
+    let countdown = 40;
+    const countdownEl = document.getElementById('ft-countdown');
+    countdownTimerId = setInterval(() => {
+      countdown--;
+      if (countdownEl) {
+        countdownEl.textContent = `(${countdown}s)`;
+      }
+      if (countdown <= 0) {
+        if (countdownTimerId) clearInterval(countdownTimerId);
+        countdownTimerId = null;
+        /* Auto-finish the match */
+        const finishFn = (window as unknown as Record<string, unknown>).finishMatch as (() => void) | undefined;
+        if (finishFn) finishFn();
+      }
+    }, 1000);
   }
 
   /**
@@ -301,8 +319,12 @@ export function runAnimatedMatch(
   /* Expose continue/finish functions on window for onclick handlers */
   (window as unknown as Record<string, unknown>).continueMatch = continueMatch;
   (window as unknown as Record<string, unknown>).finishMatch = () => {
-    /* Clean up */
-    if (timerId) clearInterval(timerId);
+    /* Prevent double-fire */
+    if (!G.matchInProgress) return;
+
+    /* Clean up all timers */
+    if (timerId) { clearInterval(timerId); timerId = null; }
+    if (countdownTimerId) { clearInterval(countdownTimerId); countdownTimerId = null; }
     G.matchInProgress = false;
 
     /* Clear subbedIn flags */

@@ -14,7 +14,7 @@
  */
 
 import type { GameState, Settings, Team } from '../../types';
-import { SEASON_WEEKS, TOTAL_SEASON_WEEKS } from '../../config';
+import { SEASON_WEEKS } from '../../config';
 import { teamLabel } from '../../utils/helpers';
 import { t } from '../../data/i18n';
 
@@ -62,6 +62,11 @@ export function registerViewRenderers(renderers: Record<string, () => void>): vo
  * @param v - The view name to switch to (e.g. 'dashboard', 'squad', 'table')
  */
 export function showView(v: string): void {
+  /* Safety: if navigating away from match view, ensure matchInProgress is cleared */
+  if (v !== 'match' && _playBtnG && _playBtnG.matchInProgress) {
+    _playBtnG.matchInProgress = false;
+  }
+
   /* Hide all views and show the target */
   document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
   const target = document.getElementById('view-' + v);
@@ -190,15 +195,8 @@ export function updatePlayBtn(): void {
   const selCount = sel.length;
   const hasGK = sel.some(p => (p.assignedPos || p.pos) === 'GK');
 
-  /* Cup-final-only week (after league ends, before season rolls) */
-  if (G.week > SEASON_WEEKS && G.week <= TOTAL_SEASON_WEEKS) {
-    btn.disabled = false;
-    btn.textContent = '\u26BD Play Cup Final';
-    return;
-  }
-
-  /* When the full season is over (league + cup), allow advancing */
-  if (G.week > TOTAL_SEASON_WEEKS) {
+  /* When the season is over, allow advancing to next season */
+  if (G.week > SEASON_WEEKS) {
     btn.disabled = false;
     btn.textContent = t(settings, 'startSeason', { season: G.season + 1 });
     return;

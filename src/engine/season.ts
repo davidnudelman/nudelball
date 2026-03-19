@@ -42,7 +42,8 @@ import {
 import { applyDevelopmentCurve, agePlayer, genName, genSkill, makePlayer, rand } from './player';
 import { getTeamPowerLevels } from './match';
 import { emptyStats, generateFixtures, getSortedDiv } from './league';
-import { generateCupBracket } from './cup';
+// Cup disabled — import removed
+// import { generateCupBracket } from './cup';
 import {
   awardSeasonIncome,
   generateSeasonFreeAgents,
@@ -707,9 +708,9 @@ export const startNewSeason = (G: GameState): void => {
   /* ---- Apply stadium income bonus (#7) ---- */
   applyFacilityIncome(G);
 
-  /* ---- Generate new fixtures and cup bracket ---- */
+  /* ---- Generate new fixtures ---- */
   generateFixtures(G);
-  generateCupBracket(G);
+  // Cup disabled — bracket generation removed
 };
 
 // ---------------------------------------------------------------------------

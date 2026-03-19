@@ -5,8 +5,8 @@
  * cup status, next fixture, and a mini league standings table.
  */
 
-import type { GameState, Settings, Team, Fixture, CupState } from '../../types';
-import { SEASON_WEEKS, TOTAL_SEASON_WEEKS, CUP_ROUNDS, CUP_WEEKS, FORMATIONS, MORALE_MAX } from '../../config';
+import type { GameState, Settings, Team, Fixture } from '../../types';
+import { SEASON_WEEKS, FORMATIONS, MORALE_MAX } from '../../config';
 import { teamLabel, plateColors } from '../../utils/helpers';
 import { t } from '../../data/i18n';
 
@@ -198,25 +198,6 @@ export function renderDashboard(
           nfc.innerHTML = '';
         }
       }
-    } else if (G.week > SEASON_WEEKS && G.week <= TOTAL_SEASON_WEEKS) {
-      /* Cup final week */
-      nf.style.display = '';
-      nfl.textContent = 'Week ' + G.week + ' — Cup Final';
-      if (G.cup && G.cup.active) {
-        const fm = G.cup.rounds[G.cup.round] ? G.cup.rounds[G.cup.round][0] : null;
-        if (fm && !fm.played) {
-          const ht = G.teams[fm.home];
-          const at = fm.away != null ? G.teams[fm.away] : null;
-          nfc.innerHTML = `<div class="fixture-card cup-fixture"><div class="fixture-main">` +
-            `<div class="team-name home">${ht ? teamLabel(ht) : 'TBD'}</div>` +
-            `<div class="vs">&#127942; vs</div>` +
-            `<div class="team-name away">${at ? teamLabel(at) : 'TBD'}</div></div></div>`;
-        } else {
-          nfc.innerHTML = '<p style="color:var(--text-dim)">Cup Final</p>';
-        }
-      } else {
-        nfc.innerHTML = '<p style="color:var(--text-dim)">No cup final this season.</p>';
-      }
     } else {
       nf.style.display = '';
       nfl.textContent = t(settings, 'seasonComplete');
@@ -224,25 +205,10 @@ export function renderDashboard(
     }
   }
 
-  /* ===== Cup Status ===== */
+  /* ===== Cup Status (disabled) ===== */
   const cupStatus = document.getElementById('cup-status');
   if (cupStatus) {
-    if (G.cup && G.cup.active) {
-      const roundName = CUP_ROUNDS[G.cup.round] || 'Cup';
-      const isCupWeek = CUP_WEEKS.includes(G.week);
-      if (G.cup.playerEliminated) {
-        cupStatus.innerHTML = '<div class="dash-cup">&#127942; Cup: <span style="color:var(--red)">Eliminated</span></div>';
-      } else {
-        cupStatus.innerHTML = `<div class="dash-cup">&#127942; Cup: <b>${roundName}</b>` +
-          `${isCupWeek ? ' <span style="color:var(--yellow)">(Cup match this week!)</span>' : ''}` +
-          ` <a style="cursor:pointer;color:var(--accent);text-decoration:underline" onclick="showView('cup')">View Bracket</a></div>`;
-      }
-    } else if (G.cup && G.cup.winner != null) {
-      const w = G.teams[G.cup.winner];
-      cupStatus.innerHTML = `<div class="dash-cup">&#127942; Cup Winner: <b>${w ? w.name : 'Unknown'}</b>${G.cup.winner === G.playerTeamId ? ' &#127881;' : ''}</div>`;
-    } else {
-      cupStatus.innerHTML = '';
-    }
+    cupStatus.innerHTML = '';
   }
 
   /* ===== Mini League Table (get reference early for status panel insertion) ===== */

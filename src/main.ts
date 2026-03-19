@@ -62,7 +62,8 @@ import {
 // 4. ENGINE MODULES
 // ===========================================================================
 
-import { generateCupBracket, simulateCupWeek, resolveCupFinal } from './engine/cup';
+// Cup competition removed — too buggy, will be re-added later
+// import { generateCupBracket, simulateCupWeek, resolveCupFinal } from './engine/cup';
 import {
   simulateMatch,
   autoSelectAI,
@@ -137,7 +138,8 @@ import { renderHistory } from './ui/views/history';
 import { renderTrophyRoom } from './ui/views/trophy-room';
 import { renderTeamProfile, openTeamProfile } from './ui/views/team-profile';
 import { renderPlayerProfile, showPlayerProfile } from './ui/views/player-profile';
-import { renderCup } from './ui/views/cup-view';
+// Cup view removed — cup competition disabled
+// import { renderCup } from './ui/views/cup-view';
 
 import { runAnimatedMatch } from './engine/match-animation';
 import type { RivalResult } from './ui/views/match-view';
@@ -164,8 +166,6 @@ import {
   FORMATIONS,
   DEFAULT_FORMATION_IDX,
   SEASON_WEEKS,
-  TOTAL_SEASON_WEEKS,
-  CUP_WEEKS,
   SQUAD_MAX,
   SQUAD_MIN,
 } from './config';
@@ -293,10 +293,6 @@ function wrappedRenderPlayerProfile(): void {
   renderPlayerProfile(G, settings);
 }
 
-/** Render the cup competition view. */
-function wrappedRenderCup(): void {
-  renderCup(G, settings);
-}
 
 // ===========================================================================
 // PLAY MATCH / ADVANCE WEEK
@@ -305,18 +301,11 @@ function wrappedRenderCup(): void {
 /**
  * The main game-loop action: play one week's matches and advance the season.
  *
- * Handles three distinct phases:
- *
- *   1. **End of season** (week > TOTAL_SEASON_WEEKS) -- run end-of-season
- *      processing via `endOfSeason()`, show the season summary overlay,
- *      then let the player click through to `startNewSeason()`.
- *
- *   2. **Cup final week** (week > SEASON_WEEKS but <= TOTAL_SEASON_WEEKS) --
- *      simulate the cup final (instant sim) and advance past it.
- *
- *   3. **Regular week** -- simulate all league fixtures across all 4
- *      divisions for the current round, apply training, simulate any
- *      scheduled cup round, then advance the week counter.
+ * Handles two phases:
+ *   1. **End of season** (week > SEASON_WEEKS) -- run end-of-season
+ *      processing via `endOfSeason()`, show the season summary overlay.
+ *   2. **Regular week** -- simulate all league fixtures across all 4
+ *      divisions for the current round, apply training, advance the week.
  *
  * After every action the game is auto-saved and the UI is refreshed.
  */
@@ -324,8 +313,8 @@ function playMatch(): void {
   /* Don't start a new match while animation is running */
   if (G.matchInProgress) return;
 
-  /* --- Phase 1: Season-end advancement --- */
-  if (G.week > TOTAL_SEASON_WEEKS) {
+  /* --- Season-end advancement --- */
+  if (G.week > SEASON_WEEKS) {
     startNewSeason(G);
     saveGame();
     updateTopBar(G, settings);
@@ -342,130 +331,7 @@ function playMatch(): void {
   if (sel.length < 11) return;
   if (!sel.some(p => (p.assignedPos || p.pos) === 'GK')) return;
 
-  /* --- Phase 2: Cup-final-only week (league finished, cup final remains) --- */
-  if (G.week > SEASON_WEEKS && G.week <= TOTAL_SEASON_WEEKS) {
-    if (G.cup && G.cup.active) {
-      const finalRoundIdx = G.cup.round;
-      const finalRound = G.cup.rounds[finalRoundIdx];
-
-      if (finalRound && finalRound.length > 0 && !finalRound[0].played) {
-        const cupFinal = finalRound[0];
-        const playerInFinal = cupFinal.home === G.playerTeamId || cupFinal.away === G.playerTeamId;
-
-        /* Auto-select AI teams for cup final */
-        const homeTeam = G.teams[cupFinal.home];
-        const awayTeam = cupFinal.away != null ? G.teams[cupFinal.away] : null;
-        if (homeTeam && homeTeam.id !== G.playerTeamId) autoSelectAI(homeTeam, G.playerTeamId!);
-        if (awayTeam && awayTeam.id !== G.playerTeamId) autoSelectAI(awayTeam, G.playerTeamId!);
-
-        if (playerInFinal && awayTeam) {
-          /* Create a Fixture-like object for the animated match */
-          const cupFixture: import('./types').Fixture = {
-            home: cupFinal.home,
-            away: cupFinal.away!,
-            homeGoals: null,
-            awayGoals: null,
-            events: [],
-          };
-
-          /* Simulate the cup final result (pre-compute for animation) */
-          const diffMult = getDifficultyMultipliers(settings);
-          simulateMatch(cupFixture, G, { difficulty: diffMult.aiStrengthMult });
-
-          /* Animate the cup final */
-          showView('match');
-          G.matchInProgress = true;
-
-          runAnimatedMatch(cupFixture, G, settings, {
-            rivalResults: [],
-            onComplete: () => {
-              /* Resolve the cup final and award the trophy */
-              resolveCupFinal(G, cupFixture.homeGoals!, cupFixture.awayGoals!);
-
-              /* Advance to end of season */
-              G.week++;
-
-              /* Run end-of-season processing */
-              if (G.week > TOTAL_SEASON_WEEKS) {
-                const result = endOfSeason(G);
-                saveGame();
-                refreshAll();
-                showSeasonEndOverlay(result);
-              } else {
-                saveGame();
-                refreshAll();
-                showView('dashboard');
-              }
-            },
-          });
-          return;
-        } else if (awayTeam) {
-          /* Player not in the final — animate as neutral spectator */
-          const cupFixtureNeutral: import('./types').Fixture = {
-            home: cupFinal.home,
-            away: cupFinal.away!,
-            homeGoals: null,
-            awayGoals: null,
-            events: [],
-          };
-
-          const diffMultNeutral = getDifficultyMultipliers(settings);
-          simulateMatch(cupFixtureNeutral, G, { difficulty: diffMultNeutral.aiStrengthMult });
-
-          showView('match');
-          G.matchInProgress = true;
-
-          runAnimatedMatch(cupFixtureNeutral, G, settings, {
-            isCupFinal: true,
-            isNeutral: true,
-            rivalResults: [],
-            onComplete: () => {
-              resolveCupFinal(G, cupFixtureNeutral.homeGoals!, cupFixtureNeutral.awayGoals!);
-
-              G.week++;
-
-              if (G.week > TOTAL_SEASON_WEEKS) {
-                const result = endOfSeason(G);
-                saveGame();
-                refreshAll();
-                showSeasonEndOverlay(result);
-              } else {
-                saveGame();
-                refreshAll();
-                showView('dashboard');
-              }
-            },
-          });
-          return;
-        } else {
-          /* No away team (shouldn't happen in a final) */
-          if (cupFinal.away != null) {
-            resolveCupFinal(G, 1, 0);
-          }
-        }
-      }
-    }
-
-    G.week++;
-
-    /* Check if season is now over */
-    if (G.week > TOTAL_SEASON_WEEKS) {
-      const result = endOfSeason(G);
-      saveGame();
-      refreshAll();
-      showSeasonEndOverlay(result);
-      return;
-    }
-
-    saveGame();
-    refreshAll();
-    showView('dashboard');
-    return;
-  }
-
-  /* --- Phase 3: Regular match week --- */
-
-  /* Transfer window reminder on week 1 — show once, then close on skip */
+  /* --- Transfer window reminder on week 1 — show once, then close on skip --- */
   if (G.week === 1 && G.transferWindow) {
     if (!G.transferReminderShown) {
       G.transferReminderShown = true;
@@ -506,11 +372,6 @@ function playMatch(): void {
         difficulty: diffMult.aiStrengthMult,
       });
     }
-  }
-
-  /* Simulate cup round if this is a cup week */
-  if (CUP_WEEKS.includes(G.week)) {
-    simulateCupWeek(G);
   }
 
   /* Apply weekly training for the player's squad */
@@ -568,11 +429,8 @@ function playMatch(): void {
           G.transferWindow = false;
         }
 
-        /* Check if the full season (league + cup) is now over */
-        const cupStillPending = G.cup && G.cup.active;
-
-        if (G.week > SEASON_WEEKS && !cupStillPending) {
-          /* No cup final remaining — end season now */
+        /* Check if the season is now over */
+        if (G.week > SEASON_WEEKS) {
           const result = endOfSeason(G);
           saveGame();
           refreshAll();
@@ -596,10 +454,8 @@ function playMatch(): void {
     G.transferWindow = false;
   }
 
-  /* Check if the full season (league + cup) is now over */
-  const cupPending = G.cup && G.cup.active;
-
-  if (G.week > SEASON_WEEKS && !cupPending) {
+  /* Check if the season is now over */
+  if (G.week > SEASON_WEEKS) {
     const result = endOfSeason(G);
     saveGame();
     refreshAll();
@@ -1316,7 +1172,7 @@ const welcomeCallbacks = {
   loadGame,
   deleteSave,
   initNewGame,
-  generateCupBracket: () => { generateCupBracket(G); assignRivals(G); },
+  generateCupBracket: () => { /* Cup disabled */ assignRivals(G); },
   saveGame,
   enterGame: () => {
     initPlayBtn(G, settings);
@@ -1512,7 +1368,6 @@ registerViewRenderers({
   trophyroom: wrappedRenderTrophyRoom,
   teamprofile: wrappedRenderTeamProfile,
   playerprofile: wrappedRenderPlayerProfile,
-  cup: wrappedRenderCup,
   match: () => { /* Match view is rendered by the animation engine */ },
 });
 
