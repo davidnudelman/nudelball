@@ -628,8 +628,8 @@ function startNewSeasonAction(): void {
 /**
  * Auto-pick the best 11 players for the currently selected formation.
  *
- * Prioritises natural-position matches (with a large scoring bonus),
- * then falls back to out-of-position candidates if needed. Injured
+ * Selects players with the highest combined skill and form ratings.
+ * Players are always assigned to their natural position. Injured
  * and suspended players are excluded.
  */
 function autoPick(): void {
@@ -645,6 +645,15 @@ function autoPick(): void {
     p.assignedPos = null;
   }
 
+  /**
+   * Combined score weighing both skill and form.
+   * Form (range -3 to +3) adjusts effective rating by ±5% per point,
+   * so a player in hot form is preferred over a slightly higher-skilled
+   * player in poor form.
+   */
+  const playerScore = (p: { skill: number; form: number }): number =>
+    p.skill * (1 + (p.form || 0) * 0.05);
+
   /* Pick best available players for each formation slot */
   const posOrder: Array<{ pos: 'GK' | 'DEF' | 'MID' | 'STR'; count: number }> = [
     { pos: 'GK', count: formation.slots.GK },
@@ -656,7 +665,7 @@ function autoPick(): void {
   const selected = new Set<number>();
 
   for (const { pos, count } of posOrder) {
-    /* Sort candidates: natural position first, then by skill */
+    /* Sort candidates by combined skill + form score (best first) */
     const candidates = pt.players
       .map((p, i) => ({ p, i }))
       .filter(({ p, i }) =>
@@ -665,7 +674,7 @@ function autoPick(): void {
         p.injuredFor === 0 &&
         p.suspendedFor === 0
       )
-      .sort((a, b) => b.p.skill - a.p.skill);
+      .sort((a, b) => playerScore(b.p) - playerScore(a.p));
 
     for (let j = 0; j < count && j < candidates.length; j++) {
       const { p, i } = candidates[j];
@@ -685,7 +694,7 @@ function autoPick(): void {
         p.injuredFor === 0 &&
         p.suspendedFor === 0
       )
-      .sort((a, b) => b.p.skill - a.p.skill);
+      .sort((a, b) => playerScore(b.p) - playerScore(a.p));
 
     for (const { p, i } of remaining) {
       if (totalSelected >= 11) break;
