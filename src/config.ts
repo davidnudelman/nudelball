@@ -14,9 +14,11 @@ import type {
   DifficultyMultipliers,
   DivisionRange,
   Formation,
+  PlayerRole,
   Position,
   PrizeMoney,
   SolidarityPayment,
+  Sponsorship,
   Tactic,
   TacticId,
   TeamData,
@@ -456,6 +458,130 @@ export const GENERIC_LAST: readonly string[] = [
   'Silva','Santos','Garcia','Martinez','Mueller','Schmidt','Petrov','Rossi','Tanaka','Kim',
   'Fernandes','Costa','Torres','Ramos','Weber','Klein','Brown','Taylor','Park','Chen',
 ] as const;
+
+/* ================================================================
+   MORALE SYSTEM (#4)
+   ================================================================ */
+
+/** Morale gained per win */
+export const MORALE_WIN = 1;
+/** Morale lost per loss */
+export const MORALE_LOSS = -1;
+/** Morale boost for promotion */
+export const MORALE_PROMOTION = 5;
+/** Morale penalty for relegation */
+export const MORALE_RELEGATION = -5;
+/** Morale boost for cup win */
+export const MORALE_CUP_WIN = 3;
+/** Morale penalty for cup elimination */
+export const MORALE_CUP_ELIM = -1;
+/** Maximum morale value */
+export const MORALE_MAX = 10;
+/** Minimum morale value */
+export const MORALE_MIN = -10;
+/** Morale effect on team strength per point (0.5%) */
+export const MORALE_STRENGTH_PCT = 0.005;
+
+/* ================================================================
+   PLAYER ROLES (#5)
+   ================================================================ */
+
+/** Available player roles by position */
+export const ROLES_BY_POSITION: Readonly<Record<Position, readonly PlayerRole[]>> = {
+  GK: ['anchor', null],
+  DEF: ['ballWinner', 'anchor', null],
+  MID: ['playmaker', 'creator', 'ballWinner', null],
+  STR: ['targetMan', 'speedster', 'creator', null],
+} as const;
+
+/** Tactic-role synergy bonuses (fractional, e.g. 0.03 = +3%) */
+export const ROLE_TACTIC_SYNERGY: Readonly<Partial<Record<PlayerRole & string, Partial<Record<TacticId, number>>>>> = {
+  playmaker: { balanced: 0.03 },
+  targetMan: { attack: 0.05 },
+  ballWinner: { defensive: 0.04 },
+  speedster: { counter: 0.05 },
+  creator: { attack: 0.03 },
+  anchor: { defensive: 0.03 },
+} as const;
+
+/* ================================================================
+   SPONSORSHIP DEALS (#6)
+   ================================================================ */
+
+/** Available sponsorship tiers */
+export const SPONSORSHIP_TIERS: readonly Sponsorship[] = [
+  { tier: 'small', incomePerSeason: 500, cupBonusPerRound: 0, requiredDiv: 4 },
+  { tier: 'medium', incomePerSeason: 1000, cupBonusPerRound: 100, requiredDiv: 3 },
+  { tier: 'large', incomePerSeason: 2000, cupBonusPerRound: 200, requiredDiv: 1 },
+  { tier: 'cup', incomePerSeason: 300, cupBonusPerRound: 500, requiredDiv: 4 },
+] as const;
+
+/* ================================================================
+   STADIUM FACILITIES (#7)
+   ================================================================ */
+
+/** Cost per facility level upgrade [level1, level2, level3] */
+export const FACILITY_COSTS: Readonly<Record<string, readonly number[]>> = {
+  trainingFacility: [5000, 8000, 12000],
+  youthAcademy: [8000, 13000, 20000],
+  stadium: [10000, 17000, 25000],
+} as const;
+
+/** Training facility effectiveness bonus per level */
+export const TRAINING_FACILITY_BONUS = 0.03;
+/** Youth academy regen skill bonus per level */
+export const YOUTH_ACADEMY_SKILL_BONUS = 2;
+/** Stadium income bonus per level per season */
+export const STADIUM_INCOME_BONUS = 500;
+
+/* ================================================================
+   LOAN SYSTEM (#8)
+   ================================================================ */
+
+/** Loan fee as fraction of market value */
+export const LOAN_FEE_RATIO = 0.30;
+
+/* ================================================================
+   RIVAL PAIRS (#13)
+   ================================================================ */
+
+/** Rival team pairs (by team name) */
+export const RIVAL_PAIRS: readonly [string, string][] = [
+  ['Barcelona', 'Madrid'],
+  ['Manchester', 'Liverpool'],
+  ['Porto', 'Lisbon'],
+  ['Berlin', 'Dortmund'],
+  ['Paris', 'Lyon'],
+  ['São Paulo', 'Santos'],
+  ['Chicago', 'Los Angeles'],
+  ['Vancouver', 'Toronto'],
+  ['Tokyo', 'Beijing'],
+  ['Buenos Aires', 'Montevideo'],
+] as const;
+
+/** Derby form multiplier (doubles form changes) */
+export const DERBY_FORM_MULT = 2;
+/** Derby morale bonus for winning */
+export const DERBY_MORALE_BONUS = 2;
+
+/* ================================================================
+   SCOUT NETWORK (#18)
+   ================================================================ */
+
+/** Scout upgrade costs by level */
+export const SCOUT_COSTS: readonly number[] = [0, 2000, 3000] as const;
+
+/* ================================================================
+   TRANSFER NEGOTIATION (#17)
+   ================================================================ */
+
+/** Maximum negotiation rounds */
+export const NEGOTIATION_MAX_ROUNDS = 3;
+/** AI seller initial markup range (10-30% above minimum) */
+export const NEGOTIATION_MARKUP_MIN = 0.10;
+export const NEGOTIATION_MARKUP_MAX = 0.30;
+/** Each counter-offer reduces the gap by this fraction */
+export const NEGOTIATION_REDUCTION = 0.50;
 
 /* ================================================================
    AGGREGATE CONFIG OBJECT

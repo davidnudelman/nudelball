@@ -28,12 +28,20 @@ import {
   FORM_MIN,
   FORM_WIN_BOOST,
   GOAL_POS_WEIGHT,
+  MORALE_STRENGTH_PCT,
   POS_ORDER,
   RED_CARD_CHANCE,
   RED_SUSPENSION,
+  ROLE_TACTIC_SYNERGY,
   TACTICS,
   YELLOW_ACCUMULATION,
   YELLOW_CARD_CHANCE,
+  MORALE_WIN,
+  MORALE_LOSS,
+  MORALE_MAX,
+  MORALE_MIN,
+  DERBY_FORM_MULT,
+  DERBY_MORALE_BONUS,
 } from '../config';
 import { getOopPenalty, playerOvr, rand, clamp } from './player';
 
@@ -51,13 +59,29 @@ import { getOopPenalty, playerOvr, rand, clamp } from './player';
  * @param team - The team to evaluate.
  * @returns The average effective rating of the starting XI.
  */
-export const teamStrength = (team: Team): number => {
+export const teamStrength = (team: Team, tactic?: TacticId): number => {
   const starters = team.players.filter(p => p.selected);
   if (starters.length < 11) return 10;
-  return starters.reduce(
-    (sum, p) => sum + playerOvr(p) * (p.subbedIn ? 1.10 : 1.0),
-    0,
-  ) / 11;
+
+  let total = 0;
+  for (const p of starters) {
+    let eff = playerOvr(p) * (p.subbedIn ? 1.10 : 1.0);
+    /* Role-tactic synergy bonus (#5) */
+    if (tactic && p.role) {
+      const synergy = (ROLE_TACTIC_SYNERGY as Record<string, Partial<Record<TacticId, number>> | undefined>)[p.role];
+      if (synergy && synergy[tactic]) {
+        eff *= (1 + synergy[tactic]!);
+      }
+    }
+    total += eff;
+  }
+  let avg = total / 11;
+
+  /* Morale multiplier (#4) */
+  const morale = team.morale ?? 0;
+  avg *= (1 + morale * MORALE_STRENGTH_PCT);
+
+  return avg;
 };
 
 /**
@@ -95,6 +119,50 @@ export const getTeamAvgRating = (team: Team): number => {
   return Math.round(
     starters.reduce((sum, p) => sum + playerOvr(p) * (p.subbedIn ? 1.10 : 1.0), 0) / starters.length,
   );
+};
+
+// ---------------------------------------------------------------------------
+// Dynamic AI Tactic Selection (#1)
+// ---------------------------------------------------------------------------
+
+/**
+ * Select a tactic for an AI team based on game context.
+ *
+ * Considers relative strength, home/away status, and league position.
+ *
+ * @param team - The AI team choosing a tactic.
+ * @param opponent - The opposing team.
+ * @param isHome - Whether the AI team is at home.
+ * @param G - Game state for league position context.
+ * @returns The selected tactic ID.
+ */
+export const selectAITactic = (
+  team: Team, opponent: Team, isHome: boolean, G: GameState,
+): TacticId => {
+  const myStr = teamStrength(team);
+  const oppStr = teamStrength(opponent);
+  const ratio = myStr / Math.max(oppStr, 1);
+
+  /* Check league position — bottom 2 teams are desperate */
+  const divTeams = G.teams.filter(t => t.div === team.div && t.div >= 1 && t.div <= 4);
+  const sorted = divTeams.sort((a, b) => {
+    if (b.seasonStats.pts !== a.seasonStats.pts) return b.seasonStats.pts - a.seasonStats.pts;
+    return (b.seasonStats.gf - b.seasonStats.ga) - (a.seasonStats.gf - a.seasonStats.ga);
+  });
+  const pos = sorted.findIndex(t => t.id === team.id);
+  const isBottom = pos >= sorted.length - 2;
+  const isTop = pos <= 1;
+
+  /* Much weaker: defend */
+  if (ratio < 0.85) return isHome ? 'counter' : 'defensive';
+  /* Much stronger: attack */
+  if (ratio > 1.15) return isHome ? 'attack' : 'balanced';
+  /* Desperate bottom team: attack more */
+  if (isBottom) return isHome ? 'attack' : 'counter';
+  /* Comfortable top team: protect lead */
+  if (isTop) return isHome ? 'balanced' : 'defensive';
+  /* Default: balanced at home, counter away */
+  return isHome ? 'balanced' : 'counter';
 };
 
 // ---------------------------------------------------------------------------
@@ -408,7 +476,7 @@ export const applyStaminaChanges = (team: Team): MatchInjury[] => {
  * @param fixture - The completed fixture with goals and events.
  * @param G - The game state.
  */
-export const updatePlayerForm = (fixture: Fixture, G: GameState): void => {
+export const updatePlayerForm = (fixture: Fixture, G: GameState, isDerby: boolean = false): void => {
   if (G.playerTeamId == null) return;
   const pt = G.teams[G.playerTeamId];
   const isHome = fixture.home === G.playerTeamId;
@@ -429,6 +497,9 @@ export const updatePlayerForm = (fixture: Fixture, G: GameState): void => {
     );
     if (scored) delta += FORM_GOAL_BOOST;
 
+    /* Derby matches double form changes (#13) */
+    if (isDerby) delta *= DERBY_FORM_MULT;
+
     p.form = clamp((p.form || 0) + delta, FORM_MIN, FORM_MAX);
   }
 
@@ -438,6 +509,38 @@ export const updatePlayerForm = (fixture: Fixture, G: GameState): void => {
     if (p.form > 0) p.form--;
     else if (p.form < 0) p.form++;
   }
+};
+
+// ---------------------------------------------------------------------------
+// Morale Update (#4)
+// ---------------------------------------------------------------------------
+
+/**
+ * Update a team's morale after a match result.
+ *
+ * @param team - The team to update.
+ * @param myGoals - Goals scored by this team.
+ * @param theirGoals - Goals conceded by this team.
+ * @param isDerby - Whether this was a derby match (double morale effect).
+ */
+export const updateMorale = (team: Team, myGoals: number, theirGoals: number, isDerby: boolean): void => {
+  let delta = 0;
+  if (myGoals > theirGoals) delta = MORALE_WIN;
+  else if (myGoals < theirGoals) delta = MORALE_LOSS;
+  if (isDerby) {
+    delta *= 2;
+    if (myGoals > theirGoals) delta += DERBY_MORALE_BONUS;
+  }
+  team.morale = clamp((team.morale ?? 0) + delta, MORALE_MIN, MORALE_MAX);
+};
+
+/**
+ * Decay team morale toward 0 by 1 point. Called once per week.
+ */
+export const decayMorale = (team: Team): void => {
+  const m = team.morale ?? 0;
+  if (m > 0) team.morale = m - 1;
+  else if (m < 0) team.morale = m + 1;
 };
 
 // ---------------------------------------------------------------------------
@@ -659,21 +762,23 @@ export const simulateMatch = (f: Fixture, G: GameState, options?: MatchSimOption
   autoSelectAI(homeTeam, G.playerTeamId!);
   autoSelectAI(awayTeam, G.playerTeamId!);
 
-  /* Calculate base strengths */
-  let hs = teamStrength(homeTeam);
-  let as_ = teamStrength(awayTeam);
+  /* Determine tactics — AI teams now choose dynamically (#1) */
+  const isPlayerHome = f.home === G.playerTeamId;
+  const isPlayerAway = f.away === G.playerTeamId;
+  const pTac = tacticOverride || (isPlayerHome || isPlayerAway ? G.tactic : 'balanced');
+
+  const homeTacId: TacticId = isPlayerHome ? pTac : selectAITactic(homeTeam, awayTeam, true, G);
+  const awayTacId: TacticId = isPlayerAway ? pTac : selectAITactic(awayTeam, homeTeam, false, G);
+  const homeTac = TACTICS[homeTacId] || TACTICS.balanced;
+  const awayTac = TACTICS[awayTacId] || TACTICS.balanced;
+
+  /* Calculate base strengths with tactic synergy */
+  let hs = teamStrength(homeTeam, homeTacId);
+  let as_ = teamStrength(awayTeam, awayTacId);
 
   /* Apply difficulty scaling to AI teams */
   if (f.home !== G.playerTeamId) hs *= difficulty;
   if (f.away !== G.playerTeamId) as_ *= difficulty;
-
-  /* Determine tactics */
-  const isPlayerHome = f.home === G.playerTeamId;
-  const isPlayerAway = f.away === G.playerTeamId;
-  const pTac = tacticOverride || (isPlayerHome || isPlayerAway ? G.tactic : 'balanced');
-  const pT = TACTICS[pTac] || TACTICS.balanced;
-  const homeTac = isPlayerHome ? pT : TACTICS.balanced;
-  const awayTac = isPlayerAway ? pT : TACTICS.balanced;
 
   /* Calculate expected goals */
   const homeExp = Math.max(0.3, (hs - as_) / 15 + homeTac.homeBonus) * awayTac.defPenalty;
@@ -713,6 +818,37 @@ export const simulateMatch = (f: Fixture, G: GameState, options?: MatchSimOption
   generateCardEvents(homeTeam, f.home, f.events);
   generateCardEvents(awayTeam, f.away, f.events);
 
+  /* Red card match impact (#10) — adjust goals for red cards received early */
+  const homeReds = f.events.filter(e => e.type === 'red' && e.teamId === f.home);
+  const awayReds = f.events.filter(e => e.type === 'red' && e.teamId === f.away);
+  if (homeReds.length > 0) {
+    /* Team with red card concedes more — roughly proportional to time remaining */
+    const earliestMin = Math.min(...homeReds.map(e => e.minute));
+    const remainingPct = (90 - earliestMin) / 90;
+    const extraGoals = poissonGoals(remainingPct * 0.4);
+    for (let i = 0; i < extraGoals; i++) {
+      const sc = pickScorer(awayTeam, f.away);
+      f.events.push({ type: 'goal', teamId: f.away, minute: rand(earliestMin, 90), scorer: sc.name });
+      f.awayGoals!++;
+      recordGoal(G, f.away, sc.name);
+      const sp = awayTeam.players.find(p => p.name === sc.name);
+      if (sp) { sp.seasonGoals = (sp.seasonGoals || 0) + 1; sp.careerGoals = (sp.careerGoals || 0) + 1; }
+    }
+  }
+  if (awayReds.length > 0) {
+    const earliestMin = Math.min(...awayReds.map(e => e.minute));
+    const remainingPct = (90 - earliestMin) / 90;
+    const extraGoals = poissonGoals(remainingPct * 0.4);
+    for (let i = 0; i < extraGoals; i++) {
+      const sc = pickScorer(homeTeam, f.home);
+      f.events.push({ type: 'goal', teamId: f.home, minute: rand(earliestMin, 90), scorer: sc.name });
+      f.homeGoals!++;
+      recordGoal(G, f.home, sc.name);
+      const sp = homeTeam.players.find(p => p.name === sc.name);
+      if (sp) { sp.seasonGoals = (sp.seasonGoals || 0) + 1; sp.careerGoals = (sp.careerGoals || 0) + 1; }
+    }
+  }
+
   /* Sort events chronologically */
   f.events.sort((a, b) => a.minute - b.minute);
 
@@ -732,10 +868,18 @@ export const simulateMatch = (f: Fixture, G: GameState, options?: MatchSimOption
   /* Update Trophy Room records */
   updateMatchRecords(f, G);
 
+  /* Detect derby match (#13) */
+  const isDerby = (homeTeam.rivals ?? []).includes(awayTeam.id) ||
+    (awayTeam.rivals ?? []).includes(homeTeam.id);
+
   /* Update form for player's team */
   if (isPlayerHome || isPlayerAway) {
-    updatePlayerForm(f, G);
+    updatePlayerForm(f, G, isDerby);
   }
+
+  /* Update morale (#4) */
+  updateMorale(homeTeam, f.homeGoals!, f.awayGoals!, isDerby);
+  updateMorale(awayTeam, f.awayGoals!, f.homeGoals!, isDerby);
 
   /* Apply stamina changes and injuries */
   const homeInj = applyStaminaChanges(homeTeam);

@@ -6,7 +6,7 @@
  * is centralised here so the rest of the engine can import cleanly.
  */
 
-import type { Player, PlayerExtra, Position } from '../types';
+import type { Player, PlayerExtra, PlayerRole, Position } from '../types';
 import {
   COUNTRY_NAMES,
   GENERIC_FIRST,
@@ -17,6 +17,7 @@ import {
   FORM_OVR_PCT,
   DEVELOPMENT_CURVE_TABLE,
   RETIREMENT_AGE,
+  ROLES_BY_POSITION,
 } from '../config';
 
 // ---------------------------------------------------------------------------
@@ -172,6 +173,8 @@ export const makePlayer = (
     formStreak: 0,
     suspendedFor: 0,
     isAcademy: false,
+    /* Assign a random role based on position (#5) */
+    role: pick(ROLES_BY_POSITION[pos] || [null]) as PlayerRole,
   };
 
   if (extra) {

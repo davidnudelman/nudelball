@@ -9,7 +9,7 @@
  */
 
 import type { GameState, Player, Position, TrainingFocus } from '../types';
-import { TRAINING_FOCUS_BONUS, TRAINING_SKILL_CHANCE } from '../config';
+import { TRAINING_FOCUS_BONUS, TRAINING_SKILL_CHANCE, TRAINING_FACILITY_BONUS } from '../config';
 import { clamp, rand } from './player';
 
 // ---------------------------------------------------------------------------
@@ -61,7 +61,9 @@ export const applyTraining = (G: GameState, difficultyMultiplier: number = 1.0):
     /* Injured players don't train */
     if (p.injuredFor > 0) continue;
 
-    let chance = TRAINING_SKILL_CHANCE * difficultyMultiplier;
+    /* Training facility bonus (#7) */
+    const facilityBonus = (G.facilities?.trainingFacility ?? 0) * TRAINING_FACILITY_BONUS;
+    let chance = (TRAINING_SKILL_CHANCE + facilityBonus) * difficultyMultiplier;
 
     /* Bonus chance for players matching the focus position */
     if (bonusPos.includes(p.pos)) {
