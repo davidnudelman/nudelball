@@ -175,6 +175,7 @@ import {
   SPONSORSHIP_TIERS,
   SCOUT_COSTS,
   TRANSFER_DEADLINE_WEEK,
+  STADIUM_HOME_GAME_BONUS,
 } from './config';
 import { teamLabel } from './utils/helpers';
 
@@ -307,6 +308,30 @@ function wrappedRenderPlayerProfile(): void {
 
 
 // ===========================================================================
+// REFRESH CURRENT VIEW HELPER
+// ===========================================================================
+
+/**
+ * Re-render the currently active view and update the top bar + play button.
+ *
+ * Unlike `refreshAll()` which only re-renders the dashboard, this function
+ * detects which view is currently shown and re-renders it. This ensures
+ * that spending money (facility upgrades, sponsor changes, etc.) is
+ * immediately reflected in whichever view the player is looking at.
+ */
+function refreshCurrentView(): void {
+  const activeEl = document.querySelector('.view.active');
+  if (activeEl) {
+    const viewName = activeEl.id.replace('view-', '');
+    showView(viewName);
+  } else {
+    refreshAll();
+  }
+  updateTopBar(G, settings);
+  updatePlayBtn();
+}
+
+// ===========================================================================
 // PLAY MATCH / ADVANCE WEEK
 // ===========================================================================
 
@@ -407,6 +432,15 @@ function playMatch(): void {
     }
   }
 
+  /* Apply stadium home-game income if player is the home team */
+  if (playerFixture && playerFixture.home === G.playerTeamId) {
+    const stadiumLevel = G.facilities?.stadium ?? 0;
+    if (stadiumLevel > 0) {
+      const homeIncome = stadiumLevel * STADIUM_HOME_GAME_BONUS;
+      G.budgets[G.playerTeamId!] = (G.budgets[G.playerTeamId!] || 0) + homeIncome;
+    }
+  }
+
   /* Apply weekly training for the player's squad */
   applyTraining(G, diffMult.trainingMult);
 
@@ -454,10 +488,7 @@ function playMatch(): void {
     runAnimatedMatch(playerFixture, G, settings, {
       rivalResults,
       onComplete: () => {
-        /* Always navigate away from match view first */
-        showView('dashboard');
-
-        /* Advance week counter after animation finishes */
+        /* Advance week counter BEFORE rendering so UI shows correct state */
         G.week++;
 
         /* Close the transfer window after deadline week */
@@ -469,11 +500,13 @@ function playMatch(): void {
         if (G.week > SEASON_WEEKS) {
           const result = endOfSeason(G);
           saveGame();
+          showView('dashboard');
           refreshAll();
           showSeasonEndOverlay(result);
         } else {
-          /* Auto-save and refresh UI */
+          /* Auto-save, navigate to dashboard, and refresh UI */
           saveGame();
+          showView('dashboard');
           refreshAll();
         }
       },
@@ -1076,7 +1109,7 @@ function upgradeFacility(facilityKey: string): void {
   SFX.click();
   saveGame();
   updateTopBar(G, settings);
-  refreshAll();
+  refreshCurrentView();
 }
 
 // ===========================================================================
@@ -1093,7 +1126,8 @@ function selectSponsor(tier: string): void {
   G.sponsorship = { ...sp };
   SFX.click();
   saveGame();
-  refreshAll();
+  updateTopBar(G, settings);
+  refreshCurrentView();
 }
 
 // ===========================================================================

@@ -170,15 +170,17 @@ export function initPlayBtn(G: GameState, settings: Settings): void {
 }
 
 /**
- * Update the Play Match button text and disabled state.
+ * Update the Play Match button text, disabled state, and visual style.
  *
- * The button reflects the current game state:
- * - "Play Cup Final" when only cup final remains
+ * The button reflects the current game state with clear contextual messages:
  * - "Start Season N" when the full season is over
- * - "Match In Progress" during animated matches
- * - "Select 11 First" when fewer than 11 players selected
- * - "Must Assign 1 GK" when no goalkeeper is assigned
- * - "Play Week N" when ready to play
+ * - "Match In Progress..." during animated matches (greyed out)
+ * - "Select 11 Players" when fewer than 11 players selected (greyed out)
+ * - "Assign a Goalkeeper" when no GK is assigned (greyed out)
+ * - "Play Week N" when ready to play (highlighted)
+ *
+ * The button also has a `btn-disabled` CSS class when greyed out for
+ * additional visual feedback beyond the native disabled attribute.
  */
 export function updatePlayBtn(): void {
   if (!_playBtnG || !_playBtnSettings) return;
@@ -195,37 +197,49 @@ export function updatePlayBtn(): void {
   const selCount = sel.length;
   const hasGK = sel.some(p => (p.assignedPos || p.pos) === 'GK');
 
+  /**
+   * Helper to set button state consistently.
+   * Adds/removes 'btn-disabled' class for greyed-out styling.
+   */
+  const setBtn = (disabled: boolean, text: string): void => {
+    btn.disabled = disabled;
+    btn.textContent = text;
+    btn.classList.toggle('btn-disabled', disabled);
+  };
+
   /* When the season is over, allow advancing to next season */
   if (G.week > SEASON_WEEKS) {
-    btn.disabled = false;
-    btn.textContent = t(settings, 'startSeason', { season: G.season + 1 });
+    setBtn(false, t(settings, 'startSeason', { season: G.season + 1 }));
     return;
   }
 
   /* Match currently in progress */
   if (G.matchInProgress) {
-    btn.disabled = true;
-    btn.textContent = t(settings, 'matchInProgress');
+    setBtn(true, '\u23F3 ' + t(settings, 'matchInProgress'));
     return;
   }
 
   /* Not enough starters selected */
   if (selCount < 11) {
-    btn.disabled = true;
-    btn.textContent = t(settings, 'select11First');
+    setBtn(true, '\u{1F6AB} ' + t(settings, 'select11First'));
     return;
   }
 
   /* No GK assigned */
   if (!hasGK) {
-    btn.disabled = true;
-    btn.textContent = t(settings, 'mustAssign1GK');
+    setBtn(true, '\u{1F6AB} ' + t(settings, 'mustAssign1GK'));
+    return;
+  }
+
+  /* Check for injured or suspended starters that shouldn't be playing */
+  const unavailable = sel.filter(p => p.injuredFor > 0 || p.suspendedFor > 0);
+  if (unavailable.length > 0) {
+    setBtn(true, `\u26A0\uFE0F ${unavailable.length} unavailable starter${unavailable.length > 1 ? 's' : ''}`);
     return;
   }
 
   /* Ready to play */
-  btn.disabled = false;
-  btn.textContent = t(settings, 'playWeek', { week: G.week });
+  setBtn(false, '\u26BD ' + t(settings, 'playWeek', { week: G.week }));
 }
 
 /* ================================================================
