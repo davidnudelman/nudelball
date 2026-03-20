@@ -31,7 +31,7 @@
  */
 
 import type { GameState, Settings, Team } from '../../types';
-import { FACILITY_COSTS, SPONSORSHIP_TIERS, STADIUM_INCOME_BONUS, TRAINING_FACILITY_BONUS, YOUTH_ACADEMY_SKILL_BONUS } from '../../config';
+import { FACILITY_COSTS, SPONSORSHIP_TIERS, STADIUM_INCOME_BONUS, STADIUM_HOME_GAME_BONUS, TRAINING_FACILITY_BONUS, YOUTH_ACADEMY_SKILL_BONUS } from '../../config';
 import { teamLabel } from '../../utils/helpers';
 import { t } from '../../data/i18n';
 
@@ -98,8 +98,8 @@ export function renderClub(G: GameState, settings: Settings): void {
     {
       key: 'stadium', label: 'Stadium', icon: '&#127967;',
       level: fac.stadium || 0,
-      effect: `+$${STADIUM_INCOME_BONUS} income/lv`,
-      detailedEffect: `Current bonus: +$${((fac.stadium || 0) * STADIUM_INCOME_BONUS).toLocaleString()} per season`,
+      effect: `+$${STADIUM_HOME_GAME_BONUS}/home game + $${STADIUM_INCOME_BONUS}/season per lv`,
+      detailedEffect: `Current: +$${((fac.stadium || 0) * STADIUM_HOME_GAME_BONUS).toLocaleString()}/home game + $${((fac.stadium || 0) * STADIUM_INCOME_BONUS).toLocaleString()}/season`,
     },
   ];
 
@@ -194,7 +194,7 @@ export function renderClub(G: GameState, settings: Settings): void {
   h += `<div style="font-size:.82rem;line-height:1.6;color:var(--text-dim)">`;
   h += `<div style="margin-bottom:10px"><b style="color:var(--text)">Facilities</b> — Each facility has 3 upgrade levels. Costs increase with each level. `;
   h += `The <b>Training Ground</b> improves weekly skill gains. The <b>Youth Academy</b> produces better youth prospects. `;
-  h += `The <b>Stadium</b> generates extra income at the end of each season.</div>`;
+  h += `The <b>Stadium</b> generates income per home game and a bonus at the end of each season.</div>`;
   h += `<div style="margin-bottom:10px"><b style="color:var(--text)">Sponsorship</b> — Choose a deal for guaranteed season income. `;
   h += `Higher-tier sponsors pay more but require your team to be in a higher division. `;
   h += `You can change sponsors at any time. Income is paid at the end of each season.</div>`;

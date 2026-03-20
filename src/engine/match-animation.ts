@@ -273,12 +273,12 @@ export function runAnimatedMatch(
         `<span class="coach-text">"${comment}"</span>` +
         `</div>` +
         `<button class="btn btn-success ht-continue-btn" style="margin-top:12px" ` +
-        `onclick="finishMatch()">\u2705 Continue <span id="ft-countdown">(40s)</span></button>` +
+        `onclick="finishMatch()">\u2705 Continue <span id="ft-countdown">(15s)</span></button>` +
         `</div>`;
     }
 
-    /* Auto-exit countdown: 40 seconds then auto-call finishMatch */
-    let countdown = 40;
+    /* Auto-exit countdown: 15 seconds then auto-call finishMatch */
+    let countdown = 15;
     const countdownEl = document.getElementById('ft-countdown');
     countdownTimerId = setInterval(() => {
       countdown--;

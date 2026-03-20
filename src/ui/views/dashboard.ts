@@ -6,7 +6,7 @@
  */
 
 import type { GameState, Settings, Team, Fixture } from '../../types';
-import { SEASON_WEEKS, FORMATIONS, MORALE_MAX, FACILITY_COSTS, SPONSORSHIP_TIERS, SCOUT_COSTS } from '../../config';
+import { SEASON_WEEKS, FORMATIONS, MORALE_MAX, FACILITY_COSTS, SPONSORSHIP_TIERS, SCOUT_COSTS, STADIUM_HOME_GAME_BONUS, STADIUM_INCOME_BONUS } from '../../config';
 import { teamLabel, plateColors } from '../../utils/helpers';
 import { t } from '../../data/i18n';
 
@@ -328,7 +328,7 @@ export function renderDashboard(
   const facTypes: Array<{ key: string; label: string; icon: string; level: number; effect: string }> = [
     { key: 'trainingFacility', label: 'Training Ground', icon: '&#127947;', level: fac.trainingFacility || 0, effect: '+3% skill growth/lv' },
     { key: 'youthAcademy', label: 'Youth Academy', icon: '&#127891;', level: fac.youthAcademy || 0, effect: '+2 regen skill/lv' },
-    { key: 'stadium', label: 'Stadium', icon: '&#127967;', level: fac.stadium || 0, effect: '+$500 income/lv' },
+    { key: 'stadium', label: 'Stadium', icon: '&#127967;', level: fac.stadium || 0, effect: `+$${STADIUM_HOME_GAME_BONUS}/home game + $${STADIUM_INCOME_BONUS}/season per lv` },
   ];
   for (const f of facTypes) {
     const costs = FACILITY_COSTS[f.key] || [];

@@ -30,7 +30,7 @@ import type {
    ================================================================ */
 
 /** Current game version string */
-export const GAME_VERSION = '3.0.0';
+export const GAME_VERSION = '3.1.0';
 
 /** localStorage key for the main game save */
 export const SAVE_KEY = 'intlSoccerLeague_v1';
@@ -522,14 +522,16 @@ export const SPONSORSHIP_TIERS: readonly Sponsorship[] = [
 export const FACILITY_COSTS: Readonly<Record<string, readonly number[]>> = {
   trainingFacility: [5000, 8000, 12000],
   youthAcademy: [8000, 13000, 20000],
-  stadium: [10000, 17000, 25000],
+  stadium: [3000, 5000, 8000],
 } as const;
 
 /** Training facility effectiveness bonus per level */
 export const TRAINING_FACILITY_BONUS = 0.03;
 /** Youth academy regen skill bonus per level */
 export const YOUTH_ACADEMY_SKILL_BONUS = 2;
-/** Stadium income bonus per level per season */
+/** Stadium income per home game, per level (paid immediately after each home match) */
+export const STADIUM_HOME_GAME_BONUS = 150;
+/** Stadium end-of-season income bonus per level */
 export const STADIUM_INCOME_BONUS = 500;
 
 /* ================================================================
