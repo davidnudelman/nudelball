@@ -1,70 +1,20 @@
 /**
  * calendar.ts — Match calendar view renderer.
  *
- * Renders the season calendar with week headers, fixture cards
- * (with match reports for played matches), and cup fixtures.
+ * Renders the season calendar with week headers and fixture cards
+ * (with match reports for played matches).
  */
 
-import type { GameState, Settings, CupMatch } from '../../types';
-import { SEASON_WEEKS, CUP_ROUNDS, CUP_WEEKS } from '../../config';
+import type { GameState, Settings } from '../../types';
+import { SEASON_WEEKS } from '../../config';
 import { teamLabel } from '../../utils/helpers';
 import { t } from '../../data/i18n';
-
-/**
- * Render cup fixtures for a specific week number.
- *
- * Displays actual results for past/current rounds, or TBD placeholders
- * for future rounds.
- *
- * @param G       - The current game state
- * @param settings - User settings
- * @param weekNum - The week number to check for cup matches
- * @returns HTML string for the cup fixtures section (empty if no cup match this week)
- */
-function renderCupForWeek(G: GameState, settings: Settings, weekNum: number): string {
-  const cupIdx = CUP_WEEKS.indexOf(weekNum);
-  if (cupIdx < 0 || !G.cup) return '';
-
-  let ch = '';
-  const roundName = CUP_ROUNDS[cupIdx] || ('Cup Round ' + (cupIdx + 1));
-  ch += `<div class="cup-cal-header">&#127942; ${roundName}</div>`;
-
-  if (cupIdx <= G.cup.round && G.cup.rounds[cupIdx]) {
-    /* Round data exists — show actual matches */
-    for (const m of G.cup.rounds[cupIdx]) {
-      if (m.bye) continue;
-      const ht = G.teams[m.home];
-      const at = m.away != null ? G.teams[m.away] : null;
-      if (!ht || !at) continue;
-      const isPlayer = m.home === G.playerTeamId || m.away === G.playerTeamId;
-      ch += `<div class="fixture-card cup-fixture${isPlayer ? ' player-match' : ''}"><div class="fixture-main">`;
-      ch += `<div class="team-name home">${teamLabel(ht)}</div>`;
-      if (m.played && m.homeGoals != null) {
-        ch += `<div class="score-box">${m.homeGoals} — ${m.awayGoals}</div>`;
-      } else {
-        ch += `<div class="vs">${t(settings, 'vs')}</div>`;
-      }
-      ch += `<div class="team-name away">${teamLabel(at)}</div></div></div>`;
-    }
-  } else {
-    /* Future round — show TBD placeholders */
-    const expectedMatches = Math.pow(2, CUP_ROUNDS.length - 1 - cupIdx) / 2;
-    for (let i = 0; i < expectedMatches; i++) {
-      ch += `<div class="fixture-card cup-fixture cup-placeholder"><div class="fixture-main">` +
-        `<div class="team-name home">TBD</div>` +
-        `<div class="vs">${t(settings, 'vs')}</div>` +
-        `<div class="team-name away">TBD</div></div></div>`;
-    }
-  }
-  return ch;
-}
 
 /**
  * Render the match calendar view into the DOM.
  *
  * Displays division tabs, week headers with fixture cards for each
- * round, match reports (goal scorers, injuries) for played matches,
- * and cup fixtures on their scheduled weeks.
+ * round, and match reports (goal scorers, injuries) for played matches.
  *
  * @param G        - The current game state
  * @param settings - User settings (for i18n)
@@ -134,18 +84,6 @@ export function renderCalendar(G: GameState, settings: Settings): void {
         h += '</div>';
       }
       h += '</div>';
-    }
-
-    /* Show cup fixtures for this week (if any) */
-    h += renderCupForWeek(G, settings, weekNum);
-  }
-
-  /* Week 15 — Cup Final (after league weeks 1-14) */
-  for (const cupWeek of CUP_WEEKS) {
-    if (cupWeek > SEASON_WEEKS) {
-      const isCurrent = cupWeek === G.week;
-      h += `<div class="week-header">${t(settings, 'week')} ${cupWeek} — Cup Final ${isCurrent ? '<span class="badge">' + t(settings, 'current') + '</span>' : ''}</div>`;
-      h += renderCupForWeek(G, settings, cupWeek);
     }
   }
 

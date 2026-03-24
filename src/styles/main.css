@@ -2766,10 +2766,6 @@ select:focus-visible {
   border-left: 3px solid var(--accent);
 }
 
-.fixture-card.cup-fixture {
-  border-left: 3px solid var(--gold);
-}
-
 .fixture-main {
   display: flex;
   align-items: center;
@@ -2836,17 +2832,6 @@ select:focus-visible {
   color: var(--accent);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-}
-
-/* Cup status on dashboard */
-.dash-cup {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: var(--sp-sm) var(--sp-md);
-  margin-bottom: var(--sp-md);
-  font-size: 0.88rem;
-  box-shadow: var(--shadow-sm);
 }
 
 /* Trophy shelf on dashboard */
@@ -3678,21 +3663,6 @@ html.light .league-table .player-row {
   border-color: var(--accent);
 }
 
-/* Cup final banner */
-.cup-final-banner {
-  text-align: center;
-  font-family: 'Oswald', system-ui, sans-serif;
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: var(--gold);
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  padding: var(--sp-sm);
-  background: rgba(255, 215, 0, 0.08);
-  border-radius: var(--radius-sm);
-  margin-bottom: var(--sp-md);
-}
-
 /* Rival results */
 .rival-results {
   margin-top: var(--sp-lg);
@@ -4242,26 +4212,12 @@ html.light .league-table .player-row {
   color: var(--accent);
 }
 
-.cup-cal-header {
-  font-family: 'Oswald', system-ui, sans-serif;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--gold);
-  text-transform: uppercase;
-  margin: var(--sp-lg) 0 var(--sp-sm);
-}
-
 .fixture-card.has-report {
   cursor: pointer;
 }
 
 .fixture-card.expanded {
   border-color: var(--accent);
-}
-
-.fixture-card.cup-placeholder {
-  opacity: 0.5;
-  cursor: default;
 }
 
 /* --------------------------------------------------------------------------
@@ -4565,103 +4521,6 @@ html.light .league-table .player-row {
 }
 
 /* --------------------------------------------------------------------------
-   35o. Cup View
-   -------------------------------------------------------------------------- */
-.cup-winner-banner {
-  text-align: center;
-  padding: var(--sp-lg);
-  margin-bottom: var(--sp-md);
-  background: rgba(255, 215, 0, 0.06);
-  border: 1px solid var(--gold);
-  border-radius: var(--radius-md);
-}
-
-.cup-winner-trophy {
-  font-size: 3rem;
-  margin-bottom: var(--sp-sm);
-}
-
-.cup-winner-name {
-  font-family: 'Oswald', system-ui, sans-serif;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--gold);
-}
-
-.cup-winner-label {
-  font-size: 0.82rem;
-  color: var(--text-dim);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.cup-round {
-  margin-bottom: var(--sp-md);
-  padding: var(--sp-md);
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-}
-
-.cup-round.cup-round-current {
-  border-color: var(--accent);
-  box-shadow: 0 0 8px rgba(79, 195, 247, 0.15);
-}
-
-.cup-round-title {
-  font-family: 'Oswald', system-ui, sans-serif;
-  font-weight: 600;
-  font-size: 0.92rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--text);
-  margin-bottom: var(--sp-sm);
-}
-
-.cup-matches {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-xs);
-}
-
-.cup-match {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--sp-sm);
-  padding: var(--sp-xs) var(--sp-sm);
-  background: var(--surface);
-  border-radius: var(--radius-sm);
-  font-size: 0.85rem;
-}
-
-.cup-match.cup-match-player {
-  border-left: 3px solid var(--accent);
-}
-
-.cup-team {
-  min-width: 120px;
-  font-weight: 500;
-}
-
-.cup-team.cup-team-winner {
-  font-weight: 700;
-  color: var(--accent);
-}
-
-.cup-team.cup-team-bye {
-  color: var(--text-dim);
-  font-style: italic;
-}
-
-.cup-score {
-  font-family: 'Oswald', system-ui, sans-serif;
-  font-weight: 700;
-  min-width: 50px;
-  text-align: center;
-}
-
-/* --------------------------------------------------------------------------
    35p. Team Profile
    -------------------------------------------------------------------------- */
 .tp-back {
@@ -4923,13 +4782,6 @@ html.light .league-table .player-row {
   background: var(--surface2);
   border-radius: var(--radius);
   border: 1px solid var(--border);
-}
-
-.season-cup-winner {
-  background: rgba(255, 215, 0, 0.08);
-  border-color: var(--gold);
-  padding: var(--sp-lg) var(--sp-md);
-  margin-bottom: var(--sp-md);
 }
 
 .season-personal {

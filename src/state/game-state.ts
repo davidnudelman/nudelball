@@ -199,9 +199,6 @@ export let G: GameState = {
   tactic: 'balanced',
   trainingFocus: 'balanced',
 
-  /* Cup */
-  cup: null,
-
   /* Animated Match (transient) */
   matchSubs: 0,
   matchRedCards: [],
@@ -313,11 +310,13 @@ export const initBudgets = (): void => {
  * This is the entry point when the player clicks "New Game" on the welcome
  * screen. It:
  *   1. Resets all state fields to their defaults.
- *   2. Creates all 32 teams from `TEAMS_DATA`, each with a full squad
- *      generated according to their division's skill range.
- *   3. Populates the waiting pool from `WAITING_TEAMS_DATA`.
- *   4. Generates the season's round-robin fixtures.
- *   5. Initialises team budgets and the free-agent market.
+ *   2. Creates all ~80 teams from `TEAMS_DATA` with placeholder squads.
+ *   3. Populates the initial waiting pool from `WAITING_TEAMS_DATA`.
+ *
+ * Fixture generation, budget init, and free-agent spawning are deferred
+ * to `randomizeDivisions()`, which is called after the player picks
+ * their team. That function selects 32 teams, assigns divisions, and
+ * regenerates squads with proper skill ranges.
  *
  * The human player's team is NOT assigned here -- that's deferred to the
  * welcome screen's team-picker flow.
@@ -339,7 +338,6 @@ export const initNewGame = (): void => {
   G.selectedFormationIdx = DEFAULT_FORMATION_IDX;
   G.tactic = 'balanced';
   G.trainingFocus = 'balanced';
-  G.cup = null;
   G.matchSubs = 0;
   G.matchRedCards = [];
   G.viewingPlayerId = null;
@@ -349,7 +347,12 @@ export const initNewGame = (): void => {
   G.loans = [];
   G.youthProspects = [];
 
-  /* Create all 32 teams from the data table */
+  /*
+   * Create ALL teams from the expanded data table (~80 teams).
+   * Teams with div > 0 keep their original division; div 0 teams are pool
+   * candidates. All get a temporary mid-range squad — squads are regenerated
+   * with correct division-based skills in randomizeDivisions().
+   */
   for (const td of TEAMS_DATA) {
     const team: Team = {
       id: G.teams.length,
@@ -366,7 +369,8 @@ export const initNewGame = (): void => {
       aiFormation: rand(0, FORMATIONS.length - 1),
     };
 
-    /* Build squad from the standard composition (2 GK, 7 DEF, 7 MID, 6 STR) */
+    /* Build squad — use div 3 range for pool (div 0) teams as a placeholder */
+    const skillDiv = td.div === 0 ? 3 : td.div;
     const positions: Position[] = [];
     for (const [pos, cnt] of Object.entries(SQUAD_COMP)) {
       for (let i = 0; i < cnt; i++) {
@@ -375,7 +379,7 @@ export const initNewGame = (): void => {
     }
     for (const pos of positions) {
       team.players.push(
-        makePlayer(genName(td.country), pos, genSkill(td.div), rand(18, 33)),
+        makePlayer(genName(td.country), pos, genSkill(skillDiv), rand(18, 33)),
       );
     }
 
@@ -391,11 +395,106 @@ export const initNewGame = (): void => {
   }));
   G.returnPool = [];
 
-  /* Generate the season's fixtures */
-  generateFixtures();
+  /*
+   * Fixtures, budgets, and free agents are NOT generated here — they are
+   * deferred to randomizeDivisions(), which is called after the player
+   * picks their team on the welcome screen.
+   */
 
   /* Player team is NOT assigned here -- deferred to welcome screen selectTeam() */
   G.playerTeamId = null;
+};
+
+// ---------------------------------------------------------------------------
+// Division Randomisation (called after player picks their team)
+// ---------------------------------------------------------------------------
+
+/**
+ * Fisher-Yates shuffle — mutates the array in place.
+ *
+ * @param arr - The array to shuffle.
+ * @returns The same array, now shuffled.
+ */
+const shuffle = <T>(arr: T[]): T[] => {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = rand(0, i);
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+};
+
+/**
+ * Randomly select 32 teams from the full pool, assign them to 4 divisions,
+ * regenerate squads with division-appropriate skills, and move the rest to
+ * the waiting pool.
+ *
+ * The player's chosen team (`G.playerTeamId`) is always guaranteed a spot
+ * in the 32 selected. Must be called after `initNewGame()` and after the
+ * player has selected their team.
+ *
+ * This function also generates fixtures, initialises budgets, and spawns
+ * the free-agent market — tasks that were previously done at the end of
+ * `initNewGame()`.
+ */
+export const randomizeDivisions = (): void => {
+  const playerIdx = G.playerTeamId;
+  if (playerIdx === null) return;
+
+  /* Grab the player's team reference and its name for later lookup */
+  const playerTeamRef = G.teams[playerIdx];
+  const playerName = playerTeamRef.name;
+
+  /* Separate the player's team from the rest */
+  const otherTeams = G.teams.filter((_tm, idx) => idx !== playerIdx);
+
+  /* Shuffle the others and pick 31 to join the player's team */
+  shuffle(otherTeams);
+  const selected = [playerTeamRef, ...otherTeams.slice(0, 31)];
+  const unselected = otherTeams.slice(31);
+
+  /* Shuffle selected teams so the player's team gets a random division slot */
+  shuffle(selected);
+
+  /* Assign divisions: first 8 → div 1, next 8 → div 2, etc. */
+  for (let i = 0; i < selected.length; i++) {
+    selected[i].div = Math.floor(i / 8) + 1;
+  }
+
+  /* Regenerate each selected team's squad with correct division skill range */
+  for (const team of selected) {
+    team.players = [];
+    const positions: Position[] = [];
+    for (const [pos, cnt] of Object.entries(SQUAD_COMP)) {
+      for (let i = 0; i < cnt; i++) {
+        positions.push(pos as Position);
+      }
+    }
+    for (const pos of positions) {
+      team.players.push(
+        makePlayer(genName(team.country), pos, genSkill(team.div), rand(18, 33)),
+      );
+    }
+  }
+
+  /* Rebuild G.teams with only the 32 selected, re-indexing IDs */
+  G.teams = selected.map((tm, idx) => ({ ...tm, id: idx }));
+
+  /* Update playerTeamId to the new index (find by name) */
+  const newPlayerIdx = G.teams.findIndex(tm => tm.name === playerName);
+  G.playerTeamId = newPlayerIdx >= 0 ? newPlayerIdx : 0;
+
+  /* Move unselected teams into the waiting pool */
+  for (const tm of unselected) {
+    G.waitingPool.push({
+      name: tm.name,
+      c1: tm.c1,
+      c2: tm.c2,
+      country: tm.country,
+    });
+  }
+
+  /* Generate the season's fixtures */
+  generateFixtures();
 
   /* Initialise budgets and free-agent market */
   initBudgets();

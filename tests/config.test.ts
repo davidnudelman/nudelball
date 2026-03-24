@@ -17,8 +17,6 @@ import {
   TOTAL_SEASON_WEEKS,
   POS_ORDER,
   SQUAD_COMP,
-  CUP_ROUNDS,
-  CUP_WEEKS,
   TRAINING_FOCUSES,
   DEFAULT_FORMATION_IDX,
   STARTING_BUDGET,
@@ -218,21 +216,14 @@ describe('DIFFICULTY_SETTINGS', () => {
    TEAMS_DATA
    ================================================================ */
 describe('TEAMS_DATA', () => {
-  it('has 32 teams', () => {
-    expect(TEAMS_DATA).toHaveLength(32);
+  it('has at least 32 teams in the pool', () => {
+    expect(TEAMS_DATA.length).toBeGreaterThanOrEqual(32);
   });
 
-  it('has 8 teams per division', () => {
-    for (let d = 1; d <= 4; d++) {
-      const count = TEAMS_DATA.filter(t => t.div === d).length;
-      expect(count).toBe(TEAMS_PER_DIV);
-    }
-  });
-
-  it('each team has name, div, c1, c2, country', () => {
+  it('each team has name, div (0-4), c1, c2, country', () => {
     for (const t of TEAMS_DATA) {
       expect(t.name.length).toBeGreaterThan(0);
-      expect(t.div).toBeGreaterThanOrEqual(1);
+      expect(t.div).toBeGreaterThanOrEqual(0);
       expect(t.div).toBeLessThanOrEqual(4);
       expect(t.c1).toMatch(/^#/);
       expect(t.c2).toMatch(/^#/);
@@ -279,19 +270,6 @@ describe('Season & Calendar constants', () => {
     expect(TOTAL_SEASON_WEEKS).toBeGreaterThanOrEqual(SEASON_WEEKS);
   });
 
-  it('CUP_ROUNDS has 5 entries', () => {
-    expect(CUP_ROUNDS).toHaveLength(5);
-  });
-
-  it('CUP_WEEKS has 5 entries matching CUP_ROUNDS', () => {
-    expect(CUP_WEEKS).toHaveLength(CUP_ROUNDS.length);
-  });
-
-  it('CUP_WEEKS are in ascending order', () => {
-    for (let i = 1; i < CUP_WEEKS.length; i++) {
-      expect(CUP_WEEKS[i]).toBeGreaterThan(CUP_WEEKS[i - 1]);
-    }
-  });
 });
 
 /* ================================================================
@@ -411,8 +389,8 @@ describe('Form constants', () => {
    WAITING_TEAMS_DATA
    ================================================================ */
 describe('WAITING_TEAMS_DATA', () => {
-  it('has 4 waiting teams', () => {
-    expect(WAITING_TEAMS_DATA).toHaveLength(4);
+  it('has at least 4 waiting teams', () => {
+    expect(WAITING_TEAMS_DATA.length).toBeGreaterThanOrEqual(4);
   });
 
   it('each waiting team has name, c1, c2, country', () => {

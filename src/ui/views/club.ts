@@ -3,7 +3,7 @@
  *
  * Renders a dedicated screen for managing club infrastructure:
  * - Facility upgrades (Training Ground, Youth Academy, Stadium)
- * - Sponsorship deals (Small, Medium, Large, Cup-focused)
+ * - Sponsorship deals (Small, Medium, Large)
  * - Club overview with budget, morale, and transfer window status
  *
  * ## How It Works
@@ -19,7 +19,6 @@
  * - **Small**: $500/season — available to all divisions.
  * - **Medium**: $1,000/season — requires Division 3 or higher.
  * - **Large**: $2,000/season — requires Division 1.
- * - **Cup**: $300/season + cup bonuses — available to all divisions.
  *
  * Sponsorship income is paid at the end of each season. You can switch
  * sponsors between seasons, but only if you meet the division requirement.
@@ -151,9 +150,6 @@ export function renderClub(G: GameState, settings: Settings): void {
     h += `<div style="font-size:.78rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px">Current Sponsor</div>`;
     h += `<div style="font-weight:700;font-size:1rem;margin:2px 0">${G.sponsorship.tier.charAt(0).toUpperCase() + G.sponsorship.tier.slice(1)} Sponsor</div>`;
     h += `<div style="font-size:.85rem;color:var(--green)">$${G.sponsorship.incomePerSeason.toLocaleString()} per season</div>`;
-    if (G.sponsorship.cupBonusPerRound > 0) {
-      h += `<div style="font-size:.78rem;color:var(--text-dim)">+$${G.sponsorship.cupBonusPerRound} per cup round</div>`;
-    }
     h += `</div>`;
   } else {
     h += `<div style="background:var(--surface2);padding:10px 14px;border-radius:8px;margin-bottom:12px;border-left:3px solid var(--red)">`;
@@ -172,9 +168,6 @@ export function renderClub(G: GameState, settings: Settings): void {
     h += `<div style="background:var(--surface2);padding:12px;border-radius:8px;border:2px solid ${borderColor};${isActive ? 'box-shadow:0 0 8px rgba(76,175,80,.2);' : ''}">`;
     h += `<div style="font-weight:700;font-size:.92rem;margin-bottom:4px">${tierName} Sponsor</div>`;
     h += `<div style="font-size:.95rem;color:var(--green);font-weight:600;margin-bottom:2px">$${sp.incomePerSeason.toLocaleString()}/season</div>`;
-    if (sp.cupBonusPerRound > 0) {
-      h += `<div style="font-size:.78rem;color:var(--text-dim)">+$${sp.cupBonusPerRound}/cup round</div>`;
-    }
     h += `<div style="font-size:.72rem;color:var(--text-dim);margin:4px 0">Requires: Div ${sp.requiredDiv} or higher</div>`;
 
     if (isActive) {

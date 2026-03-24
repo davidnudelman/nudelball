@@ -9,10 +9,23 @@
 import type { ChangelogEntry } from '../types';
 
 /** Current game version string displayed in the footer and settings. */
-export const GAME_VERSION = "3.1.1";
+export const GAME_VERSION = "4.0.0";
 
 /** Full changelog, newest version first. */
 export const CHANGELOG: readonly ChangelogEntry[] = [
+  {
+    version: "4.0.0",
+    date: "2026-03-24",
+    title: "Dynamic Leagues, Cup Removal & Translation Polish",
+    changes: [
+      "🌍 Dynamic Team Pool — 97 teams now available; 32 are randomly selected and assigned to divisions each new game for a unique experience every playthrough",
+      "🗑️ Cup System Removed — knockout cup competition removed to streamline gameplay around the league season",
+      "🛠️ Dashboard Fix — season recap now renders correctly inline on the dashboard instead of showing a blank screen",
+      "🇧🇷🇪🇸 Translation Improvements — 40+ new Portuguese and Spanish translation keys covering dashboard, match, recap, club, and scout views",
+      "👤 Expanded Name Pools — 60 first and 60 last names per country (up from 30) with more authentic common names",
+      "📋 Waiting Pool Expanded — 12 reserve teams ready to rotate into the league across seasons",
+    ],
+  },
   {
     version: "3.1.1",
     date: "2026-03-24",

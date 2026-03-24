@@ -101,7 +101,6 @@ const buildGameState = (teamCount: number = 32, playerTeamId: number | null = 0)
     selectedFormationIdx: DEFAULT_FORMATION_IDX,
     tactic: 'balanced',
     trainingFocus: 'balanced',
-    cup: null,
     matchSubs: 0,
     matchRedCards: [],
     viewingPlayerId: null,
