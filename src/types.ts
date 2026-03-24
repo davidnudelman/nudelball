@@ -667,6 +667,29 @@ export interface GameState {
   scoutLevel?: ScoutLevel;
   /** Active negotiation state (#17) */
   negotiation?: NegotiationState | null;
+
+  /* --- Season Recap Gate (v3.1) --- */
+
+  /** Pending season recap data — shown in dashboard before new season can start */
+  seasonRecapData?: SeasonRecapData | null;
+}
+
+/* ===== Season Recap Data ===== */
+
+/**
+ * Stored after endOfSeason() runs, before the new season starts.
+ * The dashboard renders this inline as a mandatory recap gate.
+ * Cleared when the player clicks "Start Next Season".
+ */
+export interface SeasonRecapData {
+  /** The season that just completed */
+  season: number;
+  /** Promotion/relegation moves (stored by ID since team.div has changed) */
+  moves: Array<{ teamId: number; type: string; from: number; to: number }>;
+  /** Financial awards distributed */
+  financialAwards: Array<{ teamId: number; type: string; amount: number }>;
+  /** Total cash earned by the player this season */
+  playerTotalCash: number;
 }
 
 /* ===== Difficulty Settings ===== */

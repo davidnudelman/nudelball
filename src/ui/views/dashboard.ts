@@ -5,10 +5,11 @@
  * cup status, next fixture, and a mini league standings table.
  */
 
-import type { GameState, Settings, Team, Fixture } from '../../types';
+import type { GameState, Settings, Team, Fixture, SeasonRecapData } from '../../types';
 import { SEASON_WEEKS, FORMATIONS, MORALE_MAX, FACILITY_COSTS, SPONSORSHIP_TIERS, SCOUT_COSTS, STADIUM_HOME_GAME_BONUS, STADIUM_INCOME_BONUS } from '../../config';
 import { teamLabel, plateColors } from '../../utils/helpers';
 import { t } from '../../data/i18n';
+import { calculateSeasonAwards } from '../../engine/season';
 
 /* ================================================================
    HELPER: Ordinal suffix (1st, 2nd, 3rd, etc.)
@@ -119,6 +120,21 @@ export function renderDashboard(
 ): void {
   const pt = G.teams[G.playerTeamId!];
   const div = pt.div;
+
+  /* ===== Season Recap Gate ===== */
+  if (G.seasonRecapData) {
+    renderSeasonRecap(G, settings, teamLabelWithTrophiesFn);
+    return;
+  }
+
+  /* Ensure elements hidden during recap are visible again */
+  const nfEl = document.getElementById('next-fixture');
+  if (nfEl) nfEl.style.display = '';
+  const dashTableWrapEl = document.getElementById('dash-table-wrap');
+  if (dashTableWrapEl) {
+    const tableCardEl = dashTableWrapEl.closest('.card') as HTMLElement | null;
+    if (tableCardEl) tableCardEl.style.display = '';
+  }
 
   /* Division number display */
   const dashDivEl = document.getElementById('dash-div-num');
@@ -418,5 +434,201 @@ export function renderDashboard(
   /* ===== Mini League Table ===== */
   if (dashTableWrap) {
     dashTableWrap.innerHTML = buildTableHTML(G, settings, div, teamLabelWithTrophiesFn);
+  }
+}
+
+/* ================================================================
+   SEASON RECAP — Inline dashboard gate
+   ================================================================ */
+
+/**
+ * Render the season recap directly in the dashboard view.
+ *
+ * This replaces the normal dashboard content when `G.seasonRecapData` exists,
+ * creating a mandatory gate that the player must click through before
+ * starting the next season. Much more robust than a fragile overlay.
+ *
+ * Shows: season header, division champions, top scorer, season awards,
+ * player's personal results, promotion/relegation, financial summary,
+ * and a "Start Next Season" button.
+ */
+function renderSeasonRecap(
+  G: GameState,
+  settings: Settings,
+  teamLabelWithTrophiesFn: (tm: Team) => string,
+): void {
+  const recap = G.seasonRecapData!;
+  const pt = G.teams[G.playerTeamId!];
+
+  /* Build recap HTML */
+  let h = '';
+
+  /* ---- Season Complete Header ---- */
+  h += `<div class="card" style="text-align:center;padding:24px 16px;margin-bottom:12px;background:linear-gradient(135deg,var(--surface2),var(--surface))">`;
+  h += `<div style="font-size:2rem;margin-bottom:4px">&#127942;</div>`;
+  h += `<h2 style="font-family:'Oswald';color:var(--accent);margin:0 0 8px">${t(settings, 'seasonComplete', { season: recap.season })}</h2>`;
+  h += `<div style="font-size:.88rem;color:var(--text-dim)">Review the season results before starting Season ${recap.season + 1}</div>`;
+  h += `</div>`;
+
+  /* ---- Top Goal Scorer ---- */
+  const allScorers = Object.values(G.topScorers).sort((a, b) => b.goals - a.goals);
+  if (allScorers.length && allScorers[0].goals > 0) {
+    const top = allScorers[0];
+    const scorerTeam = G.teams[top.teamId];
+    h += `<div class="card" style="text-align:center;padding:14px;margin-bottom:12px">`;
+    h += `<div style="font-size:1.4rem;margin-bottom:2px">&#9917;</div>`;
+    h += `<div style="font-family:'Oswald';font-size:.85rem;text-transform:uppercase;letter-spacing:.5px;color:var(--text-dim);margin-bottom:4px">Top Goal Scorer</div>`;
+    h += `<div style="font-weight:700;font-size:1rem">${top.name} <span style="color:var(--accent)">(${top.goals} goals)</span></div>`;
+    if (scorerTeam) h += `<div style="margin-top:2px">${teamLabel(scorerTeam)}</div>`;
+    h += `</div>`;
+  }
+
+  /* ---- Division Champions & Runners-up ---- */
+  const latestHistory = G.seasonHistory?.[G.seasonHistory.length - 1];
+  if (latestHistory) {
+    h += `<div class="card" style="padding:14px;margin-bottom:12px">`;
+    h += `<div style="font-family:'Oswald';font-size:.9rem;text-transform:uppercase;letter-spacing:.5px;color:var(--text-dim);margin-bottom:10px;text-align:center">League Results</div>`;
+
+    const historyRows: Array<{ divLabel: string; champ: string | null; runner: string | null }> = [
+      { divLabel: 'Division 1', champ: latestHistory.div1Champion?.name ?? null, runner: latestHistory.div1RunnerUp?.name ?? null },
+      { divLabel: 'Division 2', champ: latestHistory.div2Champion?.name ?? null, runner: latestHistory.div2RunnerUp?.name ?? null },
+    ];
+    for (const row of historyRows) {
+      if (!row.champ) continue;
+      h += `<div style="margin-bottom:8px">`;
+      h += `<div style="font-weight:700;font-size:.82rem;color:var(--text-dim);margin-bottom:3px">${row.divLabel}</div>`;
+      if (row.champ) {
+        const champTm = G.teams.find(tm => tm.name === row.champ);
+        h += `<div style="padding:2px 0">&#127942; ${champTm ? teamLabelWithTrophiesFn(champTm) : row.champ}</div>`;
+      }
+      if (row.runner) {
+        const runnerTm = G.teams.find(tm => tm.name === row.runner);
+        h += `<div style="padding:2px 0">&#129352; ${runnerTm ? teamLabelWithTrophiesFn(runnerTm) : row.runner}</div>`;
+      }
+      h += `</div>`;
+    }
+    h += `</div>`;
+  }
+
+  /* ---- Season Awards ---- */
+  const awards = calculateSeasonAwards(G);
+  if (awards.length > 0) {
+    h += `<div class="card" style="padding:14px;margin-bottom:12px">`;
+    h += `<div style="font-family:'Oswald';font-size:1rem;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:12px;text-align:center">&#127942; ${t(settings, 'seasonAwards')} &#127942;</div>`;
+    h += `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px">`;
+    for (const a of awards) {
+      const icon = a.type === 'goldenBoot' ? '&#128095;'
+        : a.type === 'playerOfSeason' ? '&#11088;'
+        : a.type === 'bestYoung' ? '&#127793;'
+        : a.type === 'mvp' ? '&#129351;'
+        : '&#127941;';
+      const typeLabel = a.type === 'goldenBoot' ? t(settings, 'goldenBootAward')
+        : a.type === 'playerOfSeason' ? t(settings, 'playerOfSeasonAward')
+        : a.type === 'bestYoung' ? t(settings, 'bestYoungAward')
+        : a.type === 'mvp' ? 'MVP'
+        : a.type;
+      const detail = a.type === 'goldenBoot' ? `${a.value} goals`
+        : a.type === 'bestYoung' ? `${a.value} goals, Youth`
+        : `${a.value} goals`;
+      h += `<div style="text-align:center;background:var(--surface2);padding:10px 8px;border-radius:8px">`;
+      h += `<div style="font-size:1.8rem;margin-bottom:4px">${icon}</div>`;
+      h += `<div style="font-family:'Oswald';font-size:.78rem;text-transform:uppercase;letter-spacing:.5px;color:var(--text-dim);margin-bottom:4px">${typeLabel}</div>`;
+      h += `<div style="font-weight:700;font-size:.9rem">${a.playerName}</div>`;
+      h += `<div style="font-size:.75rem;color:var(--text-dim)">${a.teamName}</div>`;
+      h += `<div style="font-size:.72rem;color:var(--accent);margin-top:2px">${detail}</div>`;
+      h += `</div>`;
+    }
+    h += `</div></div>`;
+  }
+
+  /* ---- Personal Highlights ---- */
+  if (pt) {
+    const st = pt.seasonStats;
+    const gd = st.gf - st.ga;
+
+    /* Determine player's promotion/relegation fate from stored moves */
+    let fateIcon = '&#10134;';
+    let fateText = 'Retained';
+    const playerMove = recap.moves.find(m => m.teamId === G.playerTeamId);
+    if (playerMove) {
+      if (playerMove.type === 'promote') {
+        fateIcon = '&#11014;&#65039;';
+        fateText = `Promoted to Division ${playerMove.to}`;
+      } else if (playerMove.type === 'relegate') {
+        fateIcon = '&#11015;&#65039;';
+        fateText = `Relegated to Division ${playerMove.to}`;
+      } else if (playerMove.type === 'out') {
+        fateIcon = '&#10060;';
+        fateText = 'Exited the league';
+      }
+    }
+
+    h += `<div class="card" style="padding:14px;margin-bottom:12px;border-left:3px solid var(--accent)">`;
+    h += `<div style="font-family:'Oswald';font-size:.9rem;text-transform:uppercase;letter-spacing:.5px;color:var(--text-dim);margin-bottom:10px">Your Season — ${teamLabel(pt)}</div>`;
+    h += `<div style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-bottom:10px">`;
+    h += `<div class="stat-badge"><span class="sb-value">${st.pts}</span><span class="sb-label">Points</span></div>`;
+    h += `<div class="stat-badge"><span class="sb-value">${st.w}-${st.d}-${st.l}</span><span class="sb-label">W-D-L</span></div>`;
+    h += `<div class="stat-badge"><span class="sb-value">${st.gf}-${st.ga}</span><span class="sb-label">GF-GA</span></div>`;
+    h += `<div class="stat-badge"><span class="sb-value">${gd >= 0 ? '+' : ''}${gd}</span><span class="sb-label">GD</span></div>`;
+    h += `</div>`;
+    h += `<div style="font-size:1rem;font-weight:700;margin-bottom:6px;text-align:center">${fateIcon} ${fateText}</div>`;
+    if (recap.playerTotalCash > 0) {
+      h += `<div style="font-size:.88rem;color:var(--green);font-weight:600;text-align:center">&#128176; Season earnings: $${recap.playerTotalCash.toLocaleString()}</div>`;
+    }
+    h += `</div>`;
+  }
+
+  /* ---- Start Next Season Button ---- */
+  h += `<button class="btn btn-accent" style="width:100%;padding:16px;font-size:1.15rem;margin-top:8px" onclick="startNewSeasonAction()">`;
+  h += `&#127942; ${t(settings, 'startSeason', { season: recap.season + 1 })}`;
+  h += `</button>`;
+
+  /* Inject into all relevant dashboard DOM elements */
+  const lr = document.getElementById('last-result');
+  if (lr) lr.innerHTML = '';
+
+  const nf = document.getElementById('next-fixture');
+  if (nf) nf.style.display = 'none';
+
+  const cupStatus = document.getElementById('cup-status');
+  if (cupStatus) cupStatus.innerHTML = '';
+
+  /* Trophies still show normally */
+  const tc = document.getElementById('club-trophies-card');
+  const tcc = document.getElementById('club-trophies-content');
+  if (tc && tcc && pt) {
+    if (pt.trophies && pt.trophies.length) {
+      tc.style.display = '';
+      let tHTML = '<div class="trophy-shelf">';
+      for (const tr of pt.trophies) {
+        if (tr.type === 'gold_trophy') tHTML += `<span class="trophy" title="${t(settings, 'div1Champion')} ${t(settings, 'season')} ${tr.season}" style="font-size:1.6rem">&#127942;</span>`;
+        else if (tr.type === 'silver_trophy') tHTML += `<span class="trophy silver" title="${t(settings, 'div1RunnerUp')} ${t(settings, 'season')} ${tr.season}" style="font-size:1.6rem">&#127942;</span>`;
+        else if (tr.type === 'gold_medal') tHTML += `<span class="trophy" title="${t(settings, 'div2Champion')} ${t(settings, 'season')} ${tr.season}" style="font-size:1.6rem">&#129351;</span>`;
+        else if (tr.type === 'silver_medal') tHTML += `<span class="trophy" title="${t(settings, 'div2RunnerUp')} ${t(settings, 'season')} ${tr.season}" style="font-size:1.6rem">&#129352;</span>`;
+        else if (tr.type === 'cup') tHTML += `<span class="trophy" title="Cup Winner ${t(settings, 'season')} ${tr.season}" style="font-size:1.6rem">&#127942;</span>`;
+      }
+      tHTML += '</div>';
+      tcc.innerHTML = tHTML;
+    } else {
+      tc.style.display = 'none';
+    }
+  }
+
+  /* Replace the status card and mini table area with the recap */
+  const dashTableWrap = document.getElementById('dash-table-wrap');
+  if (dashTableWrap) {
+    const parent = dashTableWrap.parentElement;
+    if (parent) {
+      let statusCard = document.getElementById('team-status-card');
+      if (!statusCard) {
+        statusCard = document.createElement('div');
+        statusCard.id = 'team-status-card';
+        parent.insertBefore(statusCard, dashTableWrap.closest('.card'));
+      }
+      statusCard.innerHTML = h;
+    }
+    /* Hide the mini table during recap */
+    const tableCard = dashTableWrap.closest('.card') as HTMLElement | null;
+    if (tableCard) tableCard.style.display = 'none';
   }
 }
