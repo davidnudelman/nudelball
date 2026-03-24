@@ -237,27 +237,7 @@ const COACH_ACHIEVEMENTS: readonly CoachAchievement[] = [
     descKey: 'achLeagueChampionDesc',
     check: (_G, pt) => (pt.trophies ?? []).some(tr => tr.type === 'gold_trophy'),
   },
-  /* 5. Cup Winner — Win the Cup competition */
-  {
-    id: 'cupWinner',
-    icon: '&#127941;',
-    labelKey: 'achCupWinner',
-    descKey: 'achCupWinnerDesc',
-    check: (_G, pt) => (pt.trophies ?? []).some(tr => tr.type === 'gold_medal' || tr.type === 'cup'),
-  },
-  /* 6. The Double — Win Div 1 and Cup in the same season */
-  {
-    id: 'theDouble',
-    icon: '&#11088;',
-    labelKey: 'achTheDouble',
-    descKey: 'achTheDoubleDesc',
-    check: (_G, pt) => {
-      const trophies = pt.trophies ?? [];
-      const leagueSeasons = new Set(trophies.filter(tr => tr.type === 'gold_trophy').map(tr => tr.season));
-      return trophies.some(tr => (tr.type === 'gold_medal' || tr.type === 'cup') && leagueSeasons.has(tr.season));
-    },
-  },
-  /* 7. Invincible Season — Complete a season with 0 losses */
+  /* 5. Invincible Season — Complete a season with 0 losses */
   {
     id: 'invincible',
     icon: '&#128737;',

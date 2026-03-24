@@ -41,7 +41,7 @@ const HALF_TIME = 45;
  * Options for the animated match.
  */
 export interface AnimatedMatchOptions {
-  /** Whether this is a cup final */
+  /** @deprecated Cup system removed */
   isCupFinal?: boolean;
   /** Whether the player is a neutral spectator (not participating) */
   isNeutral?: boolean;

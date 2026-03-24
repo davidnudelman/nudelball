@@ -9,6 +9,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import {
   G,
   initNewGame,
+  randomizeDivisions,
   defaultRecords,
   emptyStats,
 } from '../src/state/game-state';
@@ -30,17 +31,14 @@ import type { Position } from '../src/types';
 describe('initNewGame()', () => {
   beforeEach(() => {
     initNewGame();
+    /* Select team 0 so randomizeDivisions can run */
+    G.playerTeamId = 0;
+    randomizeDivisions();
   });
 
   /* --- Team Count --- */
   it('creates 32 teams', () => {
     expect(G.teams).toHaveLength(32);
-  });
-
-  it('creates teams matching TEAMS_DATA names', () => {
-    const expectedNames = TEAMS_DATA.map(t => t.name);
-    const actualNames = G.teams.map(t => t.name);
-    expect(actualNames).toEqual(expectedNames);
   });
 
   /* --- Division Distribution --- */
@@ -164,8 +162,8 @@ describe('initNewGame()', () => {
   });
 
   /* --- Player Team --- */
-  it('playerTeamId is null (deferred to team selection)', () => {
-    expect(G.playerTeamId).toBeNull();
+  it('playerTeamId is set after randomization', () => {
+    expect(G.playerTeamId).not.toBeNull();
   });
 
   /* --- Fixtures --- */
@@ -195,10 +193,12 @@ describe('initNewGame()', () => {
   });
 
   /* --- Waiting Pool --- */
-  it('populates the waiting pool from WAITING_TEAMS_DATA', () => {
-    expect(G.waitingPool).toHaveLength(WAITING_TEAMS_DATA.length);
-    for (let i = 0; i < WAITING_TEAMS_DATA.length; i++) {
-      expect(G.waitingPool[i].name).toBe(WAITING_TEAMS_DATA[i].name);
+  it('populates the waiting pool with unselected teams + WAITING_TEAMS_DATA', () => {
+    /* Waiting pool should contain the original waiting teams plus any unselected from the pool */
+    expect(G.waitingPool.length).toBeGreaterThanOrEqual(WAITING_TEAMS_DATA.length);
+    /* All original waiting teams should be present */
+    for (const wt of WAITING_TEAMS_DATA) {
+      expect(G.waitingPool.some(wp => wp.name === wt.name)).toBe(true);
     }
   });
 
@@ -238,10 +238,6 @@ describe('initNewGame()', () => {
     expect(G.selectedFormationIdx).toBe(DEFAULT_FORMATION_IDX);
   });
 
-  /* --- Cup --- */
-  it('cup is null at game start', () => {
-    expect(G.cup).toBeNull();
-  });
 });
 
 /* ================================================================

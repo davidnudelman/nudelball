@@ -125,7 +125,6 @@ const buildGameState = (homeId: number, awayId: number, playerTeamId: number | n
     selectedFormationIdx: DEFAULT_FORMATION_IDX,
     tactic: 'balanced',
     trainingFocus: 'balanced',
-    cup: null,
     matchSubs: 0,
     matchRedCards: [],
     viewingPlayerId: null,

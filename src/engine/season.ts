@@ -3,7 +3,7 @@
  * including trophy awards, record updates, promotion/relegation,
  * prize money distribution, waiting pool rotation, and new-season setup.
  *
- * This module orchestrates calls to league, cup, training, transfer,
+ * This module orchestrates calls to league, training, transfer,
  * and player modules to perform the full season transition.
  */
 
@@ -42,8 +42,6 @@ import {
 import { applyDevelopmentCurve, agePlayer, genName, genSkill, makePlayer, rand } from './player';
 import { getTeamPowerLevels } from './match';
 import { emptyStats, generateFixtures, getSortedDiv } from './league';
-// Cup disabled — import removed
-// import { generateCupBracket } from './cup';
 import {
   awardSeasonIncome,
   generateSeasonFreeAgents,
@@ -276,7 +274,6 @@ export const endOfSeason = (G: GameState): {
     div2Champion: null,
     div2RunnerUp: null,
     topScorer: null,
-    cupWinner: null,
   };
 
   const div1sorted = getSortedDiv(G, 1);
@@ -296,15 +293,6 @@ export const endOfSeason = (G: GameState): {
       teamName: tt ? tt.name : '',
       teamId: top.teamId,
       goals: top.goals,
-    };
-  }
-
-  /* Record cup winner in season history */
-  if (G.cup && G.cup.winner != null) {
-    const cw = G.teams[G.cup.winner];
-    historyEntry.cupWinner = {
-      name: cw ? cw.name : 'Unknown',
-      teamId: G.cup.winner,
     };
   }
 
@@ -568,7 +556,7 @@ export const endOfSeason = (G: GameState): {
  * 3. **Development curves** — apply age-based development to all players.
  * 4. **Reset** — stamina, bench streak, injuries, and seasonal stats all reset.
  * 5. **Season increment** — G.season++, G.week = 1.
- * 6. **New fixtures & cup** — fresh fixture schedule and cup bracket generated.
+ * 6. **New fixtures** — fresh fixture schedule generated.
  *
  * @param G - The game state (mutated extensively).
  */
@@ -710,7 +698,6 @@ export const startNewSeason = (G: GameState): void => {
 
   /* ---- Generate new fixtures ---- */
   generateFixtures(G);
-  // Cup disabled — bracket generation removed
 };
 
 // ---------------------------------------------------------------------------

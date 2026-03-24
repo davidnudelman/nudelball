@@ -76,7 +76,6 @@ const buildGameStateForLeague = (): GameState => {
     selectedFormationIdx: DEFAULT_FORMATION_IDX,
     tactic: 'balanced',
     trainingFocus: 'balanced',
-    cup: null,
     matchSubs: 0,
     matchRedCards: [],
     viewingPlayerId: null,

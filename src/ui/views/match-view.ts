@@ -82,7 +82,7 @@ export function getTeamAvgRating(team: Team): number {
  * Options for setting up the match UI.
  */
 export interface MatchUIOptions {
-  /** Whether this is a cup final match */
+  /** @deprecated Cup system removed — kept for interface compatibility */
   isCupFinal?: boolean;
   /** Whether the player is a neutral spectator (not participating) */
   isNeutral?: boolean;
@@ -159,12 +159,9 @@ export function setupMatchUI(
       `<div><span class="mp-value" style="color:var(--accent)">${aa}</span><span class="mp-label"> ${t(settings, 'avgRating')}</span></div></div>`;
   }
 
-  /* Cup final banner */
-  const cupBanner = isCupFinal ? '<div class="cup-final-banner">&#127942; CUP FINAL</div>' : '';
-
   /* Derby banner (#13) */
   const isDerby = (homeTeam.rivals?.includes(awayTeam.id)) || (awayTeam.rivals?.includes(homeTeam.id));
-  const derbyBanner = isDerby ? '<div class="cup-final-banner" style="background:linear-gradient(90deg,#e53935,#ff6f00)">&#128293; DERBY MATCH &#128293;</div>' : '';
+  const derbyBanner = isDerby ? '<div style="text-align:center;padding:6px;font-weight:700;color:#fff;background:linear-gradient(90deg,#e53935,#ff6f00);border-radius:6px;margin-bottom:8px">&#128293; DERBY MATCH &#128293;</div>' : '';
 
   /* Tactic buttons for mid-match adjustments */
   const tacticBtns = Object.entries(TACTICS)
@@ -199,7 +196,7 @@ export function setupMatchUI(
 
   /* Build the full match UI */
   sim.innerHTML =
-    cupBanner + derbyBanner +
+    derbyBanner +
     `<div class="match-header-area">` +
     `<div class="mh-team home">${teamLabel(homeTeam)}</div>` +
     `<div class="match-score-big" id="live-score">0 — 0</div>` +

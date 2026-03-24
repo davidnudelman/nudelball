@@ -69,7 +69,7 @@ export function renderHelp(_settings: Settings): void {
       title: '\uD83D\uDCCA Dashboard',
       content: `
         <p>The dashboard shows your upcoming match, last result, league standing, and any team news (injuries, suspensions, transfers).</p>
-        <p>Keep an eye on cup fixtures \u2014 they're scheduled on specific weeks alongside your league matches.</p>
+        <p>At the end of each season, review the recap showing awards, standings, and promotion/relegation before starting the next season.</p>
       `,
     },
     {
@@ -131,7 +131,7 @@ export function renderHelp(_settings: Settings): void {
       content: `
         <p>Buy free agents to strengthen your squad. Your first signing each season is <b>free</b>!</p>
         <p>Players cost based on their skill level and age. Your can also sell unwanted players to free up budget.</p>
-        <p>Budget comes from league prize money, cup winnings, and solidarity payments.</p>
+        <p>Budget comes from league prize money, sponsorship, stadium income, and solidarity payments.</p>
       `,
     },
     {

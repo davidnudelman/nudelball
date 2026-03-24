@@ -45,7 +45,7 @@ import type {
 // 3. GAME STATE & SAVE SYSTEM
 // ===========================================================================
 
-import { G, initNewGame } from './state/game-state';
+import { G, initNewGame, randomizeDivisions } from './state/game-state';
 import {
   saveGame,
   loadGame,
@@ -62,8 +62,6 @@ import {
 // 4. ENGINE MODULES
 // ===========================================================================
 
-// Cup competition removed — too buggy, will be re-added later
-// import { generateCupBracket, simulateCupWeek, resolveCupFinal } from './engine/cup';
 import {
   simulateMatch,
   autoSelectAI,
@@ -141,9 +139,6 @@ import { renderHistory } from './ui/views/history';
 import { renderTrophyRoom } from './ui/views/trophy-room';
 import { renderTeamProfile, openTeamProfile } from './ui/views/team-profile';
 import { renderPlayerProfile, showPlayerProfile } from './ui/views/player-profile';
-// Cup view removed — cup competition disabled
-// import { renderCup } from './ui/views/cup-view';
-
 import { runAnimatedMatch } from './engine/match-animation';
 import type { RivalResult } from './ui/views/match-view';
 
@@ -223,10 +218,8 @@ function teamLabelWithTrophies(
 ): string {
   let label = teamLabel(tm);
   if (tm.trophies && tm.trophies.length) {
-    const cups = tm.trophies.filter(tr => tr.type === 'cup').length;
     const golds = tm.trophies.filter(tr => tr.type === 'gold_trophy').length;
     if (golds) label += ` <span class="trophy" style="font-size:.8em">\u{1F3C6}\u00D7${golds}</span>`;
-    if (cups) label += ` <span class="trophy" style="font-size:.8em">\u{1F3C6}\u00D7${cups}</span>`;
   }
   return label;
 }
@@ -596,148 +589,8 @@ function playMatch(): void {
 }
 
 // ===========================================================================
-// SEASON-END OVERLAY
+// SEASON-END: START NEW SEASON
 // ===========================================================================
-
-/**
- * Display the end-of-season summary overlay.
- *
- * Shows trophy awards, promotion/relegation moves, and a button
- * to advance to the next season.
- *
- * @param result - The return value from `endOfSeason()`.
- */
-function showSeasonEndOverlay(result: ReturnType<typeof endOfSeason>): void {
-  const overlay = document.getElementById('season-overlay');
-  const box = document.getElementById('season-box');
-  if (!overlay || !box) return;
-
-  const pt = G.teams[G.playerTeamId!];
-  let h = `<h2 style="font-family:'Oswald';color:var(--accent);text-align:center;margin-bottom:16px">${t(settings, 'seasonComplete', { season: G.season })}</h2>`;
-
-  /* ---- Cup Winner (highest achievement, featured at the top) ---- */
-  if (G.cup && G.cup.winner != null) {
-    const cupWinner = G.teams[G.cup.winner];
-    if (cupWinner) {
-      h += `<div class="season-section season-cup-winner">` +
-        `<div style="font-size:2.5rem;margin-bottom:4px">\u{1F3C6}</div>` +
-        `<div style="font-family:'Oswald';font-size:1.1rem;text-transform:uppercase;letter-spacing:1px;color:var(--gold);margin-bottom:6px">Cup Winner</div>` +
-        `<div>${teamLabel(cupWinner)}</div>` +
-        `</div>`;
-    }
-  }
-
-  /* ---- Top Goal Scorer ---- */
-  const allScorers = Object.values(G.topScorers).sort((a, b) => b.goals - a.goals);
-  if (allScorers.length && allScorers[0].goals > 0) {
-    const top = allScorers[0];
-    const scorerTeam = G.teams[top.teamId];
-    h += `<div class="season-section" style="margin-bottom:12px">` +
-      `<div style="font-size:1.4rem;margin-bottom:2px">\u{26BD}</div>` +
-      `<div style="font-family:'Oswald';font-size:0.9rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim);margin-bottom:4px">Top Goal Scorer</div>` +
-      `<div style="font-weight:700;font-size:1rem">${top.name} <span style="color:var(--accent)">(${top.goals} goals)</span></div>` +
-      (scorerTeam ? `<div style="margin-top:2px">${teamLabel(scorerTeam)}</div>` : '') +
-      `</div>`;
-  }
-
-  /* ---- Division Champions & Runners-up (top 2 per division) ---- */
-  h += `<div class="season-section" style="margin-bottom:12px">` +
-    `<div style="font-family:'Oswald';font-size:0.9rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim);margin-bottom:8px">League Results</div>`;
-  for (let d = 1; d <= 4; d++) {
-    const sorted = getSortedDiv(G, d);
-    if (sorted.length < 2) continue;
-    const icon1 = d <= 2 ? '\u{1F3C6}' : '\u{1F947}';
-    const icon2 = '\u{1F948}';
-    h += `<div style="margin-bottom:8px">` +
-      `<div style="font-weight:700;font-size:0.82rem;color:var(--text-dim);margin-bottom:4px">Division ${d}</div>` +
-      `<div style="padding:2px 0">${icon1} ${teamLabel(sorted[0])} <span style="font-size:0.78rem;color:var(--text-dim)">${sorted[0].seasonStats.pts} pts</span></div>` +
-      `<div style="padding:2px 0">${icon2} ${teamLabel(sorted[1])} <span style="font-size:0.78rem;color:var(--text-dim)">${sorted[1].seasonStats.pts} pts</span></div>` +
-      `</div>`;
-  }
-  h += `</div>`;
-
-  /* ---- Personal Highlights (player's team) ---- */
-  if (pt) {
-    const st = pt.seasonStats;
-    const gd = st.gf - st.ga;
-
-    /* Determine player's fate: promoted, retained, or relegated */
-    let fateIcon = '\u{2796}';
-    let fateText = 'Retained';
-    const playerMove = result.moves.find(m => m.team.id === G.playerTeamId);
-    if (playerMove) {
-      if (playerMove.type === 'promote') {
-        fateIcon = '\u{2B06}\u{FE0F}';
-        fateText = `Promoted to Division ${playerMove.to}`;
-      } else if (playerMove.type === 'relegate') {
-        fateIcon = '\u{2B07}\u{FE0F}';
-        fateText = `Relegated to Division ${playerMove.to}`;
-      } else if (playerMove.type === 'out') {
-        fateIcon = '\u{274C}';
-        fateText = 'Exited the league';
-      }
-    }
-
-    /* Calculate total cash earned this season */
-    let totalCash = 0;
-    if (result.financialAwards) {
-      for (const fa of result.financialAwards) {
-        if (fa.team.id === G.playerTeamId && fa.type !== 'solidarityPaid') {
-          totalCash += fa.amount;
-        }
-      }
-    }
-
-    h += `<div class="season-section season-personal">` +
-      `<div style="font-family:'Oswald';font-size:0.9rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim);margin-bottom:8px">Your Season — ${teamLabel(pt)}</div>` +
-      `<div style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-bottom:8px">` +
-      `<div class="stat-badge"><span class="sb-value">${st.pts}</span><span class="sb-label">Points</span></div>` +
-      `<div class="stat-badge"><span class="sb-value">${st.w}-${st.d}-${st.l}</span><span class="sb-label">W-D-L</span></div>` +
-      `<div class="stat-badge"><span class="sb-value">${st.gf}-${st.ga}</span><span class="sb-label">GF-GA</span></div>` +
-      `<div class="stat-badge"><span class="sb-value">${gd >= 0 ? '+' : ''}${gd}</span><span class="sb-label">GD</span></div>` +
-      `</div>` +
-      `<div style="font-size:1rem;font-weight:700;margin-bottom:6px">${fateIcon} ${fateText}</div>` +
-      (totalCash > 0 ? `<div style="font-size:0.88rem;color:var(--green);font-weight:600">\u{1F4B0} Season earnings: $${totalCash.toLocaleString()}</div>` : '') +
-      `</div>`;
-  }
-
-  /* ---- Season Awards Ceremony (#15) — enhanced with icons and detail ---- */
-  const awards = calculateSeasonAwards(G);
-  if (awards.length > 0) {
-    h += `<div class="season-section" style="margin-bottom:12px">` +
-      `<div style="font-family:'Oswald';font-size:1.1rem;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:12px;text-align:center">\u{1F3C6} ${t(settings, 'seasonAwards')} \u{1F3C6}</div>` +
-      `<div class="awards-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px">`;
-    for (const a of awards) {
-      const icon = a.type === 'goldenBoot' ? '\u{1F45F}'
-        : a.type === 'playerOfSeason' ? '\u{2B50}'
-        : a.type === 'bestYoung' ? '\u{1F331}'
-        : a.type === 'mvp' ? '\u{1F947}'
-        : '\u{1F3C5}';
-      const typeLabel = a.type === 'goldenBoot' ? t(settings, 'goldenBootAward')
-        : a.type === 'playerOfSeason' ? t(settings, 'playerOfSeasonAward')
-        : a.type === 'bestYoung' ? t(settings, 'bestYoungAward')
-        : a.type === 'mvp' ? 'MVP'
-        : a.type;
-      const detail = a.type === 'goldenBoot' ? `${a.value} goals`
-        : a.type === 'bestYoung' ? `${a.value} goals, Youth`
-        : `${a.value} goals`;
-      h += `<div class="award-card" style="text-align:center;background:var(--surface2);padding:10px 8px;border-radius:8px">` +
-        `<div style="font-size:1.8rem;margin-bottom:4px">${icon}</div>` +
-        `<div class="aw-type" style="font-family:'Oswald';font-size:.78rem;text-transform:uppercase;letter-spacing:.5px;color:var(--text-dim);margin-bottom:4px">${typeLabel}</div>` +
-        `<div class="aw-name" style="font-weight:700;font-size:.9rem">${a.playerName}</div>` +
-        `<div class="aw-detail" style="font-size:.75rem;color:var(--text-dim)">${a.teamName}</div>` +
-        `<div style="font-size:.72rem;color:var(--accent);margin-top:2px">${detail}</div>` +
-        `</div>`;
-    }
-    h += `</div></div>`;
-  }
-
-  /* Start next season button */
-  h += `<button class="btn btn-accent" style="width:100%;margin-top:12px;padding:14px;font-size:1.1rem" onclick="startNewSeasonAction()">${t(settings, 'startSeason', { season: G.season + 1 })}</button>`;
-
-  box.innerHTML = h;
-  overlay.style.display = 'flex';
-}
 
 /**
  * Start a new season when the player clicks the button on the
@@ -1531,8 +1384,8 @@ const welcomeCallbacks = {
   loadGame,
   deleteSave,
   initNewGame,
-  generateCupBracket: () => {
-    /* Cup disabled */
+  randomizeDivisions,
+  postInit: () => {
     assignRivals(G);
     /* Generate initial youth prospects for season 1 */
     generateYouthProspects(G);

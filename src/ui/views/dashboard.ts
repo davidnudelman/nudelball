@@ -2,7 +2,7 @@
  * dashboard.ts — Dashboard view renderer.
  *
  * Renders the main dashboard showing last result, trophies,
- * cup status, next fixture, and a mini league standings table.
+ * next fixture, and a mini league standings table.
  */
 
 import type { GameState, Settings, Team, Fixture, SeasonRecapData } from '../../types';
@@ -106,7 +106,7 @@ export function buildTableHTML(
 /**
  * Render the dashboard view into the DOM.
  *
- * Shows: last result banner, trophies card, cup status,
+ * Shows: last result banner, trophies card,
  * next fixture card, and mini league table.
  *
  * @param G        - The current game state
@@ -135,6 +135,8 @@ export function renderDashboard(
     const tableCardEl = dashTableWrapEl.closest('.card') as HTMLElement | null;
     if (tableCardEl) tableCardEl.style.display = '';
   }
+  const tscEl = document.getElementById('team-status-card');
+  if (tscEl) tscEl.style.display = '';
 
   /* Division number display */
   const dashDivEl = document.getElementById('dash-div-num');
@@ -152,7 +154,6 @@ export function renderDashboard(
         else if (tr.type === 'silver_trophy') h += `<span class="trophy silver" title="${t(settings, 'div1RunnerUp')} ${t(settings, 'season')} ${tr.season}" style="font-size:1.6rem">&#127942;</span>`;
         else if (tr.type === 'gold_medal') h += `<span class="trophy" title="${t(settings, 'div2Champion')} ${t(settings, 'season')} ${tr.season}" style="font-size:1.6rem">&#129351;</span>`;
         else if (tr.type === 'silver_medal') h += `<span class="trophy" title="${t(settings, 'div2RunnerUp')} ${t(settings, 'season')} ${tr.season}" style="font-size:1.6rem">&#129352;</span>`;
-        else if (tr.type === 'cup') h += `<span class="trophy" title="Cup Winner ${t(settings, 'season')} ${tr.season}" style="font-size:1.6rem">&#127942;</span>`;
       }
       h += '</div>';
       tcc.innerHTML = h;
@@ -309,12 +310,6 @@ export function renderDashboard(
     }
   }
 
-  /* ===== Cup Status (disabled) ===== */
-  const cupStatus = document.getElementById('cup-status');
-  if (cupStatus) {
-    cupStatus.innerHTML = '';
-  }
-
   /* ===== Mini League Table (get reference early for status panel insertion) ===== */
   const dashTableWrap = document.getElementById('dash-table-wrap');
 
@@ -417,15 +412,16 @@ export function renderDashboard(
   }
   extraHtml += `</div>`;
 
-  /* Insert the status card before the mini table */
+  /* Insert the status card before the mini table card in the dashboard view */
   if (dashTableWrap) {
-    const parent = dashTableWrap.parentElement;
-    if (parent) {
+    const dashView = document.getElementById('view-dashboard');
+    const tableCard = dashTableWrap.closest('.card');
+    if (dashView && tableCard) {
       let statusCard = document.getElementById('team-status-card');
       if (!statusCard) {
         statusCard = document.createElement('div');
         statusCard.id = 'team-status-card';
-        parent.insertBefore(statusCard, dashTableWrap.closest('.card'));
+        dashView.insertBefore(statusCard, tableCard);
       }
       statusCard.innerHTML = extraHtml;
     }
@@ -583,15 +579,9 @@ function renderSeasonRecap(
   h += `&#127942; ${t(settings, 'startSeason', { season: recap.season + 1 })}`;
   h += `</button>`;
 
-  /* Inject into all relevant dashboard DOM elements */
-  const lr = document.getElementById('last-result');
-  if (lr) lr.innerHTML = '';
-
+  /* Hide/clear dashboard elements not needed during recap */
   const nf = document.getElementById('next-fixture');
   if (nf) nf.style.display = 'none';
-
-  const cupStatus = document.getElementById('cup-status');
-  if (cupStatus) cupStatus.innerHTML = '';
 
   /* Trophies still show normally */
   const tc = document.getElementById('club-trophies-card');
@@ -605,7 +595,6 @@ function renderSeasonRecap(
         else if (tr.type === 'silver_trophy') tHTML += `<span class="trophy silver" title="${t(settings, 'div1RunnerUp')} ${t(settings, 'season')} ${tr.season}" style="font-size:1.6rem">&#127942;</span>`;
         else if (tr.type === 'gold_medal') tHTML += `<span class="trophy" title="${t(settings, 'div2Champion')} ${t(settings, 'season')} ${tr.season}" style="font-size:1.6rem">&#129351;</span>`;
         else if (tr.type === 'silver_medal') tHTML += `<span class="trophy" title="${t(settings, 'div2RunnerUp')} ${t(settings, 'season')} ${tr.season}" style="font-size:1.6rem">&#129352;</span>`;
-        else if (tr.type === 'cup') tHTML += `<span class="trophy" title="Cup Winner ${t(settings, 'season')} ${tr.season}" style="font-size:1.6rem">&#127942;</span>`;
       }
       tHTML += '</div>';
       tcc.innerHTML = tHTML;
@@ -614,21 +603,18 @@ function renderSeasonRecap(
     }
   }
 
-  /* Replace the status card and mini table area with the recap */
+  /* Inject recap HTML into #last-result */
+  const lrInject = document.getElementById('last-result');
+  if (lrInject) lrInject.innerHTML = h;
+
+  /* Hide the standings card during recap */
   const dashTableWrap = document.getElementById('dash-table-wrap');
   if (dashTableWrap) {
-    const parent = dashTableWrap.parentElement;
-    if (parent) {
-      let statusCard = document.getElementById('team-status-card');
-      if (!statusCard) {
-        statusCard = document.createElement('div');
-        statusCard.id = 'team-status-card';
-        parent.insertBefore(statusCard, dashTableWrap.closest('.card'));
-      }
-      statusCard.innerHTML = h;
-    }
-    /* Hide the mini table during recap */
     const tableCard = dashTableWrap.closest('.card') as HTMLElement | null;
     if (tableCard) tableCard.style.display = 'none';
   }
+
+  /* Hide team-status-card if it exists (normal dashboard element) */
+  const tsc = document.getElementById('team-status-card');
+  if (tsc) tsc.style.display = 'none';
 }

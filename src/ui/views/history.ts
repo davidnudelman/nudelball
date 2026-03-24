@@ -42,7 +42,6 @@ export function renderHistory(G: GameState, settings: Settings): void {
   h += `<th>${t(settings, 'div1RunnerUp')}</th>`;
   h += `<th>${t(settings, 'div2Champion')}</th>`;
   h += `<th>${t(settings, 'div2RunnerUp')}</th>`;
-  h += `<th>&#127942; Cup</th>`;
   h += `<th>${t(settings, 'topScorerHeader')}</th>`;
   h += '</tr></thead><tbody>';
 
@@ -83,14 +82,6 @@ export function renderHistory(G: GameState, settings: Settings): void {
       const tm2 = G.teams.find(tm => tm.name === rec.div2RunnerUp!.name);
       h += '<span class="trophy-icon">&#129352;</span>';
       h += tm2 ? teamPlate(tm2.c1, tm2.c2, rec.div2RunnerUp.name, true) : rec.div2RunnerUp.name;
-    } else { h += '—'; }
-    h += '</td>';
-
-    /* Cup Winner */
-    h += '<td>';
-    if (rec.cupWinner) {
-      const cw = G.teams.find(tm => tm.name === rec.cupWinner!.name);
-      h += '&#127942; ' + (cw ? teamPlate(cw.c1, cw.c2, rec.cupWinner.name, true) : rec.cupWinner.name);
     } else { h += '—'; }
     h += '</td>';
 

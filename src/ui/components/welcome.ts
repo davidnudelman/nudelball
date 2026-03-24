@@ -36,18 +36,19 @@ export function renderTeamPicker(G: GameState, settings: Settings): void {
   const picker = document.getElementById('team-picker');
   if (!picker) return;
 
-  let h = '';
-  for (let d = 1; d <= 4; d++) {
-    const divTeams = G.teams.filter(tm => tm.div === d);
-    h += `<div class="tp-div">` +
-      `<div class="tp-div-label">${t(settings, 'division')} ${d}</div>` +
-      `<div class="tp-grid">`;
-    for (const tm of divTeams) {
-      const sel = tm.id === G.playerTeamId ? 'selected' : '';
-      h += `<div class="tp-card ${sel}" onclick="selectTeam(${tm.id})">${teamLabel(tm)}</div>`;
-    }
-    h += `</div></div>`;
+  /*
+   * Show all teams in a single grid — divisions are randomised at game start,
+   * so grouping by division in the picker would be misleading.
+   * Teams are sorted alphabetically for easy browsing.
+   */
+  const sorted = [...G.teams].sort((a, b) => a.name.localeCompare(b.name));
+
+  let h = '<div class="tp-div"><div class="tp-grid">';
+  for (const tm of sorted) {
+    const sel = tm.id === G.playerTeamId ? 'selected' : '';
+    h += `<div class="tp-card ${sel}" onclick="selectTeam(${tm.id})">${teamLabel(tm)}</div>`;
   }
+  h += '</div></div>';
   picker.innerHTML = h;
 }
 
@@ -135,8 +136,10 @@ export interface WelcomeCallbacks {
   deleteSave: () => void;
   /** Initialize a new game (reset G to defaults) */
   initNewGame: () => void;
-  /** Generate the cup bracket for season 1 */
-  generateCupBracket: () => void;
+  /** Randomly select 32 teams, assign divisions, regenerate squads */
+  randomizeDivisions: () => void;
+  /** Post-init setup (assign rivals, generate youth prospects) */
+  postInit: () => void;
   /** Save the current game state */
   saveGame: () => void;
   /** Enter the game (transition from welcome to main UI) */
@@ -295,18 +298,26 @@ function startNewGame(
     clearPlateCache();
   }
 
-  /* Set initial UI state */
-  G.tableDivTab = G.teams[G.playerTeamId].div;
-  G.calDivTab = G.teams[G.playerTeamId].div;
+  /*
+   * Randomly select 32 teams from the full pool, assign them to divisions,
+   * and regenerate squads. The player's team is guaranteed a spot.
+   * This also generates fixtures, budgets, and the free-agent market.
+   * After this call, G.playerTeamId may have changed (re-indexed).
+   */
+  callbacks.randomizeDivisions();
+
+  /* Set initial UI state (must come after randomization — div may have changed) */
+  G.tableDivTab = G.teams[G.playerTeamId!].div;
+  G.calDivTab = G.teams[G.playerTeamId!].div;
   G.scorersDivTab = 0;
 
   /* Set initial highest division to the player's starting division */
   if (G.records) {
-    G.records.highestDiv = G.teams[G.playerTeamId].div;
+    G.records.highestDiv = G.teams[G.playerTeamId!].div;
   }
 
-  /* Generate cup bracket for season 1 */
-  callbacks.generateCupBracket();
+  /* Post-init: assign rivals, generate youth prospects */
+  callbacks.postInit();
   callbacks.saveGame();
   callbacks.enterGame();
 }

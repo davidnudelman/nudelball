@@ -41,7 +41,7 @@ export type PlayerRole = 'playmaker' | 'targetMan' | 'ballWinner' | 'speedster' 
 export type ReputationTier = 'novice' | 'amateur' | 'semiPro' | 'professional' | 'worldClass' | 'legend';
 
 /** Trophy types awarded at season end */
-export type TrophyType = 'gold_trophy' | 'silver_trophy' | 'gold_medal' | 'silver_medal' | 'cup';
+export type TrophyType = 'gold_trophy' | 'silver_trophy' | 'gold_medal' | 'silver_medal';
 
 /** Match event types (used in both quick-sim and animated matches) */
 export type MatchEventType = 'goal' | 'yellow' | 'red';
@@ -250,38 +250,6 @@ export interface Fixture {
  */
 export type FixturesByDivision = Record<number, Fixture[][]>;
 
-/* ===== Cup Competition ===== */
-
-/** A single cup match (extends fixture with cup-specific fields) */
-export interface CupMatch {
-  /** Home team ID */
-  home: number;
-  /** Away team ID (null for byes) */
-  away: number | null;
-  /** Home team goals (null if not yet played) */
-  homeGoals: number | null;
-  /** Away team goals (null if not yet played) */
-  awayGoals: number | null;
-  /** Whether this match has been resolved */
-  played: boolean;
-  /** True if the home team advanced via bye (no opponent) */
-  bye?: boolean;
-}
-
-/** Full cup competition state */
-export interface CupState {
-  /** Whether the cup is currently running */
-  active: boolean;
-  /** Current round index (0 = Round of 32, 4 = Final) */
-  round: number;
-  /** Array of rounds, each containing an array of matches */
-  rounds: CupMatch[][];
-  /** Whether the human player has been eliminated */
-  playerEliminated: boolean;
-  /** Team ID of the cup winner (null until decided) */
-  winner: number | null;
-}
-
 /* ===== Formation & Tactics ===== */
 
 /** Formation slot counts by position */
@@ -385,12 +353,6 @@ export interface HistoryTopScorer {
   goals: number;
 }
 
-/** Reference to a cup winner in season history */
-export interface HistoryCupWinner {
-  name: string;
-  teamId: number;
-}
-
 /** A completed season's summary for the history view */
 export interface SeasonHistory {
   /** Season number */
@@ -405,8 +367,6 @@ export interface SeasonHistory {
   div2RunnerUp: HistoryTeamRef | null;
   /** Season's overall top scorer */
   topScorer: HistoryTopScorer | null;
-  /** Cup competition winner */
-  cupWinner: HistoryCupWinner | null;
 }
 
 /* ===== Records (Trophy Room) ===== */
@@ -636,10 +596,6 @@ export interface GameState {
   tactic: TacticId;
   /** Currently selected training focus */
   trainingFocus: TrainingFocus;
-
-  /* --- Cup Competition (v2.0) --- */
-  /** Cup tournament state (null if not yet initialised) */
-  cup: CupState | null;
 
   /* --- Animated Match State (transient, not persisted meaningfully) --- */
   /** Number of substitutions used in the current animated match */
@@ -892,12 +848,10 @@ export interface Facilities {
 
 /** An active sponsorship contract */
 export interface Sponsorship {
-  /** Sponsor tier: 'small' | 'medium' | 'large' | 'cup' */
+  /** Sponsor tier: 'small' | 'medium' | 'large' */
   tier: string;
   /** Income per season in dollars */
   incomePerSeason: number;
-  /** Bonus per cup round advanced */
-  cupBonusPerRound: number;
   /** Minimum division required to keep this sponsor */
   requiredDiv: number;
 }
