@@ -25,9 +25,9 @@ import { listSaveSlots } from '../../state/save-manager';
 /**
  * Render the team picker grid grouped by division.
  *
- * Generates a grid of team cards organized under division headers.
- * The currently selected team (if any) gets the `selected` class.
- * Each card calls `selectTeam(teamId)` on click.
+ * Teams are already assigned to randomised divisions during `initNewGame()`,
+ * so we display them grouped by division so the player can see the league
+ * structure before choosing.
  *
  * @param G        - The current game state (for teams and playerTeamId)
  * @param settings - User settings (for i18n)
@@ -36,19 +36,20 @@ export function renderTeamPicker(G: GameState, settings: Settings): void {
   const picker = document.getElementById('team-picker');
   if (!picker) return;
 
-  /*
-   * Show all teams in a single grid — divisions are randomised at game start,
-   * so grouping by division in the picker would be misleading.
-   * Teams are sorted alphabetically for easy browsing.
-   */
-  const sorted = [...G.teams].sort((a, b) => a.name.localeCompare(b.name));
+  let h = '';
+  for (let d = 1; d <= 4; d++) {
+    const divTeams = G.teams
+      .filter(tm => tm.div === d)
+      .sort((a, b) => a.name.localeCompare(b.name));
+    if (divTeams.length === 0) continue;
 
-  let h = '<div class="tp-div"><div class="tp-grid">';
-  for (const tm of sorted) {
-    const sel = tm.id === G.playerTeamId ? 'selected' : '';
-    h += `<div class="tp-card ${sel}" onclick="selectTeam(${tm.id})">${teamLabel(tm)}</div>`;
+    h += `<div class="tp-div"><div class="tp-label">${t(settings, 'div')} ${d}</div><div class="tp-grid">`;
+    for (const tm of divTeams) {
+      const sel = tm.id === G.playerTeamId ? 'selected' : '';
+      h += `<div class="tp-card ${sel}" onclick="selectTeam(${tm.id})">${teamLabel(tm)}</div>`;
+    }
+    h += '</div></div>';
   }
-  h += '</div></div>';
   picker.innerHTML = h;
 }
 
@@ -90,6 +91,14 @@ export function selectTeam(G: GameState, teamId: number, event?: Event): void {
     const c2Input = document.getElementById('team-color-c2') as HTMLInputElement | null;
     if (c1Input) c1Input.value = team.c1;
     if (c2Input) c2Input.value = team.c2;
+  }
+
+  /* Show the manager name input (positioned after team customization) */
+  const managerGroup = document.querySelector('.manager-input-group') as HTMLElement | null;
+  if (managerGroup) {
+    managerGroup.style.display = 'block';
+    const nameInput = document.getElementById('manager-name') as HTMLInputElement | null;
+    if (nameInput) nameInput.focus();
   }
 
   /* Check if start button should be enabled */
@@ -134,10 +143,8 @@ export interface WelcomeCallbacks {
   loadGame: () => true | false | 'incompatible';
   /** Delete the legacy save */
   deleteSave: () => void;
-  /** Initialize a new game (reset G to defaults) */
+  /** Initialize a new game (reset G to defaults, randomise divisions) */
   initNewGame: () => void;
-  /** Randomly select 32 teams, assign divisions, regenerate squads */
-  randomizeDivisions: () => void;
   /** Post-init setup (assign rivals, generate youth prospects) */
   postInit: () => void;
   /** Save the current game state */
@@ -228,11 +235,12 @@ export function bootWelcome(
       if (welcomeContinue) welcomeContinue.style.display = 'none';
       const teamSelected = document.getElementById('team-selected');
       if (teamSelected) teamSelected.style.display = 'none';
+      const managerGroup = document.querySelector('.manager-input-group') as HTMLElement | null;
+      if (managerGroup) managerGroup.style.display = 'none';
 
       renderTeamPicker(G, settings);
       nameInput.value = '';
       startBtn.disabled = true;
-      nameInput.focus();
     });
   }
 
@@ -298,22 +306,14 @@ function startNewGame(
     clearPlateCache();
   }
 
-  /*
-   * Randomly select 32 teams from the full pool, assign them to divisions,
-   * and regenerate squads. The player's team is guaranteed a spot.
-   * This also generates fixtures, budgets, and the free-agent market.
-   * After this call, G.playerTeamId may have changed (re-indexed).
-   */
-  callbacks.randomizeDivisions();
-
-  /* Set initial UI state (must come after randomization — div may have changed) */
-  G.tableDivTab = G.teams[G.playerTeamId!].div;
-  G.calDivTab = G.teams[G.playerTeamId!].div;
+  /* Set initial UI state based on the player's pre-assigned division */
+  G.tableDivTab = G.teams[G.playerTeamId].div;
+  G.calDivTab = G.teams[G.playerTeamId].div;
   G.scorersDivTab = 0;
 
   /* Set initial highest division to the player's starting division */
   if (G.records) {
-    G.records.highestDiv = G.teams[G.playerTeamId!].div;
+    G.records.highestDiv = G.teams[G.playerTeamId].div;
   }
 
   /* Post-init: assign rivals, generate youth prospects */

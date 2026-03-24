@@ -9,7 +9,6 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import {
   G,
   initNewGame,
-  randomizeDivisions,
   defaultRecords,
   emptyStats,
 } from '../src/state/game-state';
@@ -31,9 +30,8 @@ import type { Position } from '../src/types';
 describe('initNewGame()', () => {
   beforeEach(() => {
     initNewGame();
-    /* Select team 0 so randomizeDivisions can run */
+    /* initNewGame now handles division randomisation internally */
     G.playerTeamId = 0;
-    randomizeDivisions();
   });
 
   /* --- Team Count --- */

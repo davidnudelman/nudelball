@@ -45,7 +45,7 @@ import type {
 // 3. GAME STATE & SAVE SYSTEM
 // ===========================================================================
 
-import { G, initNewGame, randomizeDivisions } from './state/game-state';
+import { G, initNewGame } from './state/game-state';
 import {
   saveGame,
   loadGame,
@@ -1384,7 +1384,6 @@ const welcomeCallbacks = {
   loadGame,
   deleteSave,
   initNewGame,
-  randomizeDivisions,
   postInit: () => {
     assignRivals(G);
     /* Generate initial youth prospects for season 1 */

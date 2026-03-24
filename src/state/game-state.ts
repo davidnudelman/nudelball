@@ -310,16 +310,15 @@ export const initBudgets = (): void => {
  * This is the entry point when the player clicks "New Game" on the welcome
  * screen. It:
  *   1. Resets all state fields to their defaults.
- *   2. Creates all ~80 teams from `TEAMS_DATA` with placeholder squads.
- *   3. Populates the initial waiting pool from `WAITING_TEAMS_DATA`.
+ *   2. Creates all ~97 teams from `TEAMS_DATA` with placeholder squads.
+ *   3. Randomly selects 32 teams and assigns them to 4 divisions.
+ *   4. Generates division-appropriate squads, fixtures, budgets, and the
+ *      free-agent market.
+ *   5. Moves unselected teams to the waiting pool.
  *
- * Fixture generation, budget init, and free-agent spawning are deferred
- * to `randomizeDivisions()`, which is called after the player picks
- * their team. That function selects 32 teams, assigns divisions, and
- * regenerates squads with proper skill ranges.
- *
- * The human player's team is NOT assigned here -- that's deferred to the
- * welcome screen's team-picker flow.
+ * Divisions are assigned BEFORE the player picks their team so the team
+ * picker can display division groupings. The player's team is set later
+ * on the welcome screen.
  */
 export const initNewGame = (): void => {
   /* Reset core state */
@@ -348,14 +347,14 @@ export const initNewGame = (): void => {
   G.youthProspects = [];
 
   /*
-   * Create ALL teams from the expanded data table (~80 teams).
-   * Teams with div > 0 keep their original division; div 0 teams are pool
-   * candidates. All get a temporary mid-range squad — squads are regenerated
-   * with correct division-based skills in randomizeDivisions().
+   * Create ALL teams from the expanded data table (~97 teams).
+   * All get a temporary mid-range squad — squads are regenerated below
+   * with correct division-based skills after randomised division assignment.
    */
+  const allTeams: Team[] = [];
   for (const td of TEAMS_DATA) {
     const team: Team = {
-      id: G.teams.length,
+      id: allTeams.length,
       name: td.name,
       div: td.div,
       c1: td.c1,
@@ -365,11 +364,10 @@ export const initNewGame = (): void => {
       stats: emptyStats(),
       seasonStats: emptyStats(),
       trophies: [],
-      /* Random formation for AI -- reassigned each season */
       aiFormation: rand(0, FORMATIONS.length - 1),
     };
 
-    /* Build squad — use div 3 range for pool (div 0) teams as a placeholder */
+    /* Placeholder squad — will be regenerated with correct skills below */
     const skillDiv = td.div === 0 ? 3 : td.div;
     const positions: Position[] = [];
     for (const [pos, cnt] of Object.entries(SQUAD_COMP)) {
@@ -383,7 +381,7 @@ export const initNewGame = (): void => {
       );
     }
 
-    G.teams.push(team);
+    allTeams.push(team);
   }
 
   /* Copy waiting-pool teams (shallow clone to avoid mutating the constant) */
@@ -396,64 +394,13 @@ export const initNewGame = (): void => {
   G.returnPool = [];
 
   /*
-   * Fixtures, budgets, and free agents are NOT generated here — they are
-   * deferred to randomizeDivisions(), which is called after the player
-   * picks their team on the welcome screen.
+   * Randomly select 32 teams from the full pool and assign them to
+   * 4 divisions (8 each). This happens BEFORE the player picks their
+   * team so the picker can show division groupings.
    */
-
-  /* Player team is NOT assigned here -- deferred to welcome screen selectTeam() */
-  G.playerTeamId = null;
-};
-
-// ---------------------------------------------------------------------------
-// Division Randomisation (called after player picks their team)
-// ---------------------------------------------------------------------------
-
-/**
- * Fisher-Yates shuffle — mutates the array in place.
- *
- * @param arr - The array to shuffle.
- * @returns The same array, now shuffled.
- */
-const shuffle = <T>(arr: T[]): T[] => {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = rand(0, i);
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-};
-
-/**
- * Randomly select 32 teams from the full pool, assign them to 4 divisions,
- * regenerate squads with division-appropriate skills, and move the rest to
- * the waiting pool.
- *
- * The player's chosen team (`G.playerTeamId`) is always guaranteed a spot
- * in the 32 selected. Must be called after `initNewGame()` and after the
- * player has selected their team.
- *
- * This function also generates fixtures, initialises budgets, and spawns
- * the free-agent market — tasks that were previously done at the end of
- * `initNewGame()`.
- */
-export const randomizeDivisions = (): void => {
-  const playerIdx = G.playerTeamId;
-  if (playerIdx === null) return;
-
-  /* Grab the player's team reference and its name for later lookup */
-  const playerTeamRef = G.teams[playerIdx];
-  const playerName = playerTeamRef.name;
-
-  /* Separate the player's team from the rest */
-  const otherTeams = G.teams.filter((_tm, idx) => idx !== playerIdx);
-
-  /* Shuffle the others and pick 31 to join the player's team */
-  shuffle(otherTeams);
-  const selected = [playerTeamRef, ...otherTeams.slice(0, 31)];
-  const unselected = otherTeams.slice(31);
-
-  /* Shuffle selected teams so the player's team gets a random division slot */
-  shuffle(selected);
+  shuffle(allTeams);
+  const selected = allTeams.slice(0, 32);
+  const unselected = allTeams.slice(32);
 
   /* Assign divisions: first 8 → div 1, next 8 → div 2, etc. */
   for (let i = 0; i < selected.length; i++) {
@@ -479,10 +426,6 @@ export const randomizeDivisions = (): void => {
   /* Rebuild G.teams with only the 32 selected, re-indexing IDs */
   G.teams = selected.map((tm, idx) => ({ ...tm, id: idx }));
 
-  /* Update playerTeamId to the new index (find by name) */
-  const newPlayerIdx = G.teams.findIndex(tm => tm.name === playerName);
-  G.playerTeamId = newPlayerIdx >= 0 ? newPlayerIdx : 0;
-
   /* Move unselected teams into the waiting pool */
   for (const tm of unselected) {
     G.waitingPool.push({
@@ -499,4 +442,25 @@ export const randomizeDivisions = (): void => {
   /* Initialise budgets and free-agent market */
   initBudgets();
   generateSeasonFreeAgents(G);
+
+  /* Player team is NOT assigned here -- deferred to welcome screen selectTeam() */
+  G.playerTeamId = null;
+};
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Fisher-Yates shuffle — mutates the array in place.
+ *
+ * @param arr - The array to shuffle.
+ * @returns The same array, now shuffled.
+ */
+const shuffle = <T>(arr: T[]): T[] => {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = rand(0, i);
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
 };
