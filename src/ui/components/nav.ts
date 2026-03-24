@@ -207,6 +207,12 @@ export function updatePlayBtn(): void {
     btn.classList.toggle('btn-disabled', disabled);
   };
 
+  /* Season recap pending — must review results before starting next season */
+  if (G.seasonRecapData) {
+    setBtn(false, '\u{1F3C6} ' + t(settings, 'seasonComplete', { season: G.seasonRecapData.season }));
+    return;
+  }
+
   /* When the season is over, allow advancing to next season */
   if (G.week > SEASON_WEEKS) {
     setBtn(false, t(settings, 'startSeason', { season: G.season + 1 }));

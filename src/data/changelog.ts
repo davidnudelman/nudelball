@@ -9,18 +9,18 @@
 import type { ChangelogEntry } from '../types';
 
 /** Current game version string displayed in the footer and settings. */
-export const GAME_VERSION = "3.1.0";
+export const GAME_VERSION = "3.1.1";
 
 /** Full changelog, newest version first. */
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
-    version: "3.1.0",
-    date: "2026-03-20",
-    title: "Match Flow & UI Polish",
+    version: "3.1.1",
+    date: "2026-03-24",
+    title: "Season Recap Gate & Match Flow Polish",
     changes: [
+      "\uD83C\uDFC6 Season Recap Gate \u2014 end-of-year awards, stats, and promotion/relegation now render inline on the dashboard as a mandatory step before starting the next season",
       "\u26BD Match Transition Fix \u2014 dashboard now shows correct week, last result, and next fixture immediately after a match",
       "\u23F3 Faster Post-Match \u2014 full-time countdown reduced to 15 seconds for quicker progression",
-      "\uD83C\uDFC6 Season Recap Fixed \u2014 end-of-year awards and season summary overlay now displays reliably",
       "\uD83D\uDEAB Smart Play Button \u2014 greyed out with contextual messages (select squad, assign GK, unavailable starters, match in progress)",
       "\uD83D\uDCB0 Live Budget Updates \u2014 top bar budget and club view now refresh instantly after facility upgrades and sponsor changes",
       "\uD83C\uDFDF\uFE0F Stadium Rework \u2014 lower upgrade costs, new per-home-game income ($150/level) plus end-of-season bonus ($500/level) for ~3 season ROI",

@@ -350,6 +350,12 @@ function playMatch(): void {
   /* Don't start a new match while animation is running */
   if (G.matchInProgress) return;
 
+  /* --- Season recap gate: must dismiss recap before proceeding --- */
+  if (G.seasonRecapData) {
+    showView('dashboard');
+    return;
+  }
+
   /* --- Season-end advancement --- */
   if (G.week > SEASON_WEEKS) {
     startNewSeason(G);
@@ -499,10 +505,36 @@ function playMatch(): void {
         /* Check if the season is now over */
         if (G.week > SEASON_WEEKS) {
           const result = endOfSeason(G);
+
+          /* Store recap data as a persistent gate — dashboard will render it inline */
+          let playerCash = 0;
+          if (result.financialAwards) {
+            for (const fa of result.financialAwards) {
+              if (fa.team.id === G.playerTeamId && fa.type !== 'solidarityPaid') {
+                playerCash += fa.amount;
+              }
+            }
+          }
+          G.seasonRecapData = {
+            season: G.season,
+            moves: result.moves.map(m => ({
+              teamId: m.team.id,
+              type: m.type,
+              from: m.from,
+              to: m.to,
+            })),
+            financialAwards: result.financialAwards.map(fa => ({
+              teamId: fa.team.id,
+              type: fa.type,
+              amount: fa.amount,
+            })),
+            playerTotalCash: playerCash,
+          };
+
           saveGame();
+          updateTopBar(G, settings);
           showView('dashboard');
           refreshAll();
-          showSeasonEndOverlay(result);
         } else {
           /* Auto-save, navigate to dashboard, and refresh UI */
           saveGame();
@@ -525,9 +557,36 @@ function playMatch(): void {
   /* Check if the season is now over */
   if (G.week > SEASON_WEEKS) {
     const result = endOfSeason(G);
+
+    /* Store recap data as a persistent gate */
+    let playerCash = 0;
+    if (result.financialAwards) {
+      for (const fa of result.financialAwards) {
+        if (fa.team.id === G.playerTeamId && fa.type !== 'solidarityPaid') {
+          playerCash += fa.amount;
+        }
+      }
+    }
+    G.seasonRecapData = {
+      season: G.season,
+      moves: result.moves.map(m => ({
+        teamId: m.team.id,
+        type: m.type,
+        from: m.from,
+        to: m.to,
+      })),
+      financialAwards: result.financialAwards.map(fa => ({
+        teamId: fa.team.id,
+        type: fa.type,
+        amount: fa.amount,
+      })),
+      playerTotalCash: playerCash,
+    };
+
     saveGame();
+    updateTopBar(G, settings);
+    showView('dashboard');
     refreshAll();
-    showSeasonEndOverlay(result);
   } else {
     /* Auto-save and refresh UI */
     saveGame();
@@ -686,6 +745,10 @@ function showSeasonEndOverlay(result: ReturnType<typeof endOfSeason>): void {
  * new season's dashboard.
  */
 function startNewSeasonAction(): void {
+  /* Clear the season recap gate */
+  G.seasonRecapData = null;
+
+  /* Hide the legacy overlay (if still visible from older saves) */
   const overlay = document.getElementById('season-overlay');
   if (overlay) overlay.style.display = 'none';
 
