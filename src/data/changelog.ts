@@ -9,10 +9,20 @@
 import type { ChangelogEntry } from '../types';
 
 /** Current game version string displayed in the footer and settings. */
-export const GAME_VERSION = "4.0.0";
+export const GAME_VERSION = "0.87";
 
 /** Full changelog, newest version first. */
 export const CHANGELOG: readonly ChangelogEntry[] = [
+  {
+    version: "0.87",
+    date: "2026-03-25",
+    title: "Pitch Boss — Rebrand & Stadium Nights UI",
+    changes: [
+      "🎨 Rebranded from Nudelball to Pitch Boss — Football Manager",
+      "🌙 New 'Stadium Nights' color scheme — pitch green + warm amber palette",
+      "🎯 Version reset to 0.87 for the new era",
+    ],
+  },
   {
     version: "4.0.0",
     date: "2026-03-24",

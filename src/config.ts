@@ -30,13 +30,13 @@ import type {
    ================================================================ */
 
 /** Current game version string */
-export const GAME_VERSION = '4.0.0';
+export const GAME_VERSION = '0.87';
 
 /** localStorage key for the main game save */
-export const SAVE_KEY = 'intlSoccerLeague_v1';
+export const SAVE_KEY = 'pitchboss_v1';
 
 /** localStorage key for user settings (independent of save) */
-export const SETTINGS_KEY = 'intlSoccerLeague_settings';
+export const SETTINGS_KEY = 'pitchboss_settings';
 
 /* ================================================================
    LEAGUE STRUCTURE

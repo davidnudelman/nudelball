@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Nudelball Soccer Management Game — Main Stylesheet
+   Pitch Boss — Football Manager — Main Stylesheet
    Dark-first theme with light mode toggle via .light on <html>
    ========================================================================== */
 
@@ -7,29 +7,34 @@
    1. CSS Custom Properties (Dark Theme — Default)
    -------------------------------------------------------------------------- */
 :root {
-  /* Backgrounds */
-  --bg: #181a20;
-  --surface: #23262f;
-  --surface2: #2a2d38;
-  --border: #333640;
+  /* Backgrounds — deep navy-black, like a night sky over the stadium */
+  --bg: #0d1117;
+  --surface: #161b22;
+  --surface2: #1c2432;
+  --border: #30363d;
 
   /* Text */
-  --text: #e8eaed;
-  --text-dim: #9aa0a8;
+  --text: #e6edf3;
+  --text-dim: #8b949e;
 
-  /* Accents */
-  --accent: #4fc3f7;
-  --accent2: #81d4fa;
+  /* Accents — pitch green + warm amber (stadium floodlights) */
+  --accent: #3fb950;
+  --accent2: #f0883e;
 
-  /* Semantic Colors */
-  --green: #66bb6a;
-  --red: #ef5350;
-  --yellow: #fdd835;
+  /* Semantic Colors — tied to the sport */
+  --green: #3fb950;
+  --red: #f85149;
+  --yellow: #d29922;
 
   /* Medals */
-  --gold: #ffd700;
+  --gold: #e3b341;
   --silver: #c0c0c0;
   --bronze: #cd7f32;
+
+  /* Accent utilities */
+  --accent-glow: rgba(63, 185, 80, 0.15);
+  --surface-highlight: rgba(240, 136, 62, 0.08);
+  --pitch: #2ea043;
 
   /* Shadows */
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
@@ -41,10 +46,10 @@
   --radius-md: 10px;
   --radius-lg: 16px;
 
-  /* Transitions */
-  --transition-fast: 0.15s ease;
-  --transition-normal: 0.25s ease;
-  --transition-slow: 0.4s ease;
+  /* Transitions — snappy like a ref's whistle */
+  --transition-fast: 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-normal: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-slow: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 
   /* Spacing scale */
   --sp-xs: 4px;
@@ -59,23 +64,26 @@
    1b. Light Theme (applied via .light class on <html>)
    -------------------------------------------------------------------------- */
 html.light {
-  --bg: #f0f2f5;
+  --bg: #f6f8fa;
   --surface: #ffffff;
-  --surface2: #e8eaed;
-  --border: #d0d3d9;
-  --text: #1a1c22;
-  --text-dim: #5f6570;
-  --accent: #0288d1;
-  --accent2: #0277bd;
-  --green: #2e7d32;
-  --red: #c62828;
-  --yellow: #f9a825;
+  --surface2: #eef1f5;
+  --border: #d0d7de;
+  --text: #1f2328;
+  --text-dim: #656d76;
+  --accent: #1a7f37;
+  --accent2: #bc4c00;
+  --green: #1a7f37;
+  --red: #cf222e;
+  --yellow: #9a6700;
   --gold: #d4a800;
   --silver: #8a8a8a;
   --bronze: #a0612a;
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.12);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
+  --accent-glow: rgba(26, 127, 55, 0.1);
+  --surface-highlight: rgba(188, 76, 0, 0.06);
+  --pitch: #1a7f37;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 /* --------------------------------------------------------------------------

@@ -1,7 +1,7 @@
 /**
  * save-manager.ts -- Save/load system with multi-slot and export/import support.
  *
- * This module handles all persistence for the Nudelball game:
+ * This module handles all persistence for the Pitch Boss game:
  *
  * **Legacy (single save):**
  *   - `saveGame()`   -- serialise `G` to localStorage under SAVE_KEY.
@@ -37,10 +37,10 @@ import { G, defaultRecords, initBudgets } from './game-state';
 // ---------------------------------------------------------------------------
 
 /** localStorage key that stores the array of save-slot metadata. */
-export const SAVE_SLOTS_KEY = 'nudelball_save_slots';
+export const SAVE_SLOTS_KEY = 'pitchboss_save_slots';
 
-/** localStorage key prefix for individual slot data: "nudelball_slot_0", etc. */
-const SLOT_DATA_PREFIX = 'nudelball_slot_';
+/** localStorage key prefix for individual slot data: "pitchboss_slot_0", etc. */
+const SLOT_DATA_PREFIX = 'pitchboss_slot_';
 
 /** Maximum number of save slots (0 = autosave, 1-4 = manual). */
 const MAX_SLOTS = 5;
@@ -457,10 +457,10 @@ export const downloadSave = (): void => {
   const url = URL.createObjectURL(blob);
 
   /* Build a descriptive filename */
-  const safeName = (G.manager || 'nudelball')
+  const safeName = (G.manager || 'pitchboss')
     .replace(/[^a-zA-Z0-9_-]/g, '_')
     .substring(0, 30);
-  const filename = `nudelball_${safeName}_S${G.season}.json`;
+  const filename = `pitchboss_${safeName}_S${G.season}.json`;
 
   /* Create a temporary link and trigger the download */
   const a = document.createElement('a');

@@ -13,10 +13,10 @@ import type { Settings } from '../types';
 
 export const LANG: Record<string, Record<string, string>> = {
   en: {
-    pageTitle: "Nudelball",
-    welcomeTitle1: "Nudel",
-    welcomeTitle2: "ball",
-    welcomeSubtitle: "Manage your club to glory",
+    pageTitle: "Pitch Boss",
+    welcomeTitle1: "Pitch",
+    welcomeTitle2: "Boss",
+    welcomeSubtitle: "Football Manager",
     managerPlaceholder: "Enter your name, Manager...",
     teamRenamePlaceholder: "Custom team name...",
     selectedTeam: "Selected Team",
@@ -383,10 +383,10 @@ export const LANG: Record<string, Record<string, string>> = {
   },
 
   pt: {
-    pageTitle: "Nudelball",
-    welcomeTitle1: "Nudel",
-    welcomeTitle2: "ball",
-    welcomeSubtitle: "Conduza seu clube \u00e0 gl\u00f3ria",
+    pageTitle: "Pitch Boss",
+    welcomeTitle1: "Pitch",
+    welcomeTitle2: "Boss",
+    welcomeSubtitle: "Gerente de Futebol",
     managerPlaceholder: "Digite seu nome, Treinador...",
     teamRenamePlaceholder: "Nome personalizado do time...",
     selectedTeam: "Time Selecionado",
@@ -742,10 +742,10 @@ export const LANG: Record<string, Record<string, string>> = {
   },
 
   es: {
-    pageTitle: "Nudelball",
-    welcomeTitle1: "Nudel",
-    welcomeTitle2: "ball",
-    welcomeSubtitle: "Lleva a tu club a la gloria",
+    pageTitle: "Pitch Boss",
+    welcomeTitle1: "Pitch",
+    welcomeTitle2: "Boss",
+    welcomeSubtitle: "Director Técnico",
     managerPlaceholder: "Ingresa tu nombre, Director T\u00e9cnico...",
     teamRenamePlaceholder: "Nombre personalizado del equipo...",
     selectedTeam: "Equipo Seleccionado",

@@ -1,5 +1,5 @@
 /**
- * keyboard.ts -- Global keyboard shortcuts for Nudelball.
+ * keyboard.ts -- Global keyboard shortcuts for Pitch Boss.
  *
  * Provides hotkeys for:
  * - View navigation (D=Dashboard, S=Squad, T=Table, C=Calendar, G=Top Scorers,
