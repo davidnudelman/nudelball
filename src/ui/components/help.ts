@@ -61,7 +61,7 @@ export function renderHelp(_settings: Settings): void {
     {
       title: '\uD83C\uDFAE Getting Started',
       content: `
-        <p>Welcome to <b>Nudelball</b>! Pick a team, name your manager, and enter the dugout.</p>
+        <p>Welcome to <b>Pitch Boss</b>! Pick a team, name your manager, and enter the dugout.</p>
         <p>Your goal is to climb through 4 divisions to become the ultimate champion. Manage your squad, set tactics, buy and sell players, and lead your team to glory!</p>
       `,
     },

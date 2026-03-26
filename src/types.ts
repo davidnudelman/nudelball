@@ -1,5 +1,5 @@
 /**
- * types.ts — Core TypeScript interfaces for the Nudelball game.
+ * types.ts — Core TypeScript interfaces for the Pitch Boss game.
  *
  * All game objects, state, and data structures are defined here
  * so that every module imports from a single source of truth.

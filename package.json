@@ -1,6 +1,6 @@
 {
-  "name": "nudelball",
-  "version": "3.0.0",
+  "name": "pitch-boss",
+  "version": "0.87.0",
   "description": "Browser-based soccer league management simulator",
   "type": "module",
   "scripts": {
