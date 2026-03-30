@@ -1,7 +1,7 @@
 /**
  * save-manager.ts -- Save/load system with multi-slot and export/import support.
  *
- * This module handles all persistence for the Pitch Boss game:
+ * This module handles all persistence for the Park the Bus game:
  *
  * **Legacy (single save):**
  *   - `saveGame()`   -- serialise `G` to localStorage under SAVE_KEY.

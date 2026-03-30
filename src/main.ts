@@ -1,5 +1,5 @@
 /**
- * main.ts -- Sole entry point for the Pitch Boss Vite application.
+ * main.ts -- Sole entry point for the Park the Bus Vite application.
  *
  * This module bootstraps the entire game by:
  *   1. Importing global CSS for Vite bundling.

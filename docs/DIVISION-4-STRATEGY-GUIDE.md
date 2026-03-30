@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide is based on a deep analysis of the Nudelball game engine. Every number, formula, and recommendation is derived from the actual codebase — not guesswork.
+This guide is based on a deep analysis of the Park the Bus game engine. Every number, formula, and recommendation is derived from the actual codebase — not guesswork.
 
 **The goal:** Climb from Division 4 to Division 1 and build a dynasty.
 **Minimum path:** 3 seasons (Div 4 → 3 → 2 → 1).

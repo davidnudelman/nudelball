@@ -2,7 +2,7 @@
 
 ## How Match Simulation Works
 
-Every match in Nudelball is resolved through an expected-goals (xG) model. Understanding this model is key to understanding how formations and tactics affect outcomes.
+Every match in Park the Bus is resolved through an expected-goals (xG) model. Understanding this model is key to understanding how formations and tactics affect outcomes.
 
 ### The Core Formula
 

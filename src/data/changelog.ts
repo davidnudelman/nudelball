@@ -16,9 +16,9 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
   {
     version: "0.87",
     date: "2026-03-25",
-    title: "Pitch Boss — Rebrand & Stadium Nights UI",
+    title: "Park the Bus — Rebrand & Stadium Nights UI",
     changes: [
-      "🎨 Rebranded from Nudelball to Pitch Boss — Football Manager",
+      "🎨 Rebranded to Park the Bus — Football Manager",
       "🌙 New 'Stadium Nights' color scheme — pitch green + warm amber palette",
       "🎯 Version reset to 0.87 for the new era",
     ],
