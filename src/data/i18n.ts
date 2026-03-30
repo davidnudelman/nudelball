@@ -13,9 +13,9 @@ import type { Settings } from '../types';
 
 export const LANG: Record<string, Record<string, string>> = {
   en: {
-    pageTitle: "Pitch Boss",
-    welcomeTitle1: "Pitch",
-    welcomeTitle2: "Boss",
+    pageTitle: "Park the Bus",
+    welcomeTitle1: "Park the",
+    welcomeTitle2: "Bus",
     welcomeSubtitle: "Football Manager",
     managerPlaceholder: "Enter your name, Manager...",
     teamRenamePlaceholder: "Custom team name...",
@@ -383,9 +383,9 @@ export const LANG: Record<string, Record<string, string>> = {
   },
 
   pt: {
-    pageTitle: "Pitch Boss",
-    welcomeTitle1: "Pitch",
-    welcomeTitle2: "Boss",
+    pageTitle: "Park the Bus",
+    welcomeTitle1: "Park the",
+    welcomeTitle2: "Bus",
     welcomeSubtitle: "Gerente de Futebol",
     managerPlaceholder: "Digite seu nome, Treinador...",
     teamRenamePlaceholder: "Nome personalizado do time...",
@@ -742,9 +742,9 @@ export const LANG: Record<string, Record<string, string>> = {
   },
 
   es: {
-    pageTitle: "Pitch Boss",
-    welcomeTitle1: "Pitch",
-    welcomeTitle2: "Boss",
+    pageTitle: "Park the Bus",
+    welcomeTitle1: "Park the",
+    welcomeTitle2: "Bus",
     welcomeSubtitle: "Director Técnico",
     managerPlaceholder: "Ingresa tu nombre, Director T\u00e9cnico...",
     teamRenamePlaceholder: "Nombre personalizado del equipo...",

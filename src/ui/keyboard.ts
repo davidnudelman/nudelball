@@ -1,5 +1,5 @@
 /**
- * keyboard.ts -- Global keyboard shortcuts for Pitch Boss.
+ * keyboard.ts -- Global keyboard shortcuts for Park the Bus.
  *
  * Provides hotkeys for:
  * - View navigation (D=Dashboard, S=Squad, T=Table, C=Calendar, G=Top Scorers,
