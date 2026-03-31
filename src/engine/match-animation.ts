@@ -303,6 +303,8 @@ export function runAnimatedMatch(
       currentMin += 2; /* 2 game minutes per tick */
 
       if (currentMin > TOTAL_MINUTES) {
+        /* Process any remaining events (e.g. stoppage-time goals at 91-93') */
+        processEventsUpTo(currentMin);
         showFullTime();
         return;
       }
