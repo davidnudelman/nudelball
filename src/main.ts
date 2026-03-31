@@ -34,6 +34,7 @@ import type {
   Difficulty,
   GameState,
   Language,
+  Position,
   Settings,
   StrengthDisplay,
   TacticId,
@@ -83,7 +84,7 @@ import {
   loanPlayer as engineLoanPlayer,
   applyDeadlineDayScramble,
 } from './engine/transfers';
-import { makePlayer, genName, genSkill } from './engine/player';
+import { makePlayer, genName, genSkill, getOopPenalty } from './engine/player';
 
 // ===========================================================================
 // 5. UI: NAVIGATION & COMPONENTS
@@ -171,6 +172,8 @@ import {
   SCOUT_COSTS,
   TRANSFER_DEADLINE_WEEK,
   STADIUM_HOME_GAME_BONUS,
+  FORM_OVR_PCT,
+  POS_ORDER,
 } from './config';
 import { teamLabel } from './utils/helpers';
 
@@ -701,9 +704,14 @@ function toggleSquadRule(rule: string, value?: number | boolean): void {
 /**
  * Auto-pick the best 11 players for the currently selected formation.
  *
- * Selects players with the highest combined skill and form ratings.
- * Players are always assigned to their natural position. Injured
- * and suspended players are excluded.
+ * Uses an effective-rating score that mirrors the AI's logic:
+ * - Stamina-weighted base (50%-100% of skill based on stamina)
+ * - OOP penalty for players considered in adjacent positions
+ * - Form bonus (±5% per form point)
+ * - Fresh bonus (+5 score for 3+ consecutive bench weeks)
+ *
+ * Players below 60% stamina are excluded (with fallback if needed).
+ * Injured and suspended players are always excluded.
  */
 function autoPick(): void {
   const pt = G.teams[G.playerTeamId!];
@@ -719,71 +727,74 @@ function autoPick(): void {
   }
 
   /**
-   * Combined score weighing both skill and form.
-   * Form (range -3 to +3) adjusts effective rating by ±5% per point,
-   * so a player in hot form is preferred over a slightly higher-skilled
-   * player in poor form.
+   * Effective score for a player at a given position.
+   * Mirrors the AI scoring: stamina-weighted skill, OOP penalty, form, fresh bonus.
    */
-  const playerScore = (p: { skill: number; form: number }): number =>
-    p.skill * (1 + (p.form || 0) * 0.05);
-
-  /* Pick best available players for each formation slot */
-  const posOrder: Array<{ pos: 'GK' | 'DEF' | 'MID' | 'STR'; count: number }> = [
-    { pos: 'GK', count: formation.slots.GK },
-    { pos: 'DEF', count: formation.slots.DEF },
-    { pos: 'MID', count: formation.slots.MID },
-    { pos: 'STR', count: formation.slots.STR },
-  ];
+  const effectiveScore = (p: typeof pt.players[0], pos: Position): number | null => {
+    const oop = getOopPenalty(p.pos, pos);
+    if (oop === 0) return null; /* GK mismatch or 2+ steps away */
+    const stam = p.stamina ?? 100;
+    const base = p.skill * (0.5 + 0.5 * stam / 100) * oop;
+    const formMult = 1.0 + ((p.form || 0) * FORM_OVR_PCT);
+    const freshBonus = p.benchStreak >= 3 ? 5 : 0;
+    return Math.round(base * formMult) + freshBonus;
+  };
 
   const selected = new Set<number>();
 
-  for (const { pos, count } of posOrder) {
-    /* Sort candidates by combined skill + form score (best first) */
-    /* Never auto-select players below 60% stamina */
+  /* First pass: fill each formation slot with best available (stamina >= 60%) */
+  for (const pos of POS_ORDER) {
+    const needed = formation.slots[pos];
     const candidates = pt.players
-      .map((p, i) => ({ p, i }))
-      .filter(({ p, i }) =>
-        !selected.has(i) &&
-        p.pos === pos &&
-        p.injuredFor === 0 &&
-        p.suspendedFor === 0 &&
-        (p.stamina ?? 100) >= 60
-      )
-      .sort((a, b) => playerScore(b.p) - playerScore(a.p));
+      .map((p, i) => {
+        if (selected.has(i)) return null;
+        if (p.injuredFor > 0 || p.suspendedFor > 0) return null;
+        if ((p.stamina ?? 100) < 60) return null;
+        const score = effectiveScore(p, pos);
+        if (score === null) return null;
+        return { p, i, score };
+      })
+      .filter(Boolean) as Array<{ p: typeof pt.players[0]; i: number; score: number }>;
 
-    for (let j = 0; j < count && j < candidates.length; j++) {
-      const { p, i } = candidates[j];
-      p.selected = true;
-      p.assignedPos = pos;
-      selected.add(i);
+    candidates.sort((a, b) => b.score - a.score);
+
+    for (let j = 0; j < needed && j < candidates.length; j++) {
+      const c = candidates[j];
+      c.p.selected = true;
+      c.p.assignedPos = pos;
+      selected.add(c.i);
     }
   }
 
-  /* Fill remaining slots with best available from any position */
-  /* Prefer players with >= 60% stamina, but fall back to lower stamina if needed */
-  let totalSelected = selected.size;
-  if (totalSelected < 11) {
-    const remaining = pt.players
-      .map((p, i) => ({ p, i }))
-      .filter(({ p, i }) =>
-        !selected.has(i) &&
-        p.injuredFor === 0 &&
-        p.suspendedFor === 0
-      )
-      .sort((a, b) => {
-        /* Prioritize players with adequate stamina */
-        const aOk = (a.p.stamina ?? 100) >= 60 ? 1 : 0;
-        const bOk = (b.p.stamina ?? 100) >= 60 ? 1 : 0;
-        if (bOk !== aOk) return bOk - aOk;
-        return playerScore(b.p) - playerScore(a.p);
-      });
+  /* Second pass: fill any remaining slots (e.g. not enough natural-position players) */
+  /* Allow OOP adjacent picks; prefer stamina >= 60%, fall back to lower if needed */
+  if (selected.size < 11) {
+    for (const pos of POS_ORDER) {
+      const needed = formation.slots[pos];
+      const current = pt.players.filter(p => p.selected && p.assignedPos === pos).length;
+      if (current >= needed) continue;
 
-    for (const { p, i } of remaining) {
-      if (totalSelected >= 11) break;
-      p.selected = true;
-      p.assignedPos = p.pos;
-      selected.add(i);
-      totalSelected++;
+      const remaining = pt.players
+        .map((p, i) => {
+          if (selected.has(i)) return null;
+          if (p.injuredFor > 0 || p.suspendedFor > 0) return null;
+          const score = effectiveScore(p, pos);
+          if (score === null) return null;
+          const stamOk = (p.stamina ?? 100) >= 60 ? 1 : 0;
+          return { p, i, score, stamOk };
+        })
+        .filter(Boolean) as Array<{ p: typeof pt.players[0]; i: number; score: number; stamOk: number }>;
+
+      /* Prefer adequate stamina, then best score */
+      remaining.sort((a, b) => b.stamOk - a.stamOk || b.score - a.score);
+
+      const toFill = needed - current;
+      for (let j = 0; j < toFill && j < remaining.length; j++) {
+        const c = remaining[j];
+        c.p.selected = true;
+        c.p.assignedPos = pos;
+        selected.add(c.i);
+      }
     }
   }
 

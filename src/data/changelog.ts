@@ -9,10 +9,23 @@
 import type { ChangelogEntry } from '../types';
 
 /** Current game version string displayed in the footer and settings. */
-export const GAME_VERSION = "0.87";
+export const GAME_VERSION = "0.88";
 
 /** Full changelog, newest version first. */
 export const CHANGELOG: readonly ChangelogEntry[] = [
+  {
+    version: "0.88",
+    date: "2026-03-31",
+    title: "Tactical Depth — Formations & Tactics Matter",
+    changes: [
+      "⚔️ Formation-tactic synergy — pairing the right formation with the right tactic boosts effectiveness (e.g. 3-3-4 + Attack, 5-4-1 + Defensive)",
+      "🪨 Tactic counter system — rock-paper-scissors matchups between tactics (Counter beats Attack, Defensive beats Counter, etc.)",
+      "📊 Positional power matchups — your STR vs their DEF and midfield control now affect expected goals",
+      "🧠 Smarter auto-pick — now considers stamina-weighted rating, OOP penalties, form, and bench freshness bonus",
+      "🚫 AI teams no longer field exhausted players (stamina threshold raised from 30% to 60%)",
+      "📖 Updated How to Play guide with formation-tactic synergy table and tactic matchup details",
+    ],
+  },
   {
     version: "0.87",
     date: "2026-03-25",

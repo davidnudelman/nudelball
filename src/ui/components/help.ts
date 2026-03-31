@@ -84,18 +84,39 @@ export function renderHelp(_settings: Settings): void {
     {
       title: '\u26BD Formations & Tactics',
       content: `
-        <p><b>Formations</b> determine how many players play in each position. Assigning a player out of position (OOP) gives a <b>-15% penalty per step</b>:</p>
+        <p><b>Formations</b> determine how many players play in each position. Assigning a player out of position (OOP) gives a <b>-10% penalty per step</b>:</p>
         <ul>
-          <li>DEF \u2192 MID: -15% | DEF \u2192 STR: -30%</li>
-          <li>STR \u2192 MID: -15% | STR \u2192 DEF: -30%</li>
+          <li>DEF \u2192 MID or MID \u2192 STR: -10%</li>
+          <li>DEF \u2192 STR or STR \u2192 DEF: cannot play (2 steps)</li>
           <li>GK is locked and cannot play outfield</li>
         </ul>
+        <p><b>Formations now directly affect match results</b> in two ways:</p>
+        <ul>
+          <li><b>Positional power:</b> Stacking strikers boosts attack but weakens defence. Your STR power vs their DEF power (and vice versa) nudges expected goals. Midfield control also matters.</li>
+          <li><b>Formation-tactic synergy:</b> Pairing the right formation with the right tactic gives a boost. Mismatches weaken your tactic's effectiveness.</li>
+        </ul>
+        <table class="help-shortcuts-table" style="font-size:.82rem;margin:8px 0">
+          <thead><tr><th>Formation</th><th>Best With</th><th>Worst With</th></tr></thead>
+          <tbody>
+            <tr><td>3-3-4, 3-4-3</td><td>\u2694\uFE0F Attack</td><td>\uD83D\uDEE1\uFE0F Defensive</td></tr>
+            <tr><td>4-4-2, 3-5-2</td><td>\u2696\uFE0F Balanced</td><td>\u2014 (versatile)</td></tr>
+            <tr><td>4-5-1</td><td>\uD83D\uDEE1\uFE0F Defensive / \uD83C\uDFF9 Counter</td><td>\u2694\uFE0F Attack</td></tr>
+            <tr><td>5-3-2, 5-4-1</td><td>\uD83D\uDEE1\uFE0F Defensive</td><td>\u2694\uFE0F Attack</td></tr>
+          </tbody>
+        </table>
         <p><b>Tactics</b> affect how many goals you score and concede:</p>
         <ul>
           <li><b>\u2694\uFE0F All-Out Attack</b> \u2014 More goals scored AND conceded. High-risk, high-reward.</li>
           <li><b>\u2696\uFE0F Balanced</b> \u2014 Neutral modifiers. The default starting tactic.</li>
           <li><b>\uD83D\uDEE1\uFE0F Defensive</b> \u2014 Fewer goals all around. Good for protecting a lead.</li>
           <li><b>\uD83C\uDFF9 Counter-Attack</b> \u2014 Moderate balance. Good against stronger teams \u2014 concede less while still creating chances.</li>
+        </ul>
+        <p><b>Tactic matchups matter!</b> Tactics have rock-paper-scissors dynamics:</p>
+        <ul>
+          <li>\uD83C\uDFF9 Counter-Attack beats \u2694\uFE0F Attack (exploits the high line)</li>
+          <li>\uD83D\uDEE1\uFE0F Defensive beats \uD83C\uDFF9 Counter (denies space to break)</li>
+          <li>\u2696\uFE0F Balanced beats \uD83D\uDEE1\uFE0F Defensive (possession wears down a parked bus)</li>
+          <li>\u2694\uFE0F Attack beats \u2696\uFE0F Balanced (overwhelms moderate setups)</li>
         </ul>
         <p>You can change tactics <b>during a match</b> at any time!</p>
       `,
