@@ -462,8 +462,8 @@ export const RETIREMENT_AGE = 38;
  * Each entry defines improvement/decline probabilities for an age bracket.
  */
 export const DEVELOPMENT_CURVE_TABLE: readonly DevelopmentCurve[] = [
-  { minAge: 16, maxAge: 20, improvementChance: 0.50, maxGain: 3, declineChance: 0.00, maxLoss: 0 },
-  { minAge: 21, maxAge: 23, improvementChance: 0.35, maxGain: 2, declineChance: 0.00, maxLoss: 0 },
+  { minAge: 16, maxAge: 20, improvementChance: 0.35, maxGain: 2, declineChance: 0.00, maxLoss: 0 },
+  { minAge: 21, maxAge: 23, improvementChance: 0.25, maxGain: 2, declineChance: 0.00, maxLoss: 0 },
   { minAge: 24, maxAge: 25, improvementChance: 0.20, maxGain: 1, declineChance: 0.00, maxLoss: 0 },
   { minAge: 26, maxAge: 29, improvementChance: 0.05, maxGain: 1, declineChance: 0.05, maxLoss: 1 },
   { minAge: 30, maxAge: 32, improvementChance: 0.00, maxGain: 0, declineChance: 0.20, maxLoss: 1 },
@@ -631,9 +631,9 @@ export const FACILITY_COSTS: Readonly<Record<string, readonly number[]>> = {
 } as const;
 
 /** Training facility effectiveness bonus per level */
-export const TRAINING_FACILITY_BONUS = 0.03;
+export const TRAINING_FACILITY_BONUS = 0.02;
 /** Youth academy regen skill bonus per level */
-export const YOUTH_ACADEMY_SKILL_BONUS = 2;
+export const YOUTH_ACADEMY_SKILL_BONUS = 1;
 /** Stadium income per home game, per level (paid immediately after each home match) */
 export const STADIUM_HOME_GAME_BONUS = 150;
 /** Stadium end-of-season income bonus per level */

@@ -76,7 +76,7 @@ import {
 } from './engine/match';
 import { endOfSeason, startNewSeason, calculateSeasonAwards, assignRivals, generateYouthProspects } from './engine/season';
 import { decayMorale } from './engine/match';
-import { applyTraining } from './engine/training';
+import { applyTraining, applyAITraining } from './engine/training';
 import {
   signPlayer as engineSignPlayer,
   sellPlayer as engineSellPlayer,
@@ -445,6 +445,9 @@ function playMatch(): void {
 
   /* Apply weekly training for the player's squad */
   applyTraining(G, diffMult.trainingMult);
+
+  /* Apply simplified training for AI teams */
+  applyAITraining(G);
 
   /* Decay morale toward 0 for all teams (#4) */
   for (const tm of G.teams) {

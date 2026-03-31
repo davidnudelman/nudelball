@@ -562,7 +562,7 @@ export const applyStaminaChanges = (team: Team): MatchInjury[] => {
       p.injuredFor--;
       if (p.injuredFor <= 0) p.injuredFor = 0;
       /* Injured players still recover stamina but NO skill growth */
-      if (!p.selected) p.stamina = Math.min(100, p.stamina + 20);
+      if (!p.selected) p.stamina = Math.min(100, p.stamina + 12);
       continue;
     }
 
@@ -594,7 +594,7 @@ export const applyStaminaChanges = (team: Team): MatchInjury[] => {
       }
     } else {
       /* Bench: recover stamina */
-      p.stamina = Math.min(100, p.stamina + 20);
+      p.stamina = Math.min(100, p.stamina + 12);
       p.benchStreak = (p.benchStreak || 0) + 1;
 
       /* Skill growth from rest (reduced rates) */

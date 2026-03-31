@@ -83,7 +83,7 @@ export function renderHelp(_settings: Settings): void {
       title: '\uD83D\uDC65 Squad Management',
       content: `
         <p>Select 11 players from your squad. Assign each a <b>formation role</b> using the dropdown. Every squad must have exactly 1 GK.</p>
-        <p><b>Stamina</b> drains each match (8\u201315%). Players below 50% risk losing skill. Bench players recover 20% per week, so rotate your squad!</p>
+        <p><b>Stamina</b> drains each match (8\u201315%). Players below 50% risk losing skill. Bench players recover 12% per week, so rotate your squad!</p>
         <p><b>Fresh players</b> (\u26A1) have been benched 3+ matches and get a <b>+10% OVR boost</b> when selected.</p>
         <p><b>Injured</b> (\u2720) and <b>suspended</b> (\uD83D\uDEAB) players cannot be selected until they recover.</p>
         <p><b>Auto-Pick</b> selects the best 11 for your formation using stamina-weighted skill, form, OOP fit, and freshness. Players below 60% stamina are excluded when possible.</p>
@@ -241,7 +241,8 @@ export function renderHelp(_settings: Settings): void {
           <li><b>Fitness</b> \u2014 Extra stamina recovery (5\u201312 points), but skill chance halved</li>
           <li><b>Development</b> \u2014 +8% skill chance for all; players under 22 get +16% total</li>
         </ul>
-        <p><b>Training Facility</b> upgrades add +3% skill chance per level (see Facilities).</p>
+        <p><b>Training Facility</b> upgrades add +2% skill chance per level (see Facilities).</p>
+        <p><b>Note:</b> AI teams also train each week at a reduced rate, so investing in your training facility gives a competitive edge rather than an insurmountable advantage.</p>
       `,
     },
     {
@@ -260,8 +261,8 @@ export function renderHelp(_settings: Settings): void {
         <table class="help-shortcuts-table" style="font-size:.82rem;margin:8px 0">
           <thead><tr><th>Facility</th><th>Effect</th><th>Cost (L1/L2/L3)</th></tr></thead>
           <tbody>
-            <tr><td>\uD83C\uDFCB\uFE0F Training Facility</td><td>+3% skill gain chance per level</td><td>5k / 8k / 12k</td></tr>
-            <tr><td>\uD83C\uDF93 Youth Academy</td><td>+2 skill on regens per level</td><td>8k / 13k / 20k</td></tr>
+            <tr><td>\uD83C\uDFCB\uFE0F Training Facility</td><td>+2% skill gain chance per level</td><td>5k / 8k / 12k</td></tr>
+            <tr><td>\uD83C\uDF93 Youth Academy</td><td>+1 skill on regens per level</td><td>8k / 13k / 20k</td></tr>
             <tr><td>\uD83C\uDFDF\uFE0F Stadium</td><td>+150 per home game + 500 season bonus per level</td><td>3k / 5k / 8k</td></tr>
           </tbody>
         </table>
@@ -278,7 +279,7 @@ export function renderHelp(_settings: Settings): void {
       content: `
         <p>Players develop based on age:</p>
         <ul>
-          <li><b>16\u201320:</b> 50% chance of +1\u20133 skill per season (peak growth)</li>
+          <li><b>16\u201320:</b> 35% chance of +1\u20132 skill per season (peak growth)</li>
           <li><b>21\u201325:</b> Moderate growth, tapering off</li>
           <li><b>26\u201329:</b> Plateau \u2014 small chance of +1 or -1</li>
           <li><b>30\u201332:</b> 20% chance of decline (-1)</li>

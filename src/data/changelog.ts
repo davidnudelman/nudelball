@@ -9,10 +9,23 @@
 import type { ChangelogEntry } from '../types';
 
 /** Current game version string displayed in the footer and settings. */
-export const GAME_VERSION = "0.89";
+export const GAME_VERSION = "0.90";
 
 /** Full changelog, newest version first. */
 export const CHANGELOG: readonly ChangelogEntry[] = [
+  {
+    version: "0.90",
+    date: "2026-03-31",
+    title: "Balance Patch — Fairer Progression",
+    changes: [
+      "🤖 AI teams now train weekly (at 60% of human rate) — no more compounding skill gap",
+      "🎓 Youth academy bonus reduced from +2 to +1 skill per level (max +3 instead of +6)",
+      "📉 Youth development curve scaled: ages 16-20 now 35% chance / +2 max (was 50% / +3)",
+      "💪 Bench stamina recovery reduced from +20 to +12 per week — rotation requires more thought",
+      "🏋️ Training facility bonus reduced from +3% to +2% per level",
+      "📖 Game guide updated to reflect all balance changes",
+    ],
+  },
   {
     version: "0.89",
     date: "2026-03-31",
