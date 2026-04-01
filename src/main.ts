@@ -707,13 +707,13 @@ function toggleSquadRule(rule: string, value?: number | boolean): void {
 /**
  * Auto-pick the best 11 players for the currently selected formation.
  *
- * Uses an effective-rating score that mirrors the AI's logic:
- * - Stamina-weighted base (50%-100% of skill based on stamina)
- * - OOP penalty for players considered in adjacent positions
- * - Form bonus (±5% per form point)
- * - Fresh bonus (+5 score for 3+ consecutive bench weeks)
+ * Uses a three-pass approach that respects the selected formation:
+ * 1. Natural-position players with stamina >= 60% (best fit for formation)
+ * 2. OOP-adjacent players with stamina >= 60% (fallback if not enough natural)
+ * 3. Emergency fallback ignoring stamina (prefers natural position, then score)
  *
- * Players below 60% stamina are excluded (with fallback if needed).
+ * Scoring mirrors the AI logic: stamina-weighted skill, OOP penalty,
+ * form bonus (±5% per point), and fresh bonus (+5 for 3+ bench weeks).
  * Injured and suspended players are always excluded.
  */
 function autoPick(): void {
@@ -745,7 +745,7 @@ function autoPick(): void {
 
   const selected = new Set<number>();
 
-  /* First pass: fill each formation slot with best available (stamina >= 60%) */
+  /* First pass: fill each formation slot with natural-position players (stamina >= 60%) */
   for (const pos of POS_ORDER) {
     const needed = formation.slots[pos];
     const candidates = pt.players
@@ -753,6 +753,7 @@ function autoPick(): void {
         if (selected.has(i)) return null;
         if (p.injuredFor > 0 || p.suspendedFor > 0) return null;
         if ((p.stamina ?? 100) < 60) return null;
+        if (p.pos !== pos) return null; /* natural position only */
         const score = effectiveScore(p, pos);
         if (score === null) return null;
         return { p, i, score };
@@ -769,8 +770,37 @@ function autoPick(): void {
     }
   }
 
-  /* Second pass: fill any remaining slots (e.g. not enough natural-position players) */
-  /* Allow OOP adjacent picks; prefer stamina >= 60%, fall back to lower if needed */
+  /* Second pass: fill remaining slots with OOP-adjacent players (stamina >= 60%) */
+  if (selected.size < 11) {
+    for (const pos of POS_ORDER) {
+      const needed = formation.slots[pos];
+      const current = pt.players.filter(p => p.selected && p.assignedPos === pos).length;
+      if (current >= needed) continue;
+
+      const remaining = pt.players
+        .map((p, i) => {
+          if (selected.has(i)) return null;
+          if (p.injuredFor > 0 || p.suspendedFor > 0) return null;
+          if ((p.stamina ?? 100) < 60) return null;
+          const score = effectiveScore(p, pos);
+          if (score === null) return null;
+          return { p, i, score };
+        })
+        .filter(Boolean) as Array<{ p: typeof pt.players[0]; i: number; score: number }>;
+
+      remaining.sort((a, b) => b.score - a.score);
+
+      const toFill = needed - current;
+      for (let j = 0; j < toFill && j < remaining.length; j++) {
+        const c = remaining[j];
+        c.p.selected = true;
+        c.p.assignedPos = pos;
+        selected.add(c.i);
+      }
+    }
+  }
+
+  /* Third pass: emergency fallback — fill any still-empty slots ignoring stamina */
   if (selected.size < 11) {
     for (const pos of POS_ORDER) {
       const needed = formation.slots[pos];
@@ -783,13 +813,13 @@ function autoPick(): void {
           if (p.injuredFor > 0 || p.suspendedFor > 0) return null;
           const score = effectiveScore(p, pos);
           if (score === null) return null;
-          const stamOk = (p.stamina ?? 100) >= 60 ? 1 : 0;
-          return { p, i, score, stamOk };
+          /* Prefer natural position, then best score */
+          const natBonus = p.pos === pos ? 1 : 0;
+          return { p, i, score, natBonus };
         })
-        .filter(Boolean) as Array<{ p: typeof pt.players[0]; i: number; score: number; stamOk: number }>;
+        .filter(Boolean) as Array<{ p: typeof pt.players[0]; i: number; score: number; natBonus: number }>;
 
-      /* Prefer adequate stamina, then best score */
-      remaining.sort((a, b) => b.stamOk - a.stamOk || b.score - a.score);
+      remaining.sort((a, b) => b.natBonus - a.natBonus || b.score - a.score);
 
       const toFill = needed - current;
       for (let j = 0; j < toFill && j < remaining.length; j++) {
