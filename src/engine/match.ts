@@ -56,6 +56,9 @@ import {
   ON_FIRE_BONUS,
   MOTM_GOAL_WEIGHT,
   MOTM_SKILL_WEIGHT,
+  FORMATION_TACTIC_SYNERGY,
+  TACTIC_COUNTER,
+  POSITIONAL_POWER_WEIGHT,
 } from '../config';
 import { getOopPenalty, playerOvr, rand, clamp, pick } from './player';
 
@@ -317,7 +320,7 @@ export const selectAITactic = (
  * For each position slot in the formation, the function picks the best
  * available player (by effective rating including OOP penalty), skipping
  * injured, suspended, and exhausted players. A fallback pass fills any
- * remaining slots if all candidates were below the stamina threshold.
+ * remaining slots if all candidates were below the 60% stamina threshold.
  *
  * @param team - The AI team to auto-select (mutated in-place).
  * @param playerTeamId - The human player's team ID (to avoid auto-selecting human team).
@@ -348,7 +351,7 @@ const _autoPickByFormation = (team: Team, formation: Record<Position, number>): 
         if (selected.has(i)) return null;
         if (p.injuredFor > 0) return null;
         if (p.suspendedFor > 0) return null;
-        if (p.stamina < 30) return null;
+        if (p.stamina < 60) return null;
         const oop = getOopPenalty(p.pos, pos);
         if (oop === 0) return null; /* GK mismatch */
         const eff = Math.round(p.skill * (0.5 + 0.5 * p.stamina / 100) * oop);
@@ -367,7 +370,7 @@ const _autoPickByFormation = (team: Team, formation: Record<Position, number>): 
     }
   }
 
-  /* Fallback: if slots still unfilled (all below 30 stamina), fill ignoring threshold */
+  /* Fallback: if slots still unfilled (all below 60 stamina), fill ignoring threshold */
   const selCount = team.players.filter(p => p.selected).length;
   if (selCount < 11) {
     for (const pos of POS_ORDER) {
@@ -559,7 +562,7 @@ export const applyStaminaChanges = (team: Team): MatchInjury[] => {
       p.injuredFor--;
       if (p.injuredFor <= 0) p.injuredFor = 0;
       /* Injured players still recover stamina but NO skill growth */
-      if (!p.selected) p.stamina = Math.min(100, p.stamina + 20);
+      if (!p.selected) p.stamina = Math.min(100, p.stamina + 12);
       continue;
     }
 
@@ -591,7 +594,7 @@ export const applyStaminaChanges = (team: Team): MatchInjury[] => {
       }
     } else {
       /* Bench: recover stamina */
-      p.stamina = Math.min(100, p.stamina + 20);
+      p.stamina = Math.min(100, p.stamina + 12);
       p.benchStreak = (p.benchStreak || 0) + 1;
 
       /* Skill growth from rest (reduced rates) */
@@ -940,9 +943,47 @@ export const simulateMatch = (f: Fixture, G: GameState, options?: MatchSimOption
   if (homePressure) hs *= (1 + (Math.random() - 0.5) * PRESSURE_VARIANCE * 2);
   if (awayPressure) as_ *= (1 + (Math.random() - 0.5) * PRESSURE_VARIANCE * 2);
 
-  /* Calculate expected goals */
-  const homeExp = Math.max(0.3, (hs - as_) / 15 + homeTac.homeBonus) * awayTac.defPenalty;
-  const awayExp = Math.max(0.3, (as_ - hs) / 15 + awayTac.awayBonus) * homeTac.defPenalty;
+  /* --- Formation-tactic synergy --- */
+  const homeFormIdx = isPlayerHome ? (G.selectedFormationIdx ?? DEFAULT_FORMATION_IDX) : (homeTeam.aiFormation ?? DEFAULT_FORMATION_IDX);
+  const awayFormIdx = isPlayerAway ? (G.selectedFormationIdx ?? DEFAULT_FORMATION_IDX) : (awayTeam.aiFormation ?? DEFAULT_FORMATION_IDX);
+  const homeFormLabel = FORMATIONS[homeFormIdx]?.label ?? FORMATIONS[DEFAULT_FORMATION_IDX].label;
+  const awayFormLabel = FORMATIONS[awayFormIdx]?.label ?? FORMATIONS[DEFAULT_FORMATION_IDX].label;
+
+  const homeFTS = FORMATION_TACTIC_SYNERGY[homeFormLabel]?.[homeTacId] ?? 1.0;
+  const awayFTS = FORMATION_TACTIC_SYNERGY[awayFormLabel]?.[awayTacId] ?? 1.0;
+
+  /* --- Tactic counter matchup --- */
+  const homeCounterMult = TACTIC_COUNTER[homeTacId]?.[awayTacId] ?? 1.0;
+  const awayCounterMult = TACTIC_COUNTER[awayTacId]?.[homeTacId] ?? 1.0;
+
+  /* --- Positional power matchups (STR vs DEF, midfield control) --- */
+  const homePower = getTeamPowerLevels(homeTeam);
+  const awayPower = getTeamPowerLevels(awayTeam);
+
+  /* Attacking advantage: my strikers vs their defenders */
+  const homeAtkRatio = homePower.STR / Math.max(awayPower.DEF, 1);
+  const awayAtkRatio = awayPower.STR / Math.max(homePower.DEF, 1);
+  /* Clamp to [0.8, 1.2] so it nudges but doesn't dominate */
+  const homeAtkMult = 1 + (Math.min(Math.max(homeAtkRatio - 1, -0.2), 0.2)) * POSITIONAL_POWER_WEIGHT;
+  const awayAtkMult = 1 + (Math.min(Math.max(awayAtkRatio - 1, -0.2), 0.2)) * POSITIONAL_POWER_WEIGHT;
+
+  /* Midfield control: winner gets a small xG bonus, loser gets a small penalty */
+  const totalMid = homePower.MID + awayPower.MID + 1;
+  const homeMidShare = homePower.MID / totalMid;
+  const awayMidShare = awayPower.MID / totalMid;
+  /* Ranges ~0.96 to ~1.04 */
+  const homeMidMult = 1 + (homeMidShare - 0.5) * POSITIONAL_POWER_WEIGHT;
+  const awayMidMult = 1 + (awayMidShare - 0.5) * POSITIONAL_POWER_WEIGHT;
+
+  /* Calculate expected goals — all factors combined */
+  const homeExp = Math.max(0.3,
+    ((hs - as_) / 15 + homeTac.homeBonus * homeFTS) * awayTac.defPenalty
+    * homeCounterMult * homeAtkMult * homeMidMult
+  );
+  const awayExp = Math.max(0.3,
+    ((as_ - hs) / 15 + awayTac.awayBonus * awayFTS) * homeTac.defPenalty
+    * awayCounterMult * awayAtkMult * awayMidMult
+  );
 
   /* Generate goals */
   f.homeGoals = poissonGoals(homeExp);

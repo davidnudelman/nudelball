@@ -3816,6 +3816,15 @@ html.light .league-table .player-row {
   to   { opacity: 1; transform: translateX(0); }
 }
 
+@keyframes eventSlideRight {
+  from { opacity: 0; transform: translateX(12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.match-event.me-away {
+  animation: eventSlideRight 0.3s ease-out;
+}
+
 .match-event.goal {
   background: rgba(76, 175, 80, 0.1);
   border-left: 3px solid var(--green);
@@ -3839,12 +3848,20 @@ html.light .league-table .player-row {
 /* Home team events aligned left, away team events aligned right */
 .match-event.me-home {
   text-align: left;
+  justify-content: flex-start;
 }
 
 .match-event.me-away {
   text-align: right;
+  justify-content: flex-end;
   border-left: none;
   border-right: 3px solid var(--green);
+}
+
+.match-event.me-away .me-narrative {
+  padding-left: 0;
+  padding-right: 42px;
+  text-align: right;
 }
 
 .match-event.me-away.player-goal {
@@ -3867,6 +3884,7 @@ html.light .league-table .player-row {
   border-right: none;
   font-weight: 700;
   text-align: center;
+  justify-content: center;
 }
 
 .me-min {

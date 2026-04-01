@@ -1,16 +1,23 @@
 /**
- * Training system module — handles weekly training effects for the
- * human player's squad.
+ * Training system module — handles weekly training effects for all teams.
  *
- * Simplified to 3 training focuses:
+ * Human player training:
  * - **Balanced**: All positions get a training bonus.
  * - **Fitness**: Players recover stamina; skill training chance halved.
  * - **Development**: Skill growth bonus, favours youth (under 22).
+ *
+ * AI team training:
+ * - Runs at a reduced base rate (60% of human base) with no focus bonuses
+ *   or facility upgrades. This prevents the human player from compounding
+ *   an insurmountable skill advantage over AI teams across seasons.
  */
 
 import type { GameState, Player, Position, TrainingFocus } from '../types';
 import { TRAINING_FOCUS_BONUS, TRAINING_SKILL_CHANCE, TRAINING_FACILITY_BONUS } from '../config';
 import { clamp, rand } from './player';
+
+/** AI teams train at this fraction of the human base skill chance */
+const AI_TRAINING_RATE = 0.60;
 
 // ---------------------------------------------------------------------------
 // Training Application
@@ -64,6 +71,33 @@ export const applyTraining = (G: GameState, difficultyMultiplier: number = 1.0):
     /* Roll for skill improvement */
     if (Math.random() < chance) {
       p.skill = clamp(p.skill + 1, 1, 50);
+    }
+  }
+};
+
+/**
+ * Apply simplified weekly training to all AI teams.
+ *
+ * AI teams train at a reduced rate (60% of the human base chance) with no
+ * focus bonuses or facility upgrades. This keeps AI teams competitive across
+ * seasons without giving them the same strategic depth as the human player.
+ *
+ * @param G - The game state (mutated in-place — AI player skills may increase).
+ */
+export const applyAITraining = (G: GameState): void => {
+  const chance = TRAINING_SKILL_CHANCE * AI_TRAINING_RATE;
+
+  for (const tm of G.teams) {
+    /* Skip the human player's team (they get full training) */
+    if (tm.id === G.playerTeamId) continue;
+    /* Only train teams in active divisions */
+    if (tm.div < 1 || tm.div > 4) continue;
+
+    for (const p of tm.players) {
+      if (p.injuredFor > 0) continue;
+      if (Math.random() < chance) {
+        p.skill = clamp(p.skill + 1, 1, 50);
+      }
     }
   }
 };

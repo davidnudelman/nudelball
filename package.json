@@ -1,6 +1,6 @@
 {
   "name": "park-the-bus",
-  "version": "0.87.0",
+  "version": "0.90.0",
   "description": "Browser-based soccer league management simulator",
   "type": "module",
   "scripts": {

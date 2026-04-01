@@ -462,8 +462,8 @@ export const RETIREMENT_AGE = 38;
  * Each entry defines improvement/decline probabilities for an age bracket.
  */
 export const DEVELOPMENT_CURVE_TABLE: readonly DevelopmentCurve[] = [
-  { minAge: 16, maxAge: 20, improvementChance: 0.50, maxGain: 3, declineChance: 0.00, maxLoss: 0 },
-  { minAge: 21, maxAge: 23, improvementChance: 0.35, maxGain: 2, declineChance: 0.00, maxLoss: 0 },
+  { minAge: 16, maxAge: 20, improvementChance: 0.35, maxGain: 2, declineChance: 0.00, maxLoss: 0 },
+  { minAge: 21, maxAge: 23, improvementChance: 0.25, maxGain: 2, declineChance: 0.00, maxLoss: 0 },
   { minAge: 24, maxAge: 25, improvementChance: 0.20, maxGain: 1, declineChance: 0.00, maxLoss: 0 },
   { minAge: 26, maxAge: 29, improvementChance: 0.05, maxGain: 1, declineChance: 0.05, maxLoss: 1 },
   { minAge: 30, maxAge: 32, improvementChance: 0.00, maxGain: 0, declineChance: 0.20, maxLoss: 1 },
@@ -561,6 +561,53 @@ export const ROLE_TACTIC_SYNERGY: Readonly<Partial<Record<PlayerRole & string, P
   anchor: { defensive: 0.03 },
 } as const;
 
+/**
+ * Formation-tactic synergy multiplier.
+ *
+ * Certain formations naturally pair with certain tactics. A mismatched
+ * combination (e.g. 5-4-1 with All-Out Attack) weakens the tactic's
+ * effectiveness, while a well-paired combo amplifies it.
+ *
+ * Values are multipliers applied to the tactic's homeBonus/awayBonus:
+ *   1.00 = neutral, >1.00 = synergy boost, <1.00 = misfit penalty.
+ */
+export const FORMATION_TACTIC_SYNERGY: Readonly<Record<string, Readonly<Record<TacticId, number>>>> = {
+  '3-3-4': { attack: 1.12, balanced: 0.98, counter: 0.90, defensive: 0.80 },
+  '3-4-3': { attack: 1.08, balanced: 1.02, counter: 0.95, defensive: 0.85 },
+  '3-5-2': { attack: 1.00, balanced: 1.05, counter: 1.02, defensive: 0.92 },
+  '4-3-3': { attack: 1.05, balanced: 1.03, counter: 0.98, defensive: 0.90 },
+  '4-4-2': { attack: 1.00, balanced: 1.08, counter: 1.00, defensive: 0.95 },
+  '4-5-1': { attack: 0.88, balanced: 1.02, counter: 1.05, defensive: 1.08 },
+  '5-3-2': { attack: 0.82, balanced: 0.95, counter: 1.08, defensive: 1.12 },
+  '5-4-1': { attack: 0.78, balanced: 0.92, counter: 1.05, defensive: 1.15 },
+} as const;
+
+/**
+ * Tactic counter multiplier — rock-paper-scissors dynamics.
+ *
+ * When one tactic "counters" another, the countering side gets a bonus
+ * to expected goals. Keyed as [defender's tactic][attacker's tactic].
+ *
+ * - Counter-Attack beats All-Out Attack (exploits high defensive line)
+ * - Defensive beats Counter-Attack (denies space to break into)
+ * - Balanced beats Defensive (possession overcomes a parked bus)
+ * - All-Out Attack beats Balanced (overwhelms moderate setups)
+ */
+export const TACTIC_COUNTER: Readonly<Record<TacticId, Readonly<Partial<Record<TacticId, number>>>>> = {
+  attack:    { balanced: 1.12, defensive: 0.88 },
+  balanced:  { defensive: 1.10, attack: 0.90 },
+  defensive: { counter: 1.10, attack: 1.08 },
+  counter:   { attack: 1.15, defensive: 0.88 },
+} as const;
+
+/**
+ * Weight given to positional power matchups in expected-goals calculation.
+ *
+ * Controls how much STR-vs-DEF and midfield-control affect the outcome.
+ * 0.0 = no effect, 1.0 = fully determines xG alongside base strength.
+ */
+export const POSITIONAL_POWER_WEIGHT = 0.20;
+
 /* ================================================================
    SPONSORSHIP DEALS (#6)
    ================================================================ */
@@ -584,9 +631,9 @@ export const FACILITY_COSTS: Readonly<Record<string, readonly number[]>> = {
 } as const;
 
 /** Training facility effectiveness bonus per level */
-export const TRAINING_FACILITY_BONUS = 0.03;
+export const TRAINING_FACILITY_BONUS = 0.02;
 /** Youth academy regen skill bonus per level */
-export const YOUTH_ACADEMY_SKILL_BONUS = 2;
+export const YOUTH_ACADEMY_SKILL_BONUS = 1;
 /** Stadium income per home game, per level (paid immediately after each home match) */
 export const STADIUM_HOME_GAME_BONUS = 150;
 /** Stadium end-of-season income bonus per level */
