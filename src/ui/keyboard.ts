@@ -49,6 +49,11 @@ export interface KeyboardCallbacks {
    * calls `showView()` from nav.ts directly.
    */
   onShowView?: (viewName: string) => void;
+
+  /**
+   * Returns true when a match is in progress -- blocks view navigation shortcuts.
+   */
+  isMatchInProgress?: () => boolean;
 }
 
 /**
@@ -103,6 +108,9 @@ let _callbacks: KeyboardCallbacks = {};
 
 /** Whether the listener has already been attached (prevents double-init). */
 let _initialized = false;
+
+/** Optional function to check if a match is in progress (blocks nav shortcuts). */
+let _matchInProgressFn: (() => boolean) | null = null;
 
 /* ================================================================
    INTERNAL HELPERS
@@ -235,8 +243,9 @@ function handleKeyDown(e: KeyboardEvent): void {
     return;
   }
 
-  /* --- P: Play match / advance week --- */
+  /* --- P: Play match / advance week (blocked during match) --- */
   if (key === 'p') {
+    if (_matchInProgressFn && _matchInProgressFn()) return;
     e.preventDefault();
     const playBtn = document.getElementById('play-match-btn') as HTMLButtonElement | null;
     if (playBtn && !playBtn.disabled) {
@@ -274,9 +283,11 @@ function handleKeyDown(e: KeyboardEvent): void {
     }
   }
 
-  /* --- Letter keys: view navigation --- */
+  /* --- Letter keys: view navigation (blocked during match) --- */
   const viewName = KEY_TO_VIEW[key];
   if (viewName) {
+    /* Don't allow navigation while a match is in progress */
+    if (_matchInProgressFn && _matchInProgressFn()) return;
     e.preventDefault();
     switchView(viewName);
     return;
@@ -309,6 +320,9 @@ function handleKeyDown(e: KeyboardEvent): void {
 export function initKeyboardShortcuts(callbacks?: KeyboardCallbacks): void {
   if (callbacks) {
     _callbacks = callbacks;
+    if (callbacks.isMatchInProgress) {
+      _matchInProgressFn = callbacks.isMatchInProgress;
+    }
   }
 
   if (_initialized) return;

@@ -38,6 +38,7 @@ import type {
   Settings,
   StrengthDisplay,
   TacticId,
+  TeamTalkId,
   Theme,
   TrainingFocus,
 } from './types';
@@ -174,6 +175,8 @@ import {
   STADIUM_HOME_GAME_BONUS,
   FORM_OVR_PCT,
   POS_ORDER,
+  TEAM_TALKS,
+  TEAM_TALK_CHOICES,
 } from './config';
 import { teamLabel } from './utils/helpers';
 
@@ -402,6 +405,63 @@ function playMatch(): void {
     if (!proceed) return;
   }
 
+  /* Show team talk selection before proceeding with the match */
+  showTeamTalkSelection(() => {
+    proceedWithMatch();
+  });
+}
+
+/**
+ * Show the team talk selection overlay.
+ * Randomly picks 5 of 12 available team talks for the player to choose from.
+ *
+ * @param onSelect - Callback fired after the player selects a team talk.
+ */
+function showTeamTalkSelection(onSelect: () => void): void {
+  /* Pick 5 random team talks from the 12 available */
+  const allIds = Object.keys(TEAM_TALKS) as TeamTalkId[];
+  const shuffled = [...allIds].sort(() => Math.random() - 0.5);
+  const choices = shuffled.slice(0, TEAM_TALK_CHOICES);
+
+  /* Build the overlay HTML */
+  let cardsHTML = '';
+  for (const id of choices) {
+    const talk = TEAM_TALKS[id];
+    cardsHTML += `<div class="team-talk-card" onclick="selectTeamTalk('${id}')">` +
+      `<div class="tt-icon">${talk.icon}</div>` +
+      `<div class="tt-info">` +
+      `<div class="tt-label">${talk.label}</div>` +
+      `<div class="tt-desc">${talk.desc}</div>` +
+      `</div></div>`;
+  }
+
+  /* Create and show the overlay */
+  const overlay = document.createElement('div');
+  overlay.id = 'team-talk-overlay';
+  overlay.className = 'team-talk-overlay';
+  overlay.innerHTML =
+    `<div class="team-talk-panel">` +
+    `<div class="team-talk-title">\uD83D\uDDE3\uFE0F Pre-Match Team Talk</div>` +
+    cardsHTML +
+    `</div>`;
+  document.body.appendChild(overlay);
+
+  /* Expose the selection handler on window */
+  (window as unknown as Record<string, unknown>).selectTeamTalk = (talkId: string) => {
+    G.activeTeamTalk = talkId as TeamTalkId;
+    /* Remove the overlay */
+    const el = document.getElementById('team-talk-overlay');
+    if (el) el.remove();
+    SFX.click();
+    onSelect();
+  };
+}
+
+/**
+ * Proceed with match simulation after team talk has been selected.
+ * This is the second half of the original playMatch() flow.
+ */
+function proceedWithMatch(): void {
   /* Auto-select AI teams before simulation */
   for (const tm of G.teams) {
     if (tm.id !== G.playerTeamId) {
@@ -1240,6 +1300,78 @@ function startSub(benchIdx: number): void {
   initSub(benchIdx);
 }
 
+/**
+ * Auto-substitute the best bench players for the weakest/most-tired starters.
+ *
+ * Ranks starters by a "need to sub" score (fatigue + skill gap) and pairs
+ * them with the best available bench players, up to remaining sub slots.
+ */
+function autoSub(): void {
+  const pt = G.teams[G.playerTeamId!];
+  if (!pt) return;
+
+  const maxSubs = 3 - G.matchSubs;
+  if (maxSubs <= 0) return;
+
+  const bench = pt.players
+    .map((p, i) => ({ player: p, idx: i }))
+    .filter(({ player: p }) => !p.selected && !p.injuredFor && !p.suspendedFor);
+
+  const starters = pt.players
+    .map((p, i) => ({ player: p, idx: i }))
+    .filter(({ player: p }) => p.selected);
+
+  if (bench.length === 0 || starters.length === 0) return;
+
+  /* Sort starters by "need to sub" score: lower stamina + lower skill = higher need */
+  const starterScores = starters.map(s => ({
+    ...s,
+    needScore: (100 - s.player.stamina) + (100 - s.player.skill),
+  })).sort((a, b) => b.needScore - a.needScore);
+
+  /* Sort bench by skill descending (best bench players first) */
+  const benchSorted = [...bench].sort((a, b) => b.player.skill - a.player.skill);
+
+  let subsUsed = 0;
+  const usedBench = new Set<number>();
+
+  for (const starter of starterScores) {
+    if (subsUsed >= maxSubs) break;
+
+    /* Find the best available bench player not yet used */
+    const bestBench = benchSorted.find(b => !usedBench.has(b.idx));
+    if (!bestBench) break;
+
+    /* Only sub if bench player is meaningfully better or starter is very tired */
+    const skillGap = bestBench.player.skill - starter.player.skill;
+    const staminaLow = starter.player.stamina < 70;
+    if (skillGap < -5 && !staminaLow) continue;
+
+    /* Execute the swap using existing logic */
+    confirmSub(bestBench.idx, starter.idx);
+    usedBench.add(bestBench.idx);
+    subsUsed++;
+  }
+
+  /* Update the subs panel display */
+  const subsRemaining = document.getElementById('subs-remaining');
+  if (subsRemaining) {
+    subsRemaining.textContent = String(3 - G.matchSubs);
+  }
+
+  /* Update the auto-sub button to reflect remaining subs */
+  const remaining = 3 - G.matchSubs;
+  const autoSubBtns = document.querySelectorAll('.auto-sub-btn');
+  autoSubBtns.forEach(btn => {
+    if (remaining <= 0) {
+      (btn as HTMLButtonElement).disabled = true;
+      btn.textContent = '\uD83D\uDD04 No Subs Left';
+    } else {
+      btn.textContent = `\uD83D\uDD04 Auto Sub (${remaining})`;
+    }
+  });
+}
+
 // ===========================================================================
 // SAVE SLOT HANDLERS
 // ===========================================================================
@@ -1515,10 +1647,13 @@ declare global {
     confirmSub: typeof confirmSub;
     startSub: typeof startSub;
     initSub: typeof initSub;
+    autoSub: typeof autoSub;
 
     /* Match Animation */
     continueMatch: () => void;
     finishMatch: () => void;
+    changeMatchSpeed: (speed: string) => void;
+    selectTeamTalk: (talkId: string) => void;
 
     /* Save/Load */
     downloadSave: typeof globalDownloadSave;
@@ -1599,6 +1734,7 @@ window.toggleSquadRule = toggleSquadRule;
 window.confirmSub = confirmSub;
 window.startSub = startSub;
 window.initSub = initSub;
+window.autoSub = autoSub;
 
 /* --- Save/Load --- */
 window.downloadSave = globalDownloadSave;
@@ -1721,6 +1857,7 @@ function boot(): void {
     onPlayMatch: playMatch,
     onAutoPick: autoPick,
     onClearSelection: clearSelection,
+    isMatchInProgress: () => G.matchInProgress,
   });
 }
 

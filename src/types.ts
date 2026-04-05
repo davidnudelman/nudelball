@@ -16,6 +16,44 @@ export type PositionCSS = 'gk' | 'def' | 'mid' | 'str';
 /** Tactic identifiers */
 export type TacticId = 'attack' | 'balanced' | 'defensive' | 'counter';
 
+/** Team talk identifiers for pre-match motivation options */
+export type TeamTalkId =
+  | 'inspire' | 'calm' | 'aggressive' | 'tactical' | 'noExcuses'
+  | 'enjoySelf' | 'doItForFans' | 'proveYourself' | 'revenge'
+  | 'focusDefense' | 'pressHigh' | 'believeInYou';
+
+/** Effects a team talk can apply to the match simulation */
+export interface TeamTalkEffect {
+  /** Direct morale boost/penalty applied before match */
+  morale?: number;
+  /** Bonus added to attack strength multiplier */
+  atkBonus?: number;
+  /** Bonus added to defensive strength multiplier */
+  defBonus?: number;
+  /** Multiplier for tactic synergy bonus */
+  tacticBonus?: number;
+  /** Multiplier for yellow card chance (>1 = more likely) */
+  yellowRisk?: number;
+  /** Multiplier for stamina drain (>1 = more fatigue) */
+  staminaDrain?: number;
+  /** Flat form boost for all starters */
+  formBoost?: number;
+  /** Extra home advantage bonus */
+  homeBonus?: number;
+  /** OVR boost for young players (age <= 21) */
+  youngBoost?: number;
+  /** Strength multiplier if lost to this opponent last time */
+  revengeMult?: number;
+}
+
+/** A single team talk option with display info and effects */
+export interface TeamTalkOption {
+  label: string;
+  icon: string;
+  desc: string;
+  effect: TeamTalkEffect;
+}
+
 /** Training focus options (simplified: 3 focuses instead of 5) */
 export type TrainingFocus = 'balanced' | 'fitness' | 'development';
 
@@ -554,6 +592,8 @@ export interface GameState {
   sortByPos: boolean;
   /** Whether an animated match is currently in progress */
   matchInProgress: boolean;
+  /** The team talk selected for the current match (cleared after match) */
+  activeTeamTalk: TeamTalkId | null;
   /** Currently selected division tab on the Table view */
   tableDivTab: number;
   /** Currently selected division tab on the Calendar view */

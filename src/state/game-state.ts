@@ -172,6 +172,7 @@ export let G: GameState = {
   /* UI State */
   sortByPos: true,
   matchInProgress: false,
+  activeTeamTalk: null,
   tableDivTab: 4,
   calDivTab: 4,
   scorersDivTab: 0,

@@ -62,9 +62,9 @@ export function registerViewRenderers(renderers: Record<string, () => void>): vo
  * @param v - The view name to switch to (e.g. 'dashboard', 'squad', 'table')
  */
 export function showView(v: string): void {
-  /* Safety: if navigating away from match view, ensure matchInProgress is cleared */
+  /* Block navigation away from match view while a match is in progress */
   if (v !== 'match' && _playBtnG && _playBtnG.matchInProgress) {
-    _playBtnG.matchInProgress = false;
+    return;
   }
 
   /* Hide all views and show the target */
