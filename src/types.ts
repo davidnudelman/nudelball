@@ -593,7 +593,7 @@ export interface GameState {
   /** Whether an animated match is currently in progress */
   matchInProgress: boolean;
   /** The team talk selected for the current match (cleared after match) */
-  activeTeamTalk: TeamTalkId | null;
+  activeTeamTalk?: TeamTalkId | null;
   /** Currently selected division tab on the Table view */
   tableDivTab: number;
   /** Currently selected division tab on the Calendar view */
