@@ -245,7 +245,7 @@ export function updatePlayBtn(): void {
   }
 
   /* Ready to play */
-  setBtn(false, '\u26BD ' + t(settings, 'playWeek', { week: G.week }));
+  setBtn(false, t(settings, 'playWeek', { week: G.week }));
 }
 
 /* ================================================================
