@@ -2,7 +2,7 @@
  * match-animation.ts — Minute-by-minute animated match simulation.
  *
  * Drives the match view UI with a tick-based animation loop:
- *   - Configurable speed: 1x (500ms), 2x (250ms), 3x (125ms) per tick
+ *   - 1 real second = 2 game minutes (500ms per tick)
  *   - Pause at half-time for substitutions, auto-sub, and a coach comment
  *   - Show events (goals, cards) as they happen in real-time
  *   - Display rival match results with live score updates
@@ -31,12 +31,8 @@ import { teamLabel } from '../utils/helpers';
 import { SFX } from '../audio/sfx';
 import { t } from '../data/i18n';
 
-/** Speed presets: tick interval in ms */
-const SPEED_PRESETS: Record<string, number> = {
-  '1x': 500,
-  '2x': 250,
-  '3x': 125,
-};
+/** Milliseconds per tick (1 second = 2 game minutes) */
+const TICK_MS = 500;
 
 /** Total game minutes (90) */
 const TOTAL_MINUTES = 90;
@@ -123,8 +119,6 @@ export function runAnimatedMatch(
   let isPaused = false;
   let timerId: ReturnType<typeof setInterval> | null = null;
   let countdownTimerId: ReturnType<typeof setInterval> | null = null;
-  let currentSpeed = '1x';
-  let tickMs = SPEED_PRESETS['1x'];
 
   /* Play kick-off whistle */
   SFX.whistle();
@@ -399,26 +393,6 @@ export function runAnimatedMatch(
   }
 
   /**
-   * Change the match animation speed.
-   */
-  function changeSpeed(speed: string): void {
-    if (!SPEED_PRESETS[speed]) return;
-    currentSpeed = speed;
-    tickMs = SPEED_PRESETS[speed];
-
-    /* Update active button state */
-    document.querySelectorAll('.match-speed-btn').forEach(btn => {
-      (btn as HTMLElement).classList.toggle('active', (btn as HTMLElement).dataset.speed === speed);
-    });
-
-    /* Restart ticker with new interval if running */
-    if (timerId && !isPaused) {
-      clearInterval(timerId);
-      startTicker();
-    }
-  }
-
-  /**
    * Start (or restart) the minute ticker interval.
    */
   function startTicker(): void {
@@ -452,15 +426,14 @@ export function runAnimatedMatch(
       if (options.rivalResults) {
         updateRivalResults(options.rivalResults, currentMin);
       }
-    }, tickMs);
+    }, TICK_MS);
   }
 
   /* Track whether onComplete has already been called to prevent double-fire */
   let completeCalled = false;
 
-  /* Expose continue/finish/speed functions on window for onclick handlers */
+  /* Expose continue/finish functions on window for onclick handlers */
   (window as unknown as Record<string, unknown>).continueMatch = continueMatch;
-  (window as unknown as Record<string, unknown>).changeMatchSpeed = changeSpeed;
   (window as unknown as Record<string, unknown>).finishMatch = () => {
     /* Prevent double-fire using local flag (more reliable than matchInProgress) */
     if (completeCalled) return;

@@ -1652,7 +1652,6 @@ declare global {
     /* Match Animation */
     continueMatch: () => void;
     finishMatch: () => void;
-    changeMatchSpeed: (speed: string) => void;
     selectTeamTalk: (talkId: string) => void;
 
     /* Save/Load */
