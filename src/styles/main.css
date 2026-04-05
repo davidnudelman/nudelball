@@ -3565,6 +3565,265 @@ html.light .league-table .player-row {
 }
 
 /* --------------------------------------------------------------------------
+   35i-pre. Nav Locked State (during match simulation)
+   -------------------------------------------------------------------------- */
+.nav-locked .nav-btn {
+  opacity: 0.35;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+/* --------------------------------------------------------------------------
+   35i-pre2. Immersive Full-Screen Match
+   -------------------------------------------------------------------------- */
+body.match-active #top-bar,
+body.match-active #nav {
+  display: none !important;
+}
+
+body.match-active #view-match {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  overflow-y: auto;
+  background: linear-gradient(180deg, #0a1628 0%, #0d2818 50%, #0a1628 100%);
+  padding: var(--sp-lg) var(--sp-md);
+}
+
+/* Centered container inside full-screen match */
+body.match-active #match-sim {
+  max-width: 640px;
+  margin: 0 auto;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+/* Pitch decoration: subtle center circle */
+body.match-active #view-match::before {
+  content: '';
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 280px;
+  height: 280px;
+  border: 2px solid rgba(63, 185, 80, 0.08);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Pitch decoration: halfway line */
+body.match-active #view-match::after {
+  content: '';
+  position: fixed;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: rgba(63, 185, 80, 0.06);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Light mode adjustments for immersive match */
+.light.match-active #view-match {
+  background: linear-gradient(180deg, #e8f0e4 0%, #d4e8d0 50%, #e8f0e4 100%);
+}
+
+.light.match-active #view-match::before {
+  border-color: rgba(26, 127, 55, 0.1);
+}
+
+.light.match-active #view-match::after {
+  background: rgba(26, 127, 55, 0.08);
+}
+
+/* Goal pulse animation */
+@keyframes goalPulse {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(1.25); color: var(--accent); }
+  100% { transform: scale(1); }
+}
+
+.score-pulse {
+  animation: goalPulse 0.5s ease-out;
+}
+
+/* Match speed controls */
+.match-speed-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-xs);
+  margin-bottom: var(--sp-sm);
+}
+
+.match-speed-btn {
+  padding: 3px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: var(--surface2);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.match-speed-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+/* Team talk selection */
+.team-talk-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.85);
+  padding: var(--sp-md);
+}
+
+.team-talk-panel {
+  max-width: 560px;
+  width: 100%;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: var(--sp-xl);
+  box-shadow: var(--shadow-lg);
+}
+
+.team-talk-title {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--text);
+  margin-bottom: var(--sp-lg);
+}
+
+.team-talk-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--sp-sm);
+}
+
+.team-talk-card {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-md);
+  padding: var(--sp-md);
+  background: var(--surface2);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: border-color var(--transition-fast),
+              background var(--transition-fast),
+              transform var(--transition-fast);
+}
+
+.team-talk-card:hover {
+  border-color: var(--accent);
+  background: var(--surface);
+  transform: translateY(-2px);
+}
+
+.team-talk-card:active {
+  transform: translateY(0);
+}
+
+.tt-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+  width: 48px;
+  text-align: center;
+}
+
+.tt-info {
+  flex: 1;
+}
+
+.tt-label {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.tt-desc {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+
+/* Auto-sub button */
+.auto-sub-btn {
+  padding: 10px 24px;
+  font-size: 0.9rem;
+  margin-left: var(--sp-sm);
+}
+
+/* Match summary at full-time */
+.match-summary {
+  margin-top: var(--sp-md);
+  padding: var(--sp-md);
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+}
+
+.match-summary-title {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: var(--sp-sm);
+  text-align: center;
+  color: var(--text);
+}
+
+.match-summary-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  padding: 3px 0;
+  color: var(--text-dim);
+}
+
+.match-summary-row b {
+  color: var(--text);
+}
+
+/* Mobile adjustments for team talk */
+@media (max-width: 480px) {
+  .team-talk-panel {
+    padding: var(--sp-md);
+  }
+
+  .team-talk-title {
+    font-size: 1.1rem;
+  }
+
+  .tt-icon {
+    font-size: 1.5rem;
+    width: 36px;
+  }
+
+  .tt-label {
+    font-size: 0.9rem;
+  }
+
+  .auto-sub-btn {
+    margin-left: 0;
+    margin-top: var(--sp-sm);
+  }
+}
+
+/* --------------------------------------------------------------------------
    35i. Match View Components
    -------------------------------------------------------------------------- */
 .match-header-area {

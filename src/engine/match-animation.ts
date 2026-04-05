@@ -2,11 +2,14 @@
  * match-animation.ts — Minute-by-minute animated match simulation.
  *
  * Drives the match view UI with a tick-based animation loop:
- *   - 1 real second = 2 game minutes (45 seconds per half)
- *   - Pause at half-time for substitutions and a coach comment
+ *   - Configurable speed: 1x (500ms), 2x (250ms), 3x (125ms) per tick
+ *   - Pause at half-time for substitutions, auto-sub, and a coach comment
  *   - Show events (goals, cards) as they happen in real-time
  *   - Display rival match results with live score updates
  *   - Coach comment at half-time and full-time based on current score
+ *   - Full-screen immersive mode with nav locking
+ *   - Goal pulse animation on score updates
+ *   - Match summary card at full-time
  *
  * The match result is pre-computed by simulateMatch(), then this module
  * animates the reveal of events minute by minute. Substitutions made
@@ -28,8 +31,12 @@ import { teamLabel } from '../utils/helpers';
 import { SFX } from '../audio/sfx';
 import { t } from '../data/i18n';
 
-/** Milliseconds per tick (1 second = 2 game minutes) */
-const TICK_MS = 500;
+/** Speed presets: tick interval in ms */
+const SPEED_PRESETS: Record<string, number> = {
+  '1x': 500,
+  '2x': 250,
+  '3x': 125,
+};
 
 /** Total game minutes (90) */
 const TOTAL_MINUTES = 90;
@@ -51,12 +58,30 @@ export interface AnimatedMatchOptions {
   onComplete: () => void;
 }
 
+/* ================================================================
+   IMMERSIVE MODE HELPERS
+   ================================================================ */
+
+/** Enter immersive full-screen match mode: hide chrome, lock nav. */
+function enterImmersiveMode(): void {
+  document.body.classList.add('match-active');
+  const nav = document.getElementById('nav');
+  if (nav) nav.classList.add('nav-locked');
+}
+
+/** Exit immersive full-screen match mode: restore chrome, unlock nav. */
+function exitImmersiveMode(): void {
+  document.body.classList.remove('match-active');
+  const nav = document.getElementById('nav');
+  if (nav) nav.classList.remove('nav-locked');
+}
+
 /**
  * Run an animated match simulation.
  *
  * The match result (fixture) must already be computed (homeGoals, awayGoals,
  * events populated). This function animates the display of that result
- * minute by minute with a 500ms tick interval (2 game minutes per second).
+ * minute by minute with a configurable tick interval.
  *
  * @param fixture  - The pre-computed fixture with results and events
  * @param G        - The game state
@@ -73,12 +98,16 @@ export function runAnimatedMatch(
   const awayTeam = G.teams[fixture.away];
   const isPlayerHome = fixture.home === G.playerTeamId;
 
+  /* Enter immersive mode */
+  enterImmersiveMode();
+
   /* Set up the match UI DOM */
   const sim = setupMatchUI(G, settings, homeTeam, awayTeam, {
     isCupFinal: options.isCupFinal,
     isNeutral: options.isNeutral ?? false,
   });
   if (!sim) {
+    exitImmersiveMode();
     options.onComplete();
     return;
   }
@@ -94,10 +123,25 @@ export function runAnimatedMatch(
   let isPaused = false;
   let timerId: ReturnType<typeof setInterval> | null = null;
   let countdownTimerId: ReturnType<typeof setInterval> | null = null;
+  let currentSpeed = '1x';
+  let tickMs = SPEED_PRESETS['1x'];
 
   /* Play kick-off whistle */
   SFX.whistle();
   updateMatchTimer(0, t(settings, 'kickOff'));
+
+  /**
+   * Trigger a pulse animation on the live score element.
+   */
+  function pulseScore(): void {
+    const scoreEl = document.getElementById('live-score');
+    if (scoreEl) {
+      scoreEl.classList.remove('score-pulse');
+      /* Force reflow to restart animation */
+      void scoreEl.offsetWidth;
+      scoreEl.classList.add('score-pulse');
+    }
+  }
 
   /**
    * Process all events that occur at or before the given minute.
@@ -112,6 +156,7 @@ export function runAnimatedMatch(
         if (ev.teamId === fixture.home) homeGoals++;
         else awayGoals++;
         updateLiveScore(homeGoals, awayGoals);
+        pulseScore();
         SFX.goal();
       } else if (ev.type === 'yellow') {
         SFX.yellowCard();
@@ -167,7 +212,51 @@ export function runAnimatedMatch(
   }
 
   /**
-   * Show the half-time break with coach comment and continue button.
+   * Build a match summary HTML string for full-time display.
+   */
+  function buildMatchSummary(): string {
+    const goalEvents = events.filter(e => e.type === 'goal');
+    const cardEvents = events.filter(e => e.type === 'yellow' || e.type === 'red');
+
+    let html = '<div class="match-summary">';
+    html += '<div class="match-summary-title">Match Summary</div>';
+
+    /* Goal scorers */
+    if (goalEvents.length > 0) {
+      for (const g of goalEvents) {
+        const team = g.teamId === fixture.home ? homeTeam : awayTeam;
+        const icon = g.teamId === G.playerTeamId ? '\u26BD' : '\uD83D\uDFE0';
+        html += `<div class="match-summary-row">${icon} <b>${g.scorer}</b> ${g.minute}' (${team.name})</div>`;
+      }
+    } else {
+      html += '<div class="match-summary-row">No goals scored</div>';
+    }
+
+    /* Cards */
+    if (cardEvents.length > 0) {
+      for (const c of cardEvents) {
+        const icon = c.type === 'red' ? '\uD83D\uDFE5' : '\uD83D\uDFE8';
+        const team = c.teamId === fixture.home ? homeTeam : awayTeam;
+        html += `<div class="match-summary-row">${icon} <b>${c.playerName}</b> ${c.minute}' (${team.name})</div>`;
+      }
+    }
+
+    /* MOTM */
+    if (fixture.motm) {
+      html += `<div class="match-summary-row">\u2B50 <b>Man of the Match:</b> ${fixture.motm}</div>`;
+    }
+
+    /* Team talk effect */
+    if (G.activeTeamTalk) {
+      html += `<div class="match-summary-row">\uD83D\uDDE3\uFE0F Your team talk set the tone for this match</div>`;
+    }
+
+    html += '</div>';
+    return html;
+  }
+
+  /**
+   * Show the half-time break with coach comment, auto-sub, and continue button.
    */
   function showHalfTime(): void {
     isPaused = true;
@@ -188,9 +277,16 @@ export function runAnimatedMatch(
       `${homeGoals} — ${awayGoals}</div>`,
     );
 
-    /* Show coach comment and continue button */
+    /* Show coach comment, auto-sub button, and continue button */
     const htContainer = document.getElementById('ht-continue-container');
     if (htContainer) {
+      const isNeutral = options.isNeutral ?? false;
+      const subsLeft = 3 - G.matchSubs;
+      const autoSubBtn = (!isNeutral && subsLeft > 0)
+        ? `<button class="btn btn-secondary auto-sub-btn" onclick="autoSub()">` +
+          `\uD83D\uDD04 Auto Sub (${subsLeft})</button>`
+        : '';
+
       htContainer.style.display = 'block';
       htContainer.innerHTML =
         `<div class="ht-panel">` +
@@ -200,8 +296,11 @@ export function runAnimatedMatch(
         `</div>` +
         `<div class="ht-actions">` +
         `<div class="ht-label">\u23F8\uFE0F Half Time — Make substitutions or continue</div>` +
+        `<div style="display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px">` +
         `<button class="btn btn-accent ht-continue-btn" onclick="continueMatch()">` +
         `\u25B6\uFE0F 2nd Half</button>` +
+        autoSubBtn +
+        `</div>` +
         `</div>` +
         `</div>`;
     }
@@ -231,7 +330,7 @@ export function runAnimatedMatch(
   }
 
   /**
-   * Show the full-time summary.
+   * Show the full-time summary with match summary card.
    */
   function showFullTime(): void {
     if (timerId) clearInterval(timerId);
@@ -262,7 +361,10 @@ export function runAnimatedMatch(
       updateRivalResults(options.rivalResults, 90);
     }
 
-    /* Show coach comment and back-to-dashboard button with auto-exit countdown */
+    /* Build match summary */
+    const summaryHTML = buildMatchSummary();
+
+    /* Show coach comment, match summary, and back-to-dashboard button with auto-exit countdown */
     const htContainer = document.getElementById('ht-continue-container');
     if (htContainer) {
       htContainer.style.display = 'block';
@@ -272,6 +374,7 @@ export function runAnimatedMatch(
         `<span class="coach-icon">\uD83E\uDDD1\u200D\uD83C\uDFEB</span> ` +
         `<span class="coach-text">"${comment}"</span>` +
         `</div>` +
+        summaryHTML +
         `<button class="btn btn-success ht-continue-btn" style="margin-top:12px" ` +
         `onclick="finishMatch()">\u2705 Continue <span id="ft-countdown">(15s)</span></button>` +
         `</div>`;
@@ -293,6 +396,26 @@ export function runAnimatedMatch(
         if (finishFn) finishFn();
       }
     }, 1000);
+  }
+
+  /**
+   * Change the match animation speed.
+   */
+  function changeSpeed(speed: string): void {
+    if (!SPEED_PRESETS[speed]) return;
+    currentSpeed = speed;
+    tickMs = SPEED_PRESETS[speed];
+
+    /* Update active button state */
+    document.querySelectorAll('.match-speed-btn').forEach(btn => {
+      (btn as HTMLElement).classList.toggle('active', (btn as HTMLElement).dataset.speed === speed);
+    });
+
+    /* Restart ticker with new interval if running */
+    if (timerId && !isPaused) {
+      clearInterval(timerId);
+      startTicker();
+    }
   }
 
   /**
@@ -329,14 +452,15 @@ export function runAnimatedMatch(
       if (options.rivalResults) {
         updateRivalResults(options.rivalResults, currentMin);
       }
-    }, TICK_MS);
+    }, tickMs);
   }
 
   /* Track whether onComplete has already been called to prevent double-fire */
   let completeCalled = false;
 
-  /* Expose continue/finish functions on window for onclick handlers */
+  /* Expose continue/finish/speed functions on window for onclick handlers */
   (window as unknown as Record<string, unknown>).continueMatch = continueMatch;
+  (window as unknown as Record<string, unknown>).changeMatchSpeed = changeSpeed;
   (window as unknown as Record<string, unknown>).finishMatch = () => {
     /* Prevent double-fire using local flag (more reliable than matchInProgress) */
     if (completeCalled) return;
@@ -346,6 +470,9 @@ export function runAnimatedMatch(
     if (timerId) { clearInterval(timerId); timerId = null; }
     if (countdownTimerId) { clearInterval(countdownTimerId); countdownTimerId = null; }
     G.matchInProgress = false;
+
+    /* Exit immersive mode */
+    exitImmersiveMode();
 
     /* Clear subbedIn flags */
     const pt = G.teams[G.playerTeamId!];

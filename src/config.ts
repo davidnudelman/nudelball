@@ -23,6 +23,8 @@ import type {
   TacticId,
   TeamData,
   WaitingTeam,
+  TeamTalkId,
+  TeamTalkOption,
 } from './types';
 
 /* ================================================================
@@ -264,6 +266,32 @@ export const TACTICS: Readonly<Record<TacticId, Tactic>> = {
   defensive: { homeBonus: 0.85, awayBonus: 0.75, defPenalty: 0.80, label: 'Defensive',      icon: '\uD83D\uDEE1\uFE0F' },
   counter:   { homeBonus: 0.95, awayBonus: 0.90, defPenalty: 0.90, label: 'Counter-Attack', icon: '\uD83C\uDFF9' },
 } as const;
+
+/* ================================================================
+   TEAM TALKS
+   ================================================================ */
+
+/**
+ * Pre-match team talk options. 5 of these 12 are randomly presented
+ * before each match. Each has a small tactical effect on the simulation.
+ */
+export const TEAM_TALKS: Readonly<Record<TeamTalkId, TeamTalkOption>> = {
+  inspire:       { label: 'Inspire',             icon: '\uD83D\uDD25', desc: 'Rally the team with passion',          effect: { morale: 8 } },
+  calm:          { label: 'Stay Calm',           icon: '\uD83E\uDDD8', desc: 'Keep composure and focus',             effect: { defBonus: 0.03 } },
+  aggressive:    { label: 'Get Stuck In',        icon: '\uD83D\uDCAA', desc: 'Play with intensity',                  effect: { atkBonus: 0.03, yellowRisk: 1.3 } },
+  tactical:      { label: 'Tactical Brief',      icon: '\uD83D\uDCCB', desc: 'Focus on the game plan',              effect: { tacticBonus: 0.05 } },
+  noExcuses:     { label: 'No Excuses',          icon: '\uD83D\uDE24', desc: 'Demand maximum effort',                effect: { staminaDrain: 1.15, atkBonus: 0.02, defBonus: 0.02 } },
+  enjoySelf:     { label: 'Enjoy Yourselves',    icon: '\uD83D\uDE0A', desc: 'Play with freedom and creativity',     effect: { formBoost: 1, morale: 5 } },
+  doItForFans:   { label: 'Do It For The Fans',  icon: '\uD83C\uDFDF\uFE0F', desc: 'Play for the supporters',       effect: { homeBonus: 0.04 } },
+  proveYourself: { label: 'Prove Yourself',      icon: '\u2B50',       desc: 'Show what you are made of',            effect: { youngBoost: 0.05 } },
+  revenge:       { label: 'Remember Last Time',  icon: '\uD83D\uDD04', desc: 'Use past defeats as fuel',             effect: { revengeMult: 1.05 } },
+  focusDefense:  { label: 'Keep It Tight',       icon: '\uD83D\uDEE1\uFE0F', desc: 'Defensive discipline first',    effect: { defBonus: 0.05, atkBonus: -0.02 } },
+  pressHigh:     { label: 'Press High',          icon: '\u26A1',       desc: 'Win the ball back quickly',            effect: { atkBonus: 0.04, staminaDrain: 1.1 } },
+  believeInYou:  { label: 'I Believe In You',    icon: '\uD83E\uDD1D', desc: 'Show trust and confidence',            effect: { morale: 10, formBoost: 1 } },
+};
+
+/** Number of team talk options to present per match */
+export const TEAM_TALK_CHOICES = 5;
 
 /* ================================================================
    TRAINING

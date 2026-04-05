@@ -194,7 +194,14 @@ export function setupMatchUI(
     }
   }
 
-  /* Build the full match UI */
+  /* Speed control buttons */
+  const speedBar = `<div class="match-speed-bar">` +
+    `<button class="match-speed-btn active" data-speed="1x" onclick="changeMatchSpeed('1x')">1x</button>` +
+    `<button class="match-speed-btn" data-speed="2x" onclick="changeMatchSpeed('2x')">2x</button>` +
+    `<button class="match-speed-btn" data-speed="3x" onclick="changeMatchSpeed('3x')">3x</button>` +
+    `</div>`;
+
+  /* Build the full match UI — HT container placed right below timer for visibility */
   sim.innerHTML =
     derbyBanner +
     `<div class="match-header-area">` +
@@ -205,9 +212,10 @@ export function setupMatchUI(
     strengthHTML +
     `<div class="match-timer" id="match-timer"><span class="minute">0'</span> — ${t(settings, 'kickOff')}</div>` +
     `<div class="match-progress"><div class="match-progress-bar" id="match-bar" style="width:0%"></div></div>` +
+    speedBar +
+    `<div id="ht-continue-container" style="display:none"></div>` +
     tacticsBar +
     `<div class="match-events" id="match-events"></div>` +
-    `<div id="ht-continue-container" style="display:none"></div>` +
     `<div class="rival-results" id="rival-results-panel" style="display:none">` +
     `<div class="rr-title">&#128202; Other Results</div>` +
     `<div id="rival-results-list"></div></div>` +

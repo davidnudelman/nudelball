@@ -18,6 +18,7 @@ import type {
   PowerLevels,
   TacticId,
   Team,
+  TeamTalkEffect,
 } from '../types';
 import {
   DEFAULT_FORMATION_IDX,
@@ -59,6 +60,7 @@ import {
   FORMATION_TACTIC_SYNERGY,
   TACTIC_COUNTER,
   POSITIONAL_POWER_WEIGHT,
+  TEAM_TALKS,
 } from '../config';
 import { getOopPenalty, playerOvr, rand, clamp, pick } from './player';
 
@@ -485,10 +487,10 @@ export const recordGoal = (G: GameState, teamId: number, playerName: string): vo
  * @param teamId - The team's ID for event attribution.
  * @param events - The match event array (mutated in-place).
  */
-export const generateCardEvents = (team: Team, teamId: number, events: MatchEvent[]): void => {
+export const generateCardEvents = (team: Team, teamId: number, events: MatchEvent[], yellowMult = 1.0): void => {
   const starters = team.players.filter(p => p.selected);
   for (const p of starters) {
-    if (Math.random() * 100 < YELLOW_CARD_CHANCE) {
+    if (Math.random() * 100 < YELLOW_CARD_CHANCE * yellowMult) {
       p.seasonYellows = (p.seasonYellows || 0) + 1;
       events.push({
         type: 'yellow', teamId, minute: rand(1, 90), playerName: p.name,
@@ -552,7 +554,7 @@ export const applyCardSuspensions = (team: Team, events: MatchEvent[]): void => 
  * @param team - The team to process (mutated in-place).
  * @returns Array of new injuries that occurred.
  */
-export const applyStaminaChanges = (team: Team): MatchInjury[] => {
+export const applyStaminaChanges = (team: Team, staminaMult = 1.0): MatchInjury[] => {
   const div = team.div || 1;
   const injuries: MatchInjury[] = [];
 
@@ -568,7 +570,7 @@ export const applyStaminaChanges = (team: Team): MatchInjury[] => {
 
     if (p.selected) {
       (p as any).matchesPlayed = ((p as any).matchesPlayed || 0) + 1;
-      const drain = rand(8, 15);
+      const drain = Math.round(rand(8, 15) * staminaMult);
       p.stamina = Math.max(10, p.stamina - drain);
       p.benchStreak = 0;
 
@@ -937,6 +939,59 @@ export const simulateMatch = (f: Fixture, G: GameState, options?: MatchSimOption
   if (f.home !== G.playerTeamId) hs *= difficulty;
   if (f.away !== G.playerTeamId) as_ *= difficulty;
 
+  /* --- Team talk effects (player's team only) --- */
+  let ttYellowRisk = 1.0;
+  let ttStaminaDrain = 1.0;
+  if (G.activeTeamTalk && (isPlayerHome || isPlayerAway)) {
+    const tt = TEAM_TALKS[G.activeTeamTalk];
+    if (tt) {
+      const eff: TeamTalkEffect = tt.effect;
+      /* Apply morale boost to the player's team (temporary, not persisted) */
+      if (eff.morale) {
+        const moraleMult = 1 + (eff.morale * 0.005);
+        if (isPlayerHome) hs *= moraleMult;
+        else as_ *= moraleMult;
+      }
+      /* Attack and defense bonuses */
+      if (eff.atkBonus) {
+        if (isPlayerHome) hs *= (1 + eff.atkBonus);
+        else as_ *= (1 + eff.atkBonus);
+      }
+      if (eff.defBonus) {
+        /* Defense bonus reduces opponent's effective strength slightly */
+        if (isPlayerHome) as_ *= (1 - eff.defBonus);
+        else hs *= (1 - eff.defBonus);
+      }
+      /* Home advantage bonus */
+      if (eff.homeBonus && isPlayerHome) {
+        hs *= (1 + eff.homeBonus);
+      }
+      /* Tactic synergy bonus */
+      if (eff.tacticBonus) {
+        if (isPlayerHome) hs *= (1 + eff.tacticBonus);
+        else as_ *= (1 + eff.tacticBonus);
+      }
+      /* Track multipliers to apply later */
+      if (eff.yellowRisk) ttYellowRisk = eff.yellowRisk;
+      if (eff.staminaDrain) ttStaminaDrain = eff.staminaDrain;
+      /* Form boost for starters */
+      if (eff.formBoost) {
+        const playerTeam = G.teams[G.playerTeamId!];
+        for (const p of playerTeam.players.filter(pl => pl.selected)) {
+          p.form = Math.min((p.form || 0) + eff.formBoost, 3);
+        }
+      }
+      /* Young player boost */
+      if (eff.youngBoost) {
+        const playerTeam = G.teams[G.playerTeamId!];
+        for (const p of playerTeam.players.filter(pl => pl.selected && pl.age <= 21)) {
+          /* Temporary skill boost applied through effective OVR */
+          p.subbedIn = true; /* Reuse subbedIn flag for +10% OVR boost */
+        }
+      }
+    }
+  }
+
   /* Pressure mechanic — title race / relegation battle adds variance */
   const homePressure = isUnderPressure(homeTeam, G);
   const awayPressure = isUnderPressure(awayTeam, G);
@@ -1018,9 +1073,11 @@ export const simulateMatch = (f: Fixture, G: GameState, options?: MatchSimOption
     }
   }
 
-  /* Card events */
-  generateCardEvents(homeTeam, f.home, f.events);
-  generateCardEvents(awayTeam, f.away, f.events);
+  /* Card events — apply team talk yellow risk multiplier to player's team */
+  const homeYellowMult = isPlayerHome ? ttYellowRisk : 1.0;
+  const awayYellowMult = isPlayerAway ? ttYellowRisk : 1.0;
+  generateCardEvents(homeTeam, f.home, f.events, homeYellowMult);
+  generateCardEvents(awayTeam, f.away, f.events, awayYellowMult);
 
   /* Red card match impact (#10) — adjust goals for red cards received early */
   const homeReds = f.events.filter(e => e.type === 'red' && e.teamId === f.home);
@@ -1089,8 +1146,11 @@ export const simulateMatch = (f: Fixture, G: GameState, options?: MatchSimOption
   updateMorale(awayTeam, f.awayGoals!, f.homeGoals!, isDerby);
 
   /* Apply stamina changes and injuries */
-  const homeInj = applyStaminaChanges(homeTeam);
-  const awayInj = applyStaminaChanges(awayTeam);
+  /* Apply team talk stamina drain multiplier to player's team */
+  const homeStamMult = isPlayerHome ? ttStaminaDrain : 1.0;
+  const awayStamMult = isPlayerAway ? ttStaminaDrain : 1.0;
+  const homeInj = applyStaminaChanges(homeTeam, homeStamMult);
+  const awayInj = applyStaminaChanges(awayTeam, awayStamMult);
   f.injuries = [...homeInj, ...awayInj];
 
   /* Apply suspensions from cards */
@@ -1107,4 +1167,7 @@ export const simulateMatch = (f: Fixture, G: GameState, options?: MatchSimOption
   /* Update On Fire status after form changes */
   updateOnFireStatus(homeTeam);
   updateOnFireStatus(awayTeam);
+
+  /* Clear team talk after match */
+  G.activeTeamTalk = null;
 };
