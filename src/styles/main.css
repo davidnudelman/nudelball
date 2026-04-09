@@ -114,6 +114,9 @@ body {
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Safe area support for notched phones (iPhone X+) */
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
 
 /* Subtle pitch decorations visible on all screens */
@@ -2214,15 +2217,27 @@ html.light .overlay {
     padding: 3px 8px;
   }
 
-  /* Nav: wrap to multiple rows */
+  /* Nav: horizontal scroll strip instead of wrapping */
+  .nav-bar {
+    position: sticky;
+    top: 0;
+    z-index: 90;
+  }
+
   .nav-bar-inner {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: var(--sp-xs);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    padding-bottom: 2px; /* prevent scrollbar clipping */
   }
 
   .nav-btn {
     padding: 7px 10px;
     font-size: 0.8rem;
+    flex-shrink: 0;
+    scroll-snap-align: start;
   }
 
   .nav-btn .nav-key {
@@ -2233,12 +2248,9 @@ html.light .overlay {
     font-size: 0.95rem;
   }
 
-  /* Play Match button: full width on bottom row */
+  /* Play Match button: stays prominent but doesn't break row */
   .nav-btn.play-match {
-    width: 100%;
-    justify-content: center;
-    margin-left: 0;
-    margin-top: var(--sp-xs);
+    margin-left: auto;
     order: 99;
   }
 
@@ -2247,9 +2259,14 @@ html.light .overlay {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  /* Cards: full width */
+  /* Cards: full width with tighter vertical spacing */
   .card-grid {
     grid-template-columns: 1fr;
+  }
+
+  .card + .card,
+  .card-grid + .card {
+    margin-top: var(--sp-sm);
   }
 
   /* Transfer grid */
@@ -2314,9 +2331,15 @@ html.light .overlay {
     width: 100%;
   }
 
-  /* Tables: ensure horizontal scroll works */
+  /* Tables: ensure horizontal scroll works + better readability */
   .table-wrapper {
     -webkit-overflow-scrolling: touch;
+  }
+
+  /* Hide less important stat columns on tablet */
+  .league-table .col-gf,
+  .league-table .col-ga {
+    display: none;
   }
 
   /* Settings overlay */
@@ -2329,6 +2352,16 @@ html.light .overlay {
     flex-direction: column;
     align-items: flex-start;
     gap: var(--sp-sm);
+  }
+
+  .settings-toggle {
+    width: 100%;
+  }
+
+  .stoggle-opt {
+    flex: 1;
+    text-align: center;
+    justify-content: center;
   }
 
   .volume-slider {
@@ -2355,9 +2388,36 @@ html.light .overlay {
     display: flex;
   }
 
+  /* Division tabs: horizontal scroll */
+  .div-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    padding-bottom: 2px;
+  }
+
+  .div-tab {
+    flex-shrink: 0;
+    scroll-snap-align: start;
+  }
+
   /* Container padding */
   .container {
     padding: 0 var(--sp-sm);
+  }
+
+  /* Tactic and training bars: scroll horizontally */
+  .tactic-bar,
+  .training-bar {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tactic-btn,
+  .training-btn {
+    flex-shrink: 0;
   }
 }
 
@@ -2369,13 +2429,101 @@ html.light .overlay {
     font-size: 13px;
   }
 
-  /* Top Bar: compact single line */
+  /* ---- BOTTOM TAB NAV BAR ---- */
+  /* Reposition nav bar to bottom of screen as a fixed tab bar */
+  .nav-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    top: auto;
+    z-index: 200;
+    border-bottom: none;
+    border-top: 1px solid var(--border);
+    padding: var(--sp-xs) var(--sp-xs) calc(var(--sp-xs) + env(safe-area-inset-bottom));
+    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  .nav-bar-inner {
+    flex-wrap: nowrap;
+    gap: 0;
+    justify-content: space-around;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .nav-btn {
+    flex-direction: column;
+    padding: 4px 2px;
+    font-size: 0.62rem;
+    gap: 2px;
+    min-height: 48px;
+    min-width: 0;
+    flex: 1;
+    justify-content: center;
+    align-items: center;
+    border-radius: var(--radius-sm);
+  }
+
+  .nav-btn .nav-icon {
+    font-size: 1.15rem;
+    display: block;
+  }
+
+  /* Show short labels under icons on phone bottom nav */
+  .nav-btn .nav-label {
+    display: block;
+    font-size: 0.58rem;
+    line-height: 1.1;
+    text-align: center;
+    max-width: 48px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .nav-btn .nav-key {
+    display: none;
+  }
+
+  /* Active state: subtle background instead of full green fill */
+  .nav-btn.active {
+    background: var(--accent-glow);
+    color: var(--accent);
+    box-shadow: none;
+  }
+
+  /* Play Match button: prominent in bottom nav */
+  .nav-btn.play-match {
+    margin-left: 0;
+    order: 0;
+    background: var(--green);
+    color: #fff;
+    border-radius: var(--radius-md);
+    padding: 4px 6px;
+  }
+
+  .nav-btn.play-match .nav-label {
+    display: block;
+  }
+
+  /* Market open animation in bottom nav */
+  .nav-btn.market-open {
+    font-size: 0.62rem;
+  }
+
+  /* ---- TOP BAR: compact for phone ---- */
   .top-bar {
     padding: var(--sp-xs) var(--sp-sm);
+    padding-top: calc(var(--sp-xs) + env(safe-area-inset-top));
   }
 
   .top-bar-left {
     gap: var(--sp-sm);
+  }
+
+  .top-bar-title {
+    font-size: 0.92rem;
   }
 
   /* Hide manager info on very small screens */
@@ -2383,26 +2531,34 @@ html.light .overlay {
     display: none;
   }
 
-  /* Nav: compact icons */
-  .nav-bar {
-    padding: var(--sp-xs) var(--sp-sm);
+  /* ---- MAIN CONTENT: bottom padding for tab bar ---- */
+  #main {
+    padding-bottom: calc(var(--sp-xl) + 68px + env(safe-area-inset-bottom));
   }
 
-  .nav-btn {
-    padding: 6px 8px;
-    font-size: 0.75rem;
-    gap: 4px;
-    min-height: 44px;
+  /* ---- WELCOME SCREEN ---- */
+  .welcome-screen {
+    padding: var(--sp-md);
+    padding-top: calc(var(--sp-md) + env(safe-area-inset-top));
   }
 
-  /* Hide nav text labels, show only icons on phones */
-  .nav-btn .nav-label {
-    display: none;
+  .welcome-card {
+    padding: var(--sp-lg) var(--sp-md);
+    border-radius: var(--radius-lg);
   }
 
-  /* Keep play match text visible */
-  .nav-btn.play-match .nav-label {
-    display: inline;
+  .welcome-card h1 {
+    font-size: 1.5rem;
+  }
+
+  .welcome-card p {
+    font-size: 0.9rem;
+  }
+
+  .btn-start {
+    width: 100%;
+    padding: 14px;
+    font-size: 1rem;
   }
 
   /* Team Picker: single column on phone */
@@ -2428,25 +2584,19 @@ html.light .overlay {
     flex-shrink: 0;
   }
 
-  /* Welcome card */
-  .welcome-card {
-    padding: var(--sp-lg) var(--sp-md);
+  /* ---- CARDS: compact spacing ---- */
+  .card {
+    padding: var(--sp-md);
+    border-radius: var(--radius-sm);
   }
 
-  .welcome-card h1 {
-    font-size: 1.4rem;
+  .card-title {
+    font-size: 0.95rem;
+    margin-bottom: var(--sp-sm);
+    padding-bottom: var(--sp-xs);
   }
 
-  .welcome-card p {
-    font-size: 0.9rem;
-  }
-
-  .btn-start {
-    width: 100%;
-    padding: 14px;
-  }
-
-  /* Match view: stack vertically */
+  /* ---- MATCH VIEW: improved mobile experience ---- */
   .match-header {
     flex-direction: column;
     gap: var(--sp-md);
@@ -2461,7 +2611,33 @@ html.light .overlay {
     min-width: unset;
   }
 
-  /* Player row compact */
+  /* Full-screen match on phone: account for no bottom nav */
+  body.match-active #view-match {
+    padding: var(--sp-md) var(--sp-sm);
+    padding-top: calc(var(--sp-md) + env(safe-area-inset-top));
+    padding-bottom: calc(var(--sp-md) + env(safe-area-inset-bottom));
+  }
+
+  body.match-active .match-header-area {
+    padding: var(--sp-md) 0;
+  }
+
+  /* Match events: larger text on phone for readability */
+  .match-event {
+    font-size: 0.88rem;
+    padding: 8px 10px;
+  }
+
+  .me-narrative {
+    padding-left: 36px;
+    font-size: 0.8rem;
+  }
+
+  .match-event.me-away .me-narrative {
+    padding-right: 36px;
+  }
+
+  /* ---- PLAYER ROW: compact ---- */
   .player-row {
     flex-wrap: wrap;
     gap: var(--sp-xs);
@@ -2472,42 +2648,97 @@ html.light .overlay {
     margin-top: var(--sp-xs);
   }
 
-  /* Trophy grid: single column */
+  /* ---- GRIDS: single column ---- */
   .trophy-grid {
     grid-template-columns: 1fr;
   }
 
-  /* Transfer grid */
   .transfer-grid {
     grid-template-columns: 1fr;
   }
 
-  /* Overlay: slide-up sheet on phone */
+  /* ---- OVERLAYS: slide-up bottom sheet ---- */
   .overlay {
-    padding: var(--sp-sm);
+    padding: 0;
     align-items: flex-end;
   }
 
   .overlay-content {
-    max-height: 90vh;
+    max-height: 92vh;
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     padding: var(--sp-md);
+    padding-bottom: calc(var(--sp-md) + env(safe-area-inset-bottom));
+    transform: translateY(100%);
   }
 
-  /* Card compact */
-  .card {
-    padding: var(--sp-md);
+  .overlay.active .overlay-content {
+    transform: translateY(0);
   }
 
-  /* Table compact */
+  /* Bottom sheet drag handle indicator */
+  .overlay-content::before {
+    content: '';
+    display: block;
+    width: 36px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 0 auto var(--sp-md);
+  }
+
+  /* ---- TABLE: compact ---- */
   thead th {
-    padding: 8px;
-    font-size: 0.7rem;
+    padding: 8px 6px;
+    font-size: 0.68rem;
   }
 
   tbody td {
-    padding: 8px;
-    font-size: 0.8rem;
+    padding: 8px 6px;
+    font-size: 0.78rem;
+  }
+
+  /* League table: hide draw and loss columns on very small screens */
+  .league-table .col-d,
+  .league-table .col-l,
+  .league-table .col-gf,
+  .league-table .col-ga {
+    display: none;
+  }
+
+  /* ---- RESULT BANNER: compact ---- */
+  .result-banner {
+    padding: var(--sp-md);
+  }
+
+  .score-line {
+    flex-direction: column;
+    gap: var(--sp-sm);
+  }
+
+  .score-line .score {
+    font-size: 2.2rem;
+  }
+
+  /* ---- FIXTURE CARD: compact ---- */
+  .fixture-main {
+    flex-direction: column;
+    gap: var(--sp-xs);
+  }
+
+  .fixture-main .team-name {
+    text-align: center !important;
+    min-width: unset;
+  }
+
+  /* ---- TOAST: positioned above bottom nav ---- */
+  .toast {
+    bottom: calc(68px + env(safe-area-inset-bottom) + 12px);
+  }
+
+  /* ---- SEASON OVERLAY: full screen on phone ---- */
+  .season-overlay {
+    padding: var(--sp-sm);
+    padding-bottom: calc(var(--sp-sm) + env(safe-area-inset-bottom));
   }
 }
 
@@ -2544,6 +2775,170 @@ html.light .overlay {
   input[type="range"]::-moz-range-thumb {
     width: 24px;
     height: 24px;
+  }
+
+  /* Active/pressed tap feedback for touch devices */
+  .btn:active,
+  .nav-btn:active,
+  .tp-card:active,
+  .top-bar-icon:active,
+  .div-tab:active,
+  .tactic-btn:active,
+  .training-btn:active,
+  .match-tactic-btn:active,
+  .team-talk-card:active {
+    transform: scale(0.95);
+    opacity: 0.85;
+  }
+
+  /* Prevent double-tap zoom on frequently tapped interactive elements */
+  .nav-btn,
+  .btn,
+  .div-tab,
+  .tactic-btn,
+  .training-btn,
+  .top-bar-icon {
+    touch-action: manipulation;
+  }
+
+  /* Squad row: larger tap target + active feedback */
+  .squad-row:active {
+    background: rgba(79, 195, 247, 0.12);
+  }
+
+  /* Fixture card active state */
+  .fixture-card:active {
+    transform: scale(0.98);
+    border-color: var(--accent);
+  }
+
+  /* Sub button: larger for touch */
+  .sub-btn {
+    padding: 8px 16px;
+    min-height: 40px;
+  }
+
+  /* Team talk cards: larger touch areas */
+  .team-talk-card {
+    padding: var(--sp-md) var(--sp-lg);
+  }
+
+  /* Disable hover elevation on touch (prevents sticky hover) */
+  .card:hover {
+    box-shadow: var(--shadow-sm);
+  }
+
+  .tp-card:hover {
+    transform: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   31b. Landscape Phone Optimizations
+   -------------------------------------------------------------------------- */
+@media (max-width: 768px) and (orientation: landscape) {
+  /* Reduce vertical padding in landscape to maximize content area */
+  .top-bar {
+    padding: 2px var(--sp-sm);
+  }
+
+  .top-bar-title {
+    font-size: 0.88rem;
+  }
+
+  .season-badge {
+    font-size: 0.68rem;
+    padding: 2px 6px;
+  }
+
+  /* Nav bar: slim horizontal strip in landscape */
+  .nav-bar {
+    padding: 2px var(--sp-sm);
+  }
+
+  .nav-btn {
+    padding: 4px 8px;
+    min-height: 36px;
+    font-size: 0.75rem;
+  }
+
+  /* Welcome screen: side-by-side layout in landscape */
+  .welcome-card {
+    padding: var(--sp-md);
+  }
+
+  .welcome-card h1 {
+    font-size: 1.4rem;
+    margin-bottom: var(--sp-xs);
+  }
+
+  .welcome-card .subtitle {
+    margin-bottom: var(--sp-md);
+  }
+
+  /* Match view: horizontal layout in landscape */
+  .match-header-area {
+    flex-direction: row;
+    gap: var(--sp-md);
+  }
+
+  .match-score-big {
+    font-size: 2.4rem;
+    order: 0;
+  }
+
+  /* Reduce card padding in landscape */
+  .card {
+    padding: var(--sp-sm) var(--sp-md);
+  }
+
+  /* Overlays: side panel style in landscape */
+  .overlay-content {
+    max-height: 95vh;
+    max-width: 420px;
+  }
+
+  /* Squad controls: horizontal in landscape */
+  .squad-controls {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   31c. Landscape Phone Bottom Nav Adjustments
+   -------------------------------------------------------------------------- */
+@media (max-width: 480px) and (orientation: landscape) {
+  /* Bottom nav: slim row in landscape */
+  .nav-bar {
+    padding: 2px var(--sp-xs) calc(2px + env(safe-area-inset-bottom));
+  }
+
+  .nav-btn {
+    flex-direction: row;
+    min-height: 36px;
+    padding: 2px 6px;
+    font-size: 0.68rem;
+    gap: 4px;
+  }
+
+  .nav-btn .nav-icon {
+    font-size: 0.95rem;
+  }
+
+  .nav-btn .nav-label {
+    font-size: 0.62rem;
+    max-width: none;
+  }
+
+  /* Less bottom padding needed for slimmer nav */
+  #main {
+    padding-bottom: calc(var(--sp-lg) + 44px + env(safe-area-inset-bottom));
+  }
+
+  .toast {
+    bottom: calc(44px + env(safe-area-inset-bottom) + 8px);
   }
 }
 
@@ -5287,6 +5682,57 @@ html.light .changelog-overlay {
   .milestone-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  /* Squad position group headers: more compact */
+  .pos-group-header {
+    padding: var(--sp-xs) var(--sp-sm);
+    margin-top: var(--sp-xs);
+  }
+
+  /* Formation bar: wrap on tablet */
+  .formation-bar {
+    flex-wrap: wrap;
+    gap: var(--sp-xs);
+  }
+
+  /* Power bar: compact */
+  .power-bar {
+    gap: var(--sp-sm);
+    padding: var(--sp-xs) var(--sp-sm);
+  }
+
+  /* Overlays become bottom sheets on tablets too */
+  .settings-box,
+  .help-box,
+  .changelog-box {
+    max-width: 100%;
+  }
+
+  /* Settings overlay: full-width toggles */
+  .settings-toggle {
+    width: 100%;
+  }
+
+  .stoggle-opt {
+    flex: 1;
+    text-align: center;
+    justify-content: center;
+  }
+
+  /* Awards grid: 2 columns */
+  .awards-grid {
+    gap: var(--sp-sm);
+  }
+
+  .award-card {
+    min-width: 140px;
+    padding: 8px 12px;
+  }
+
+  /* Facility grid compact */
+  .facility-grid {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
 }
 
 @media (max-width: 480px) {
@@ -5362,8 +5808,140 @@ html.light .changelog-overlay {
     flex-direction: column;
   }
 
+  /* Division tabs: horizontal scroll on phone (not wrapping) */
   .div-tabs {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: var(--sp-xs);
+    padding-bottom: 2px;
+  }
+
+  .div-tab {
+    flex-shrink: 0;
+    padding: 6px 14px;
+    font-size: 0.78rem;
+  }
+
+  /* Squad controls: full-width stacked on phone */
+  .squad-controls .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .selected-count {
+    margin-left: 0;
+    text-align: center;
+    width: 100%;
+  }
+
+  /* Position group headers: even more compact on phone */
+  .pos-group-header {
+    margin-top: 2px;
+  }
+
+  .pos-group-label {
+    font-size: 0.78rem;
+  }
+
+  /* Power bar: stacked items on phone */
+  .power-bar {
+    gap: var(--sp-xs);
+    font-size: 0.78rem;
+  }
+
+  .pb-label {
+    font-size: 0.65rem;
+  }
+
+  .pb-value {
+    font-size: 0.85rem;
+  }
+
+  /* Awards: single column on phone */
+  .awards-grid {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .award-card {
+    min-width: unset;
+  }
+
+  /* Facility grid: single column on phone */
+  .facility-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Youth grid: full width cards */
+  .youth-card {
+    min-width: unset;
+    flex: 1;
+  }
+
+  /* News items: tighter */
+  .news-item {
+    padding: var(--sp-sm);
+  }
+
+  /* App footer: account for bottom nav */
+  .app-footer {
+    padding-bottom: calc(var(--sp-xl) + 60px + env(safe-area-inset-bottom));
+  }
+
+  /* Sponsor cards: full width */
+  .sponsor-grid {
+    flex-direction: column;
+  }
+
+  .sponsor-card {
+    width: 100%;
+    text-align: center;
+  }
+
+  /* Transfer log entries: compact */
+  .transfer-entry {
+    font-size: 0.78rem;
+    padding: var(--sp-xs);
+  }
+
+  /* Sub rows: compact on phone */
+  .sub-row {
+    gap: var(--sp-xs);
+    padding: var(--sp-xs);
+  }
+
+  .sub-name {
+    font-size: 0.78rem;
+  }
+
+  .sub-stats {
+    font-size: 0.68rem;
+  }
+
+  /* Coach comment: compact */
+  .coach-comment {
+    padding: var(--sp-sm);
+    gap: var(--sp-xs);
+  }
+
+  .coach-icon {
+    font-size: 1.3rem;
+  }
+
+  .coach-text {
+    font-size: 0.88rem;
+  }
+
+  /* Rival results: compact */
+  .rival-result {
+    font-size: 0.78rem;
+    gap: var(--sp-xs);
+  }
+
+  .rr-score {
+    min-width: 55px;
+    font-size: 0.88rem;
   }
 }
 
