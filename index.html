@@ -62,15 +62,19 @@
 <!-- ===== TOP BAR ===== -->
 <div id="top-bar" class="top-bar" style="display:none">
   <div class="top-bar-inner">
-    <div class="top-bar-left">
+    <div class="top-bar-title-row">
       <div class="top-bar-title">Park the <span>Bus</span></div>
-      <div class="manager-badge" id="manager-info"></div>
-      <div class="season-badge" id="season-badge">Season 1</div>
     </div>
-    <div class="top-bar-right">
-      <button class="top-bar-icon" id="mute-btn" onclick="toggleMute()" title="Mute/Unmute">&#128266;</button>
-      <button class="btn btn-success" id="play-match-btn" onclick="playMatch()" data-i18n="playMatch">Play Match</button>
-      <button class="top-bar-icon" id="settings-btn" onclick="toggleSettings()" title="Settings">&#9881;</button>
+    <div class="top-bar-controls-row">
+      <div class="top-bar-left">
+        <div class="manager-badge" id="manager-info"></div>
+        <div class="season-badge" id="season-badge">Season 1</div>
+      </div>
+      <div class="top-bar-right">
+        <button class="top-bar-icon" id="mute-btn" onclick="toggleMute()" title="Mute/Unmute">&#128266;</button>
+        <button class="btn btn-success" id="play-match-btn" onclick="playMatch()" data-i18n="playMatch">Play Match</button>
+        <button class="top-bar-icon" id="settings-btn" onclick="toggleSettings()" title="Settings">&#9881;</button>
+      </div>
     </div>
   </div>
 </div>
