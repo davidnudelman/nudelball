@@ -469,7 +469,7 @@ html.light .tp-card.selected {
 }
 
 /* --------------------------------------------------------------------------
-   6. Top Bar
+   6. Top Bar (two-row: hero title + controls)
    -------------------------------------------------------------------------- */
 .top-bar {
   position: sticky;
@@ -479,7 +479,7 @@ html.light .tp-card.selected {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
-  padding: var(--sp-sm) var(--sp-md);
+  padding: var(--sp-md) var(--sp-md) var(--sp-sm);
   box-shadow: var(--shadow-sm);
 }
 
@@ -487,26 +487,47 @@ html.light .tp-card.selected {
   max-width: 1100px;
   margin: 0 auto;
   display: flex;
+  flex-direction: column;
+  gap: var(--sp-sm);
+}
+
+/* Row 1 — Big hero title, centered (matches welcome-card h1 styling) */
+.top-bar-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.top-bar-title {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -1px;
+  line-height: 1;
+  text-align: center;
+}
+
+.top-bar-title span {
+  color: var(--accent);
+}
+
+/* Row 2 — Badges on the left, controls on the right */
+.top-bar-controls-row {
+  display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--sp-md);
+  width: 100%;
 }
 
 .top-bar-left {
   display: flex;
   align-items: center;
   gap: var(--sp-md);
-}
-
-.top-bar-title {
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--text);
-  letter-spacing: -0.3px;
-}
-
-.top-bar-title span {
-  color: var(--accent);
+  min-width: 0;
+  flex-wrap: wrap;
 }
 
 /* Manager / Team info in top bar */
@@ -2202,14 +2223,22 @@ html.light .overlay {
     font-size: 14px;
   }
 
-  /* Top Bar: compact */
+  /* Top Bar: compact two-row */
+  .top-bar {
+    padding: var(--sp-sm) var(--sp-sm) var(--sp-xs);
+  }
+
   .top-bar-inner {
-    flex-wrap: wrap;
-    gap: var(--sp-sm);
+    gap: var(--sp-xs);
   }
 
   .top-bar-title {
-    font-size: 1rem;
+    font-size: 1.6rem;
+  }
+
+  .top-bar-controls-row {
+    flex-wrap: wrap;
+    gap: var(--sp-sm);
   }
 
   .season-badge {
@@ -2512,18 +2541,27 @@ html.light .overlay {
     font-size: 0.62rem;
   }
 
-  /* ---- TOP BAR: compact for phone ---- */
+  /* ---- TOP BAR: compact two-row for phone ---- */
   .top-bar {
     padding: var(--sp-xs) var(--sp-sm);
     padding-top: calc(var(--sp-xs) + env(safe-area-inset-top));
   }
 
-  .top-bar-left {
-    gap: var(--sp-sm);
+  .top-bar-inner {
+    gap: 2px;
+  }
+
+  .top-bar-title-row {
+    padding-top: 2px;
   }
 
   .top-bar-title {
-    font-size: 0.92rem;
+    font-size: 1.35rem;
+    letter-spacing: -0.5px;
+  }
+
+  .top-bar-left {
+    gap: var(--sp-sm);
   }
 
   /* Hide manager info on very small screens */
@@ -2842,8 +2880,12 @@ html.light .overlay {
     padding: 2px var(--sp-sm);
   }
 
+  .top-bar-inner {
+    gap: 2px;
+  }
+
   .top-bar-title {
-    font-size: 0.88rem;
+    font-size: 1.15rem;
   }
 
   .season-badge {
@@ -5464,13 +5506,16 @@ body.match-active .mh-team {
 }
 
 /* --------------------------------------------------------------------------
-   35t. App Footer
+   35t. App Footer (matches welcome-footer styling — Oswald, spaced uppercase)
    -------------------------------------------------------------------------- */
 .app-footer {
   text-align: center;
-  padding: var(--sp-xl) var(--sp-md);
+  padding: var(--sp-lg) var(--sp-md) var(--sp-xl);
+  margin-top: var(--sp-xl);
+  border-top: 1px solid var(--border);
   font-family: 'Oswald', system-ui, sans-serif;
-  font-size: 0.72rem;
+  font-size: 0.78rem;
+  font-weight: 500;
   letter-spacing: 2px;
   text-transform: uppercase;
   color: var(--text-dim);
