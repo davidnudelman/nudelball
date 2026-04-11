@@ -16,6 +16,7 @@
 import type { GameState, Settings, Team } from '../../types';
 import { SEASON_WEEKS } from '../../config';
 import { teamLabel } from '../../utils/helpers';
+import { icon } from '../../assets/icons';
 import { t } from '../../data/i18n';
 
 /* ================================================================
@@ -125,7 +126,11 @@ export function updateTopBar(G: GameState, settings: Settings): void {
 
   const seasonEl = document.getElementById('season-badge');
   if (seasonEl) {
-    seasonEl.textContent = t(settings, 'season') + ' ' + G.season + ' | \uD83D\uDCB0$' + budget.toLocaleString();
+    seasonEl.innerHTML =
+      t(settings, 'season') + ' ' + G.season +
+      ' <span class="season-sep">|</span> ' +
+      `<span class="season-budget-icon">${icon('money', 12)}</span>$` +
+      budget.toLocaleString();
   }
 }
 
@@ -240,7 +245,7 @@ export function updatePlayBtn(): void {
   /* Check for injured or suspended starters that shouldn't be playing */
   const unavailable = sel.filter(p => p.injuredFor > 0 || p.suspendedFor > 0);
   if (unavailable.length > 0) {
-    setBtn(true, `\u26A0\uFE0F ${unavailable.length} unavailable starter${unavailable.length > 1 ? 's' : ''}`);
+    setBtn(true, `${unavailable.length} unavailable starter${unavailable.length > 1 ? 's' : ''}`);
     return;
   }
 
@@ -295,7 +300,7 @@ export function applyLanguage(settings: Settings): void {
  */
 export function updateVolumeUI(settings: Settings): void {
   const btn = document.getElementById('mute-btn');
-  if (btn) btn.textContent = settings.muted ? '\uD83D\uDD07' : '\uD83D\uDD0A';
+  if (btn) btn.innerHTML = settings.muted ? icon('mute', 18) : icon('volume', 18);
 
   const slider = document.getElementById('volume-slider') as HTMLInputElement | null;
   if (slider) slider.value = String(Math.round(settings.volume * 100));

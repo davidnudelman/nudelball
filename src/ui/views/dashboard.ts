@@ -8,6 +8,7 @@
 import type { GameState, Settings, Team, Fixture, SeasonRecapData } from '../../types';
 import { SEASON_WEEKS, FORMATIONS, MORALE_MAX, FACILITY_COSTS, SPONSORSHIP_TIERS, SCOUT_COSTS, STADIUM_HOME_GAME_BONUS, STADIUM_INCOME_BONUS } from '../../config';
 import { teamLabel, plateColors } from '../../utils/helpers';
+import { icon } from '../../assets/icons';
 import { t } from '../../data/i18n';
 import { calculateSeasonAwards } from '../../engine/season';
 
@@ -93,9 +94,9 @@ export function buildTableHTML(
   });
 
   h += '</tbody></table>';
-  h += `<div style="margin-top:8px;font-size:.72rem;color:var(--text-muted)">` +
-    `<span style="color:var(--green)">&#9632;</span> ${t(settings, 'promotion')} &nbsp; ` +
-    `<span style="color:var(--red)">&#9632;</span> ${t(settings, 'relegation')}</div>`;
+  h += `<div class="table-legend">` +
+    `<span class="legend-dot legend-promote"></span> ${t(settings, 'promotion')}` +
+    `<span class="legend-dot legend-relegate" style="margin-left:12px"></span> ${t(settings, 'relegation')}</div>`;
   return h;
 }
 
@@ -150,10 +151,18 @@ export function renderDashboard(
       tc.style.display = '';
       let h = '<div class="trophy-shelf">';
       for (const tr of pt.trophies) {
-        if (tr.type === 'gold_trophy') h += `<span class="trophy" title="${t(settings, 'div1Champion')} ${t(settings, 'season')} ${tr.season}" style="font-size:1.6rem">&#127942;</span>`;
-        else if (tr.type === 'silver_trophy') h += `<span class="trophy silver" title="${t(settings, 'div1RunnerUp')} ${t(settings, 'season')} ${tr.season}" style="font-size:1.6rem">&#127942;</span>`;
-        else if (tr.type === 'gold_medal') h += `<span class="trophy" title="${t(settings, 'div2Champion')} ${t(settings, 'season')} ${tr.season}" style="font-size:1.6rem">&#129351;</span>`;
-        else if (tr.type === 'silver_medal') h += `<span class="trophy" title="${t(settings, 'div2RunnerUp')} ${t(settings, 'season')} ${tr.season}" style="font-size:1.6rem">&#129352;</span>`;
+        const tCls =
+          tr.type === 'gold_trophy' ? 'trophy trophy-gold' :
+          tr.type === 'silver_trophy' ? 'trophy trophy-silver' :
+          tr.type === 'gold_medal' ? 'trophy trophy-gold-medal' :
+          'trophy trophy-silver-medal';
+        const tIcon = tr.type.includes('trophy') ? icon('trophy', 28) : icon('medal', 28);
+        const tTitle =
+          tr.type === 'gold_trophy' ? `${t(settings, 'div1Champion')} ${t(settings, 'season')} ${tr.season}` :
+          tr.type === 'silver_trophy' ? `${t(settings, 'div1RunnerUp')} ${t(settings, 'season')} ${tr.season}` :
+          tr.type === 'gold_medal' ? `${t(settings, 'div2Champion')} ${t(settings, 'season')} ${tr.season}` :
+          `${t(settings, 'div2RunnerUp')} ${t(settings, 'season')} ${tr.season}`;
+        h += `<span class="${tCls}" title="${tTitle}">${tIcon}</span>`;
       }
       h += '</div>';
       tcc.innerHTML = h;
@@ -188,7 +197,7 @@ export function renderDashboard(
             if (e.type === 'goal') {
               const side = e.teamId === pm.home ? 'rb-home' : 'rb-away';
               /* Show narrative instead of just scorer name if available */
-              const desc = e.narrative || `&#9917; ${e.scorer}`;
+              const desc = e.narrative || `<span class="inline-icon">${icon('ball', 12)}</span> ${e.scorer}`;
               detailHTML += `<div class="rb-event ${side}"><span class="rb-min">${e.minute}'</span> ${desc}</div>`;
             } else if (e.type === 'yellow' && e.narrative) {
               const side = e.teamId === pm.home ? 'rb-home' : 'rb-away';
@@ -200,15 +209,15 @@ export function renderDashboard(
           }
           for (const inj of (pm.injuries || [])) {
             const side = inj.teamId === pm.home ? 'rb-home' : 'rb-away';
-            detailHTML += `<div class="rb-event rb-injury ${side}"><span class="rb-min">&#10014;</span> <b>${inj.name}</b> (${inj.duration})</div>`;
+            detailHTML += `<div class="rb-event rb-injury ${side}"><span class="rb-min">${icon('cross', 12)}</span> <b>${inj.name}</b> (${inj.duration})</div>`;
           }
 
           /* Man of the Match */
           let motmHTML = '';
           if (pm.motm) {
             const motmTeam = pm.motmTeamId != null ? G.teams[pm.motmTeamId] : null;
-            motmHTML = `<div style="text-align:center;margin-top:6px;padding:4px 8px;background:var(--surface2);border-radius:6px;font-size:.82rem">` +
-              `&#11088; <b>Man of the Match:</b> ${pm.motm}${motmTeam ? ` (${teamLabel(motmTeam)})` : ''}</div>`;
+            motmHTML = `<div class="motm-banner">` +
+              `<span class="inline-icon">${icon('star', 14)}</span> <b>Man of the Match:</b> ${pm.motm}${motmTeam ? ` (${teamLabel(motmTeam)})` : ''}</div>`;
           }
 
           lr.innerHTML = `<div class="result-banner"><h3 style="color:${rc}">${t(settings, 'week')} ${prevWeek} — ${resultLabel}</h3>` +
@@ -236,7 +245,9 @@ export function renderDashboard(
           const oppId = pm.home === G.playerTeamId ? pm.away : pm.home;
           const opp = G.teams[oppId];
           const isDerby = (ht.rivals?.includes(at.id)) || (at.rivals?.includes(ht.id));
-          const derbyBadge = isDerby ? '<div style="text-align:center;font-size:.78rem;font-weight:700;color:var(--red);margin-bottom:4px">&#128293; DERBY MATCH &#128293;</div>' : '';
+          const derbyBadge = isDerby
+            ? `<div class="derby-mini"><span class="inline-icon">${icon('fire', 12)}</span> DERBY MATCH <span class="inline-icon">${icon('fire', 12)}</span></div>`
+            : '';
 
           /* Opponent insights: league position, W-D-L, form, head-to-head */
           let insightsHTML = '';
@@ -285,7 +296,7 @@ export function renderDashboard(
             }
 
             insightsHTML = `<div style="display:flex;flex-wrap:wrap;gap:8px 16px;justify-content:center;font-size:.8rem;margin-top:6px;padding-top:6px;border-top:1px solid var(--border)">`;
-            insightsHTML += `<span>&#127942; League: <b>${oppPos ? ordinal(oppPos) : '?'}</b> <span style="color:var(--text-dim)">(You: ${ptPos ? ordinal(ptPos) : '?'})</span></span>`;
+            insightsHTML += `<span><span class="inline-icon">${icon('trophy', 12)}</span> League: <b>${oppPos ? ordinal(oppPos) : '?'}</b> <span style="color:var(--text-dim)">(You: ${ptPos ? ordinal(ptPos) : '?'})</span></span>`;
             insightsHTML += `<span>Record: <b>${oppSt.w}W ${oppSt.d}D ${oppSt.l}L</b></span>`;
             insightsHTML += `<span>GD: <b>${(oppSt.gf - oppSt.ga) >= 0 ? '+' : ''}${oppSt.gf - oppSt.ga}</b></span>`;
             if (recentForm) insightsHTML += `<span>Form: ${recentForm}</span>`;
@@ -320,7 +331,7 @@ export function renderDashboard(
 
   const budget = G.budgets[pt.id] || 0;
 
-  let extraHtml = `<div class="card" style="margin-top:8px"><div class="card-title">&#127963;&#65039; Club Development</div>`;
+  let extraHtml = `<div class="card" style="margin-top:8px"><div class="card-title"><span class="title-icon">${icon('stadium', 18)}</span> Club Development</div>`;
 
   /* ===== Morale & Transfer Window status ===== */
   const windowStatus = G.transferWindow
@@ -336,19 +347,19 @@ export function renderDashboard(
   extraHtml += `<div style="margin-top:4px;border-top:1px solid var(--border);padding-top:8px">`;
   extraHtml += `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px">`;
 
-  const facTypes: Array<{ key: string; label: string; icon: string; level: number; effect: string }> = [
-    { key: 'trainingFacility', label: 'Training Ground', icon: '&#127947;', level: fac.trainingFacility || 0, effect: '+3% skill growth/lv' },
-    { key: 'youthAcademy', label: 'Youth Academy', icon: '&#127891;', level: fac.youthAcademy || 0, effect: '+2 regen skill/lv' },
-    { key: 'stadium', label: 'Stadium', icon: '&#127967;', level: fac.stadium || 0, effect: `+$${STADIUM_HOME_GAME_BONUS}/home game + $${STADIUM_INCOME_BONUS}/season per lv` },
+  const facTypes: Array<{ key: string; label: string; iconKey: 'dumbbell' | 'cap' | 'stadium'; level: number; effect: string }> = [
+    { key: 'trainingFacility', label: 'Training Ground', iconKey: 'dumbbell', level: fac.trainingFacility || 0, effect: '+3% skill growth/lv' },
+    { key: 'youthAcademy', label: 'Youth Academy', iconKey: 'cap', level: fac.youthAcademy || 0, effect: '+2 regen skill/lv' },
+    { key: 'stadium', label: 'Stadium', iconKey: 'stadium', level: fac.stadium || 0, effect: `+$${STADIUM_HOME_GAME_BONUS}/home game + $${STADIUM_INCOME_BONUS}/season per lv` },
   ];
   for (const f of facTypes) {
     const costs = FACILITY_COSTS[f.key] || [];
     const nextCost = f.level < costs.length ? costs[f.level] : null;
     const canUpgrade = nextCost !== null && budget >= nextCost;
-    const lvlPips = '&#9608;'.repeat(f.level) + '&#9617;'.repeat(3 - f.level);
-    extraHtml += `<div style="background:var(--surface2);padding:8px 10px;border-radius:6px">`;
-    extraHtml += `<div style="font-weight:700;font-size:.85rem">${f.icon} ${f.label}</div>`;
-    extraHtml += `<div style="font-size:.78rem;color:var(--accent);margin:2px 0">${lvlPips} Lv${f.level}/3</div>`;
+    const lvlPips = '<span class="pip on"></span>'.repeat(f.level) + '<span class="pip"></span>'.repeat(3 - f.level);
+    extraHtml += `<div class="fac-tile">`;
+    extraHtml += `<div class="fac-title"><span class="fac-icon">${icon(f.iconKey, 16)}</span> ${f.label}</div>`;
+    extraHtml += `<div class="fac-level">${lvlPips} Lv${f.level}/3</div>`;
     extraHtml += `<div style="font-size:.72rem;color:var(--text-dim)">${f.effect}</div>`;
     if (nextCost !== null) {
       extraHtml += `<button class="btn-sign" style="margin-top:4px;font-size:.72rem;padding:2px 8px;width:100%" ${canUpgrade ? `onclick="upgradeFacility('${f.key}')"` : 'disabled'}>Upgrade $${nextCost.toLocaleString()}</button>`;
@@ -362,8 +373,8 @@ export function renderDashboard(
   const spLabel = G.sponsorship
     ? `<b style="color:var(--green)">${G.sponsorship.tier}</b> $${G.sponsorship.incomePerSeason}/s`
     : '<span style="color:var(--text-dim)">None</span>';
-  extraHtml += `<div style="background:var(--surface2);padding:8px 10px;border-radius:6px">`;
-  extraHtml += `<div style="font-weight:700;font-size:.85rem">&#128176; Sponsor</div>`;
+  extraHtml += `<div class="fac-tile">`;
+  extraHtml += `<div class="fac-title"><span class="fac-icon">${icon('money', 16)}</span> Sponsor</div>`;
   extraHtml += `<div style="font-size:.78rem;margin:2px 0">${spLabel}</div>`;
   extraHtml += `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">`;
   for (const sp of SPONSORSHIP_TIERS) {
@@ -371,7 +382,7 @@ export function renderDashboard(
     const isActive = G.sponsorship?.tier === sp.tier;
     extraHtml += `<button class="btn-sign" style="padding:2px 6px;font-size:.68rem;${isActive ? 'background:var(--green);color:#fff;' : ''}" `;
     extraHtml += eligible && !isActive ? `onclick="selectSponsor('${sp.tier}')"` : 'disabled';
-    extraHtml += `>${sp.tier}${!eligible ? '*' : ''}${isActive ? '✓' : ''}</button>`;
+    extraHtml += `>${sp.tier}${!eligible ? '*' : ''}${isActive ? ' ✓' : ''}</button>`;
   }
   extraHtml += `</div></div>`;
 
@@ -393,7 +404,7 @@ export function renderDashboard(
           const bestPlayer = [...opp.players].sort((a, b) => b.skill - a.skill)[0];
 
           extraHtml += `<div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px">`;
-          extraHtml += `<div style="font-size:.82rem;font-weight:700;color:var(--text-dim);margin-bottom:4px">&#128270; ${t(settings, 'scoutReport')} — ${teamLabel(opp)}</div>`;
+          extraHtml += `<div style="font-size:.82rem;font-weight:700;color:var(--text-dim);margin-bottom:4px"><span class="inline-icon">${icon('radar', 14)}</span> ${t(settings, 'scoutReport')} — ${teamLabel(opp)}</div>`;
           extraHtml += `<div style="display:flex;gap:14px;flex-wrap:wrap;font-size:.82rem">`;
           extraHtml += `<span>Form: <b style="color:${formColor}">${formStr}</b></span>`;
           extraHtml += `<span>Formation: <b>${oppFormation}</b></span>`;
@@ -460,8 +471,8 @@ function renderSeasonRecap(
   let h = '';
 
   /* ---- Season Complete Header ---- */
-  h += `<div class="card" style="text-align:center;padding:24px 16px;margin-bottom:12px;background:linear-gradient(135deg,var(--surface2),var(--surface))">`;
-  h += `<div style="font-size:2rem;margin-bottom:4px">&#127942;</div>`;
+  h += `<div class="card recap-hero">`;
+  h += `<div class="recap-hero-icon">${icon('trophy', 40)}</div>`;
   h += `<h2 style="font-family:'Oswald';color:var(--accent);margin:0 0 8px">${t(settings, 'seasonComplete', { season: recap.season })}</h2>`;
   h += `<div style="font-size:.88rem;color:var(--text-dim)">Review the season results before starting Season ${recap.season + 1}</div>`;
   h += `</div>`;
@@ -472,7 +483,7 @@ function renderSeasonRecap(
     const top = allScorers[0];
     const scorerTeam = G.teams[top.teamId];
     h += `<div class="card" style="text-align:center;padding:14px;margin-bottom:12px">`;
-    h += `<div style="font-size:1.4rem;margin-bottom:2px">&#9917;</div>`;
+    h += `<div class="recap-sub-icon">${icon('ball', 26)}</div>`;
     h += `<div style="font-family:'Oswald';font-size:.85rem;text-transform:uppercase;letter-spacing:.5px;color:var(--text-dim);margin-bottom:4px">Top Goal Scorer</div>`;
     h += `<div style="font-weight:700;font-size:1rem">${top.name} <span style="color:var(--accent)">(${top.goals} goals)</span></div>`;
     if (scorerTeam) h += `<div style="margin-top:2px">${teamLabel(scorerTeam)}</div>`;
@@ -495,11 +506,11 @@ function renderSeasonRecap(
       h += `<div style="font-weight:700;font-size:.82rem;color:var(--text-dim);margin-bottom:3px">${row.divLabel}</div>`;
       if (row.champ) {
         const champTm = G.teams.find(tm => tm.name === row.champ);
-        h += `<div style="padding:2px 0">&#127942; ${champTm ? teamLabelWithTrophiesFn(champTm) : row.champ}</div>`;
+        h += `<div class="recap-standings-row"><span class="trophy-icon trophy-gold">${icon('trophy', 16)}</span> ${champTm ? teamLabelWithTrophiesFn(champTm) : row.champ}</div>`;
       }
       if (row.runner) {
         const runnerTm = G.teams.find(tm => tm.name === row.runner);
-        h += `<div style="padding:2px 0">&#129352; ${runnerTm ? teamLabelWithTrophiesFn(runnerTm) : row.runner}</div>`;
+        h += `<div class="recap-standings-row"><span class="trophy-icon trophy-silver">${icon('medal', 16)}</span> ${runnerTm ? teamLabelWithTrophiesFn(runnerTm) : row.runner}</div>`;
       }
       h += `</div>`;
     }
@@ -510,14 +521,15 @@ function renderSeasonRecap(
   const awards = calculateSeasonAwards(G);
   if (awards.length > 0) {
     h += `<div class="card" style="padding:14px;margin-bottom:12px">`;
-    h += `<div style="font-family:'Oswald';font-size:1rem;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:12px;text-align:center">&#127942; ${t(settings, 'seasonAwards')} &#127942;</div>`;
+    h += `<div class="awards-title"><span class="inline-icon">${icon('trophy', 16)}</span> ${t(settings, 'seasonAwards')} <span class="inline-icon">${icon('trophy', 16)}</span></div>`;
     h += `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px">`;
     for (const a of awards) {
-      const icon = a.type === 'goldenBoot' ? '&#128095;'
-        : a.type === 'playerOfSeason' ? '&#11088;'
-        : a.type === 'bestYoung' ? '&#127793;'
-        : a.type === 'mvp' ? '&#129351;'
-        : '&#127941;';
+      const awIcon =
+        a.type === 'goldenBoot' ? icon('ball', 28) :
+        a.type === 'playerOfSeason' ? icon('star', 28) :
+        a.type === 'bestYoung' ? icon('seedling', 28) :
+        a.type === 'mvp' ? icon('medal', 28) :
+        icon('trophy', 28);
       const typeLabel = a.type === 'goldenBoot' ? t(settings, 'goldenBootAward')
         : a.type === 'playerOfSeason' ? t(settings, 'playerOfSeasonAward')
         : a.type === 'bestYoung' ? t(settings, 'bestYoungAward')
@@ -526,12 +538,12 @@ function renderSeasonRecap(
       const detail = a.type === 'goldenBoot' ? `${a.value} goals`
         : a.type === 'bestYoung' ? `${a.value} goals, Youth`
         : `${a.value} goals`;
-      h += `<div style="text-align:center;background:var(--surface2);padding:10px 8px;border-radius:8px">`;
-      h += `<div style="font-size:1.8rem;margin-bottom:4px">${icon}</div>`;
-      h += `<div style="font-family:'Oswald';font-size:.78rem;text-transform:uppercase;letter-spacing:.5px;color:var(--text-dim);margin-bottom:4px">${typeLabel}</div>`;
-      h += `<div style="font-weight:700;font-size:.9rem">${a.playerName}</div>`;
-      h += `<div style="font-size:.75rem;color:var(--text-dim)">${a.teamName}</div>`;
-      h += `<div style="font-size:.72rem;color:var(--accent);margin-top:2px">${detail}</div>`;
+      h += `<div class="award-card">`;
+      h += `<div class="award-icon">${awIcon}</div>`;
+      h += `<div class="award-label">${typeLabel}</div>`;
+      h += `<div class="award-player">${a.playerName}</div>`;
+      h += `<div class="award-team">${a.teamName}</div>`;
+      h += `<div class="award-detail">${detail}</div>`;
       h += `</div>`;
     }
     h += `</div></div>`;
@@ -543,18 +555,22 @@ function renderSeasonRecap(
     const gd = st.gf - st.ga;
 
     /* Determine player's promotion/relegation fate from stored moves */
-    let fateIcon = '&#10134;';
+    let fateIcon = icon('check', 16);
+    let fateCls = 'fate-retained';
     let fateText = 'Retained';
     const playerMove = recap.moves.find(m => m.teamId === G.playerTeamId);
     if (playerMove) {
       if (playerMove.type === 'promote') {
-        fateIcon = '&#11014;&#65039;';
+        fateIcon = icon('arrowUp', 16);
+        fateCls = 'fate-promote';
         fateText = `Promoted to Division ${playerMove.to}`;
       } else if (playerMove.type === 'relegate') {
-        fateIcon = '&#11015;&#65039;';
+        fateIcon = icon('arrowDown', 16);
+        fateCls = 'fate-relegate';
         fateText = `Relegated to Division ${playerMove.to}`;
       } else if (playerMove.type === 'out') {
-        fateIcon = '&#10060;';
+        fateIcon = icon('close', 16);
+        fateCls = 'fate-out';
         fateText = 'Exited the league';
       }
     }
@@ -567,16 +583,16 @@ function renderSeasonRecap(
     h += `<div class="stat-badge"><span class="sb-value">${st.gf}-${st.ga}</span><span class="sb-label">GF-GA</span></div>`;
     h += `<div class="stat-badge"><span class="sb-value">${gd >= 0 ? '+' : ''}${gd}</span><span class="sb-label">GD</span></div>`;
     h += `</div>`;
-    h += `<div style="font-size:1rem;font-weight:700;margin-bottom:6px;text-align:center">${fateIcon} ${fateText}</div>`;
+    h += `<div class="fate-line ${fateCls}"><span class="inline-icon">${fateIcon}</span> ${fateText}</div>`;
     if (recap.playerTotalCash > 0) {
-      h += `<div style="font-size:.88rem;color:var(--green);font-weight:600;text-align:center">&#128176; Season earnings: $${recap.playerTotalCash.toLocaleString()}</div>`;
+      h += `<div class="season-earnings"><span class="inline-icon">${icon('money', 14)}</span> Season earnings: $${recap.playerTotalCash.toLocaleString()}</div>`;
     }
     h += `</div>`;
   }
 
   /* ---- Start Next Season Button ---- */
-  h += `<button class="btn btn-accent" style="width:100%;padding:16px;font-size:1.15rem;margin-top:8px" onclick="startNewSeasonAction()">`;
-  h += `&#127942; ${t(settings, 'startSeason', { season: recap.season + 1 })}`;
+  h += `<button class="btn btn-accent btn-has-icon start-next-season-btn" onclick="startNewSeasonAction()">`;
+  h += `<span class="btn-icon">${icon('trophy', 18)}</span> ${t(settings, 'startSeason', { season: recap.season + 1 })}`;
   h += `</button>`;
 
   /* Hide/clear dashboard elements not needed during recap */
@@ -591,10 +607,18 @@ function renderSeasonRecap(
       tc.style.display = '';
       let tHTML = '<div class="trophy-shelf">';
       for (const tr of pt.trophies) {
-        if (tr.type === 'gold_trophy') tHTML += `<span class="trophy" title="${t(settings, 'div1Champion')} ${t(settings, 'season')} ${tr.season}" style="font-size:1.6rem">&#127942;</span>`;
-        else if (tr.type === 'silver_trophy') tHTML += `<span class="trophy silver" title="${t(settings, 'div1RunnerUp')} ${t(settings, 'season')} ${tr.season}" style="font-size:1.6rem">&#127942;</span>`;
-        else if (tr.type === 'gold_medal') tHTML += `<span class="trophy" title="${t(settings, 'div2Champion')} ${t(settings, 'season')} ${tr.season}" style="font-size:1.6rem">&#129351;</span>`;
-        else if (tr.type === 'silver_medal') tHTML += `<span class="trophy" title="${t(settings, 'div2RunnerUp')} ${t(settings, 'season')} ${tr.season}" style="font-size:1.6rem">&#129352;</span>`;
+        const tCls =
+          tr.type === 'gold_trophy' ? 'trophy trophy-gold' :
+          tr.type === 'silver_trophy' ? 'trophy trophy-silver' :
+          tr.type === 'gold_medal' ? 'trophy trophy-gold-medal' :
+          'trophy trophy-silver-medal';
+        const tIcon = tr.type.includes('trophy') ? icon('trophy', 28) : icon('medal', 28);
+        const tTitle =
+          tr.type === 'gold_trophy' ? `${t(settings, 'div1Champion')} ${t(settings, 'season')} ${tr.season}` :
+          tr.type === 'silver_trophy' ? `${t(settings, 'div1RunnerUp')} ${t(settings, 'season')} ${tr.season}` :
+          tr.type === 'gold_medal' ? `${t(settings, 'div2Champion')} ${t(settings, 'season')} ${tr.season}` :
+          `${t(settings, 'div2RunnerUp')} ${t(settings, 'season')} ${tr.season}`;
+        tHTML += `<span class="${tCls}" title="${tTitle}">${tIcon}</span>`;
       }
       tHTML += '</div>';
       tcc.innerHTML = tHTML;

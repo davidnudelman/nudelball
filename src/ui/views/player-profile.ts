@@ -7,6 +7,8 @@
 
 import type { GameState, Settings, Player, Position } from '../../types';
 import { POS_CSS, POS_DISTANCE, OOP_PENALTY_PER_STEP, FORM_OVR_PCT, RETIREMENT_AGE } from '../../config';
+import { playerAvatar } from '../../utils/helpers';
+import { icon } from '../../assets/icons';
 
 /* ================================================================
    HELPERS
@@ -71,15 +73,26 @@ export function renderPlayerProfile(G: GameState, settings: Settings): void {
   const posClass = POS_CSS[p.pos as keyof typeof POS_CSS] || '';
   const formVal = p.form || 0;
   const formLabel = formVal > 0 ? ('+' + formVal) : formVal.toString();
-  const formIcon = formVal >= 2 ? '&#128293;' : formVal >= 1 ? '&#128200;' : formVal <= -2 ? '&#129398;' : formVal <= -1 ? '&#128201;' : '&#10134;';
+  const formIcon =
+    formVal >= 2 ? icon('fire', 14) :
+    formVal >= 1 ? icon('chartUp', 14) :
+    formVal <= -2 ? icon('chartDown', 14) :
+    formVal <= -1 ? icon('arrowDown', 14) :
+    icon('close', 14);
   const streakLabel = (p.formStreak || 0) > 1 ? (' (' + p.formStreak + ' match streak)') : '';
+
+  /* Procedural portrait, tinted with the player's team colours */
+  const portrait = playerAvatar(p.name, { c1: pt.c1, c2: pt.c2, size: 96 });
 
   let h = `<div class="card-title">Player Profile</div>`;
 
-  /* Header */
+  /* Header with portrait + identity */
   h += `<div class="pp-header">`;
-  h += `<span class="pp-pos ${posClass}" style="background:var(--pos-${posClass})">${p.pos}</span>`;
-  h += `<span class="pp-name">${p.name}</span>`;
+  h += `<div class="pp-portrait">${portrait}</div>`;
+  h += `<div class="pp-identity">`;
+  h += `<div class="pp-name-row"><span class="pp-pos ${posClass}" style="background:var(--pos-${posClass})">${p.pos}</span><span class="pp-name">${p.name}</span></div>`;
+  h += `<div class="pp-club">${pt.name}</div>`;
+  h += `</div>`;
   h += `</div>`;
 
   /* Key stats grid */
@@ -119,14 +132,14 @@ export function renderPlayerProfile(G: GameState, settings: Settings): void {
     h += `<div class="pp-section"><div class="pp-section-title">Retirement</div>`;
     h += `<p style="color:var(--text-dim);font-size:.85rem">${
       retireYears <= 1
-        ? '&#9888;&#65039; This player will retire at the end of this season!'
-        : '&#9203; This player will retire in ' + retireYears + ' seasons.'
+        ? `<span class="inline-icon warn">${icon('warning', 14)}</span> This player will retire at the end of this season!`
+        : `<span class="inline-icon">${icon('clock', 14)}</span> This player will retire in ` + retireYears + ' seasons.'
     } Players who retire are automatically replaced by a new 18-year-old in the same position, with skill matching your division level.</p>`;
     h += `</div>`;
   }
 
   /* Back button */
-  h += `<div style="margin-top:16px"><button class="btn btn-outline" onclick="showView('squad')">&#8592; Back to Squad</button></div>`;
+  h += `<div style="margin-top:16px"><button class="btn btn-outline btn-has-icon" onclick="showView('squad')"><span class="btn-icon">${icon('arrowLeft', 14)}</span> Back to Squad</button></div>`;
 
   el.innerHTML = h;
 }

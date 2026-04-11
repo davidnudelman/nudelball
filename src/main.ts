@@ -179,6 +179,7 @@ import {
   TEAM_TALK_CHOICES,
 } from './config';
 import { teamLabel } from './utils/helpers';
+import { icon } from './assets/icons';
 
 // ===========================================================================
 // 10. TROPHY ROOM needs defaultRecords from engine/season
@@ -220,14 +221,38 @@ const settings: Settings = {
  * @returns HTML string with the team plate and optional trophy badges.
  */
 function teamLabelWithTrophies(
-  tm: { name: string; c1: string; c2: string; trophies?: Array<{ type: string; season: number }> },
+  tm: { name: string; c1: string; c2: string; country?: string; trophies?: Array<{ type: string; season: number }> },
 ): string {
   let label = teamLabel(tm);
   if (tm.trophies && tm.trophies.length) {
     const golds = tm.trophies.filter(tr => tr.type === 'gold_trophy').length;
-    if (golds) label += ` <span class="trophy" style="font-size:.8em">\u{1F3C6}\u00D7${golds}</span>`;
+    if (golds) label += ` <span class="trophy-count"><span class="trophy-count-icon">${icon('trophy', 12)}</span>\u00D7${golds}</span>`;
   }
   return label;
+}
+
+/**
+ * Walk the DOM and replace every `<span data-icon="name"></span>` placeholder
+ * with its inline SVG counterpart.  This lets plain HTML (like `index.html`
+ * and nav templates) use simple declarative markers that the icon library
+ * resolves at runtime.  Safe to call repeatedly -- already-resolved icons
+ * have their `data-icon` attribute removed so they're skipped on the next
+ * pass.
+ *
+ * @param root - Optional DOM sub-tree to scan; defaults to `document.body`
+ */
+function hydrateIcons(root: HTMLElement | Document = document): void {
+  const nodes = (root as Document | HTMLElement).querySelectorAll('[data-icon]');
+  nodes.forEach((node) => {
+    const name = node.getAttribute('data-icon');
+    if (!name) return;
+    const svg = icon(name as Parameters<typeof icon>[0], 16);
+    if (svg) {
+      node.innerHTML = svg;
+      node.classList.add('ui-icon');
+      node.removeAttribute('data-icon');
+    }
+  });
 }
 
 // ===========================================================================
@@ -427,8 +452,9 @@ function showTeamTalkSelection(onSelect: () => void): void {
   let cardsHTML = '';
   for (const id of choices) {
     const talk = TEAM_TALKS[id];
+    const talkIconSvg = icon(talk.icon as Parameters<typeof icon>[0], 24);
     cardsHTML += `<div class="team-talk-card" onclick="selectTeamTalk('${id}')">` +
-      `<div class="tt-icon">${talk.icon}</div>` +
+      `<div class="tt-icon">${talkIconSvg}</div>` +
       `<div class="tt-info">` +
       `<div class="tt-label">${talk.label}</div>` +
       `<div class="tt-desc">${talk.desc}</div>` +
@@ -441,7 +467,7 @@ function showTeamTalkSelection(onSelect: () => void): void {
   overlay.className = 'team-talk-overlay';
   overlay.innerHTML =
     `<div class="team-talk-panel">` +
-    `<div class="team-talk-title">\uD83D\uDDE3\uFE0F Pre-Match Team Talk</div>` +
+    `<div class="team-talk-title"><span class="title-icon">${icon('users', 18)}</span> Pre-Match Team Talk</div>` +
     cardsHTML +
     `</div>`;
   document.body.appendChild(overlay);
@@ -538,6 +564,8 @@ function proceedWithMatch(): void {
           homeC2: ht.c2,
           awayC1: at.c1,
           awayC2: at.c2,
+          homeCountry: ht.country,
+          awayCountry: at.country,
           finalH: rf.homeGoals!,
           finalA: rf.awayGoals!,
           goalEvents,
@@ -1362,12 +1390,13 @@ function autoSub(): void {
   /* Update the auto-sub button to reflect remaining subs */
   const remaining = 3 - G.matchSubs;
   const autoSubBtns = document.querySelectorAll('.auto-sub-btn');
+  const refreshIconHtml = icon('refresh', 14);
   autoSubBtns.forEach(btn => {
     if (remaining <= 0) {
       (btn as HTMLButtonElement).disabled = true;
-      btn.textContent = '\uD83D\uDD04 No Subs Left';
+      btn.innerHTML = `${refreshIconHtml} No Subs Left`;
     } else {
-      btn.textContent = `\uD83D\uDD04 Auto Sub (${remaining})`;
+      btn.innerHTML = `${refreshIconHtml} Auto Sub (${remaining})`;
     }
   });
 }
@@ -1673,6 +1702,10 @@ declare global {
     /* Rendering (called from dynamic onclick in squad/match tactic bars) */
     renderSquad: typeof wrappedRenderSquad;
 
+    /* Icon resolver for any dynamically-injected HTML that uses
+       <span data-icon="name"></span> placeholders instead of inline SVG. */
+    hydrateIcons: typeof hydrateIcons;
+
     /* Global State (accessed by dynamic onclick handlers) */
     G: GameState;
     SFX: typeof SFX;
@@ -1758,6 +1791,9 @@ window.renderSquad = wrappedRenderSquad;
 window.G = G;
 window.SFX = SFX;
 
+/* --- Icon hydration helper (used by overlays and dynamic views) --- */
+window.hydrateIcons = hydrateIcons;
+
 // ===========================================================================
 // REGISTER VIEW RENDERERS
 // ===========================================================================
@@ -1834,6 +1870,9 @@ function boot(): void {
   applyTheme(settings);
   applyLanguage(settings);
   updateSettingsUI(settings);
+
+  /* 1b. Replace every <span data-icon="name"></span> placeholder with its SVG */
+  hydrateIcons();
 
   /* 2. Sync SFX with loaded settings */
   SFX.syncFromSettings(settings);

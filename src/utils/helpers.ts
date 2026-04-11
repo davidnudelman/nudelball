@@ -8,6 +8,9 @@
  * name plates always have a dark background with readable light text.
  */
 
+import { flagSvg } from '../assets/flags';
+import { playerPortrait, type PortraitOptions } from '../assets/portraits';
+
 /* ===== RGB Tuple Type ===== */
 
 /** An [R, G, B] colour tuple with values in the 0-255 range */
@@ -251,26 +254,37 @@ export function clearPlateCache(): void {
  * Generate an Elifoot-style team name plate as an HTML string.
  *
  * The plate has a dark background (derived from c1/c2) with readable
- * light text. Uses the `team-plate` CSS class (or `team-plate-sm` for
- * the compact variant).
+ * light text, plus an inline country flag glyph rendered to the left
+ * of the team name.  Uses the `team-plate` CSS class (or
+ * `team-plate-sm` for the compact variant).
  *
- * @param c1   - First team colour (hex)
- * @param c2   - Second team colour (hex)
- * @param name - Team name to display
- * @param sm   - If true, use the smaller "team-plate-sm" variant
+ * @param c1      - First team colour (hex)
+ * @param c2      - Second team colour (hex)
+ * @param name    - Team name to display
+ * @param sm      - If true, use the smaller "team-plate-sm" variant
+ * @param country - Optional country code for the leading flag glyph
  * @returns An HTML `<span>` string with inline background/color styles
  */
-export function teamPlate(c1: string, c2: string, name: string, sm?: boolean): string {
+export function teamPlate(
+  c1: string,
+  c2: string,
+  name: string,
+  sm?: boolean,
+  country?: string,
+): string {
   const { bg, txt } = plateColors(c1, c2);
   const cls = sm ? 'team-plate team-plate-sm' : 'team-plate';
-  return `<span class="${cls}" style="background:${bg};color:${txt}">${name.toUpperCase()}</span>`;
+  const flag = country
+    ? `<span class="team-plate-flag" aria-hidden="true">${flagSvg(country)}</span>`
+    : '';
+  return `<span class="${cls}" style="background:${bg};color:${txt}">${flag}<span class="team-plate-name">${name.toUpperCase()}</span></span>`;
 }
 
 /**
  * Generate a legacy two-tone flag as an HTML string.
  *
- * This is kept for backward compatibility but is no longer used
- * in the main UI (replaced by teamPlate).
+ * Kept for backward compatibility; superseded by `teamFlag()` below
+ * which returns a proper country flag SVG.
  *
  * @param c1 - Left half colour (hex)
  * @param c2 - Right half colour (hex)
@@ -281,6 +295,21 @@ export function makeFlag(c1: string, c2: string): string {
 }
 
 /**
+ * Generate a stand-alone country flag glyph (rounded corners, 3:2 aspect).
+ *
+ * Used in team profile headers, the team picker, and any other place
+ * where the flag should appear separately from the team name.
+ *
+ * @param country - Two-letter country code (ES, EN, PT, ...)
+ * @param extra   - Optional extra CSS classes to apply
+ * @returns An HTML `<span>` wrapping the inline flag SVG
+ */
+export function teamFlag(country: string | undefined | null, extra?: string): string {
+  const cls = extra ? `country-flag ${extra}` : 'country-flag';
+  return `<span class="${cls}" aria-hidden="true">${flagSvg(country)}</span>`;
+}
+
+/**
  * A minimal team-like object with the fields needed for label generation.
  * Avoids importing the full Team type for simple labelling functions.
  */
@@ -288,24 +317,48 @@ export interface TeamLike {
   c1: string;
   c2: string;
   name: string;
+  /** Optional country code; when provided, a flag is prepended. */
+  country?: string;
 }
 
 /**
  * Generate a full-size team name plate from a team object.
  *
- * @param t - A team (or any object with c1, c2, name)
- * @returns An HTML team plate string
+ * @param t - A team (or any object with c1, c2, name, country)
+ * @returns An HTML team plate string with an inline flag glyph
  */
 export function teamLabel(t: TeamLike): string {
-  return teamPlate(t.c1, t.c2, t.name);
+  return teamPlate(t.c1, t.c2, t.name, false, t.country);
 }
 
 /**
  * Generate a compact (small) team name plate from a team object.
  *
- * @param t - A team (or any object with c1, c2, name)
- * @returns An HTML team plate string (small variant)
+ * @param t - A team (or any object with c1, c2, name, country)
+ * @returns An HTML team plate string (small variant) with inline flag
  */
 export function teamLabelSm(t: TeamLike): string {
-  return teamPlate(t.c1, t.c2, t.name, true);
+  return teamPlate(t.c1, t.c2, t.name, true, t.country);
+}
+
+/* ================================================================
+   PLAYER PORTRAIT HELPERS
+   ================================================================ */
+
+/**
+ * Generate a procedural player portrait HTML fragment.
+ *
+ * Wraps the SVG portrait in a sized `<span>` with the `player-portrait`
+ * class so CSS can style the frame, aspect ratio, and border.  The
+ * portrait is deterministic -- repeated calls with the same inputs
+ * return the same visual.
+ *
+ * @param seed - Any unique player identifier (usually `player.name`)
+ * @param opts - Optional rendering options (team colours, size, variant)
+ * @returns An HTML `<span>` containing the inline SVG portrait
+ */
+export function playerAvatar(seed: string, opts: PortraitOptions = {}): string {
+  const svg = playerPortrait(seed, opts);
+  const size = opts.size ? ` style="width:${opts.size}px;height:${opts.size}px"` : '';
+  return `<span class="player-portrait" aria-hidden="true"${size}>${svg}</span>`;
 }

@@ -6121,3 +6121,930 @@ html.light .changelog-overlay {
   font-size: 0.78rem;
   color: var(--text-dim);
 }
+
+/* ==========================================================================
+   36. Image-first UI: SVG icons, country flags, and player portraits
+   ==========================================================================
+   Every inline SVG from the icon library uses the `.icon` class.  Containers
+   that host an icon reserve vertical alignment so text and graphic line up.
+*/
+
+.icon {
+  display: inline-block;
+  vertical-align: -0.14em;
+  stroke-width: 2;
+  fill: none;
+  stroke: currentColor;
+  flex-shrink: 0;
+}
+
+.ui-icon,
+.inline-icon,
+.btn-icon,
+.title-icon,
+.section-icon,
+.fac-icon,
+.nav-icon,
+.badge-icon,
+.scorer-badge,
+.coach-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+}
+
+.inline-icon {
+  color: var(--text-dim);
+}
+
+.inline-icon.warn {
+  color: var(--red);
+}
+
+.title-icon,
+.section-icon {
+  color: var(--accent);
+  margin-right: 4px;
+}
+
+.btn-has-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.btn-has-icon .btn-icon {
+  color: currentColor;
+}
+
+/* ----- Country flags (global) ----- */
+.country-flag {
+  display: inline-flex;
+  width: 26px;
+  height: 17px;
+  border-radius: 3px;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25), 0 1px 2px rgba(0, 0, 0, 0.25);
+  background: var(--surface2);
+}
+
+.country-flag svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* ----- Team plate flag integration ----- */
+.team-plate {
+  padding: 3px 10px 3px 4px;
+  gap: 6px;
+  overflow: hidden;
+}
+
+.team-plate-flag {
+  display: inline-flex;
+  width: 22px;
+  height: 14px;
+  border-radius: 2px;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+
+.team-plate-flag svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.team-plate-sm .team-plate-flag {
+  width: 16px;
+  height: 10px;
+}
+
+.team-plate-name {
+  letter-spacing: 0.4px;
+}
+
+/* ----- Player portraits ----- */
+.player-portrait {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--surface2);
+  box-shadow: 0 0 0 1px var(--border), 0 2px 6px rgba(0, 0, 0, 0.3);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.player-portrait svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.squad-row:hover .player-portrait,
+.fa-card:hover .player-portrait {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px var(--accent), 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
+/* Squad row layout tweak: make room for avatar as first visual */
+.squad-row {
+  display: grid;
+  grid-template-columns: auto auto auto 1fr auto;
+  gap: var(--sp-sm);
+  align-items: center;
+}
+
+.pr-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Market / free agent card avatar */
+.fa-header {
+  position: relative;
+}
+
+.fa-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 6px;
+}
+
+.fa-avatar .player-portrait {
+  width: 36px;
+  height: 36px;
+}
+
+/* Top scorers avatar column */
+.sc-avatar {
+  width: 40px;
+  padding: 4px 0;
+}
+
+.sc-avatar .player-portrait {
+  width: 32px;
+  height: 32px;
+}
+
+/* Team profile squad list avatar column */
+.tp-pl-avatar {
+  width: 36px;
+  padding: 4px 0;
+}
+
+.tp-pl-avatar .player-portrait {
+  width: 30px;
+  height: 30px;
+}
+
+/* Player profile hero portrait */
+.pp-header {
+  gap: var(--sp-lg);
+  align-items: center;
+}
+
+.pp-portrait .player-portrait {
+  width: 96px;
+  height: 96px;
+  box-shadow: 0 0 0 3px var(--accent), 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.pp-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pp-name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pp-club {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+/* Youth card avatar */
+.youth-card .player-portrait,
+.fa-card .fa-avatar .player-portrait {
+  width: 36px;
+  height: 36px;
+}
+
+/* Team profile hero (large flag banner) */
+.tp-hero {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-md);
+  padding: var(--sp-lg);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--sp-md);
+  box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.tp-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.5));
+  pointer-events: none;
+}
+
+.tp-hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+.tp-hero-flag .country-flag {
+  width: 96px;
+  height: 64px;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2), 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.tp-hero-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.tp-hero-name {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.tp-hero-div {
+  font-size: 0.92rem;
+  font-weight: 500;
+  opacity: 0.85;
+  margin-top: 2px;
+}
+
+.tp-hero-trophies {
+  display: flex;
+  gap: 6px;
+  margin-top: var(--sp-sm);
+}
+
+/* Club header uses a large flag too */
+.club-header-card {
+  margin-bottom: 12px;
+}
+
+.club-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.club-identity {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.club-flag-large .country-flag {
+  width: 64px;
+  height: 43px;
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 4px 10px rgba(0, 0, 0, 0.35);
+}
+
+.club-name {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.club-meta {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+
+.club-stats {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  font-size: 0.88rem;
+  flex-wrap: wrap;
+}
+
+/* Trophy colouring for SVG trophy icons */
+.trophy,
+.trophy-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+}
+
+.trophy-gold { color: #e3b341; filter: drop-shadow(0 0 4px rgba(227, 179, 65, 0.4)); }
+.trophy-silver { color: #c0c0c0; filter: drop-shadow(0 0 4px rgba(192, 192, 192, 0.35)); }
+.trophy-gold-medal { color: #ffb000; }
+.trophy-silver-medal { color: #bfbfbf; }
+.trophy-bronze { color: #cd7f32; }
+
+.trophy-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--gold);
+  margin-left: 4px;
+}
+
+.trophy-count-icon {
+  display: inline-flex;
+  color: var(--gold);
+}
+
+/* Card badges for yellow/red cards (replaces emoji) */
+.card-rect {
+  display: inline-block;
+  width: 10px;
+  height: 14px;
+  border-radius: 1.5px;
+  vertical-align: -2px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+
+.card-rect.yellow {
+  background: linear-gradient(180deg, #fff35e 0%, #e8c91a 100%);
+}
+
+.card-rect.red {
+  background: linear-gradient(180deg, #ff5a52 0%, #c9302c 100%);
+}
+
+/* Pip indicators for facility levels */
+.pip {
+  display: inline-block;
+  width: 18px;
+  height: 6px;
+  border-radius: 2px;
+  background: var(--border);
+  margin-right: 2px;
+}
+
+.pip.on {
+  background: var(--accent);
+  box-shadow: 0 0 4px rgba(63, 185, 80, 0.5);
+}
+
+/* Derby banners */
+.derby-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 6px 12px;
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #fff;
+  background: linear-gradient(90deg, #e53935, #ff6f00);
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+  box-shadow: 0 2px 8px rgba(229, 57, 53, 0.4);
+}
+
+.derby-banner .db-icon {
+  color: #fff;
+  display: inline-flex;
+}
+
+.derby-mini {
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--red);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* Man of the match banner */
+.motm-banner {
+  text-align: center;
+  margin-top: 6px;
+  padding: 6px 10px;
+  background: var(--surface2);
+  border-radius: 6px;
+  font-size: 0.82rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.motm-banner .inline-icon {
+  color: var(--gold);
+}
+
+/* Form badges with SVG arrows */
+.form-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 4px;
+  padding: 1px 3px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 3px;
+  gap: 1px;
+}
+
+.form-badge.form-hot,
+.form-badge.form-good { color: var(--green); }
+.form-badge.form-cold,
+.form-badge.form-poor { color: var(--red); }
+.form-badge.form-neutral { color: var(--text-dim); }
+
+.form-badge.form-onfire {
+  color: #ff4500;
+  background: rgba(255, 69, 0, 0.12);
+  padding: 1px 5px;
+  animation: onfire-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes onfire-pulse {
+  0%, 100% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.06); filter: brightness(1.25); }
+}
+
+/* Scorer badges on top-scorers table */
+.scorer-badge {
+  display: inline-flex;
+  vertical-align: -2px;
+  margin-right: 4px;
+}
+
+.scorer-badge.scorer-star { color: var(--gold); }
+.scorer-badge.scorer-prev { color: var(--accent); }
+
+/* HoF medal cells */
+.hof-medal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hof-medal.medal-gold { color: #e3b341; }
+.hof-medal.medal-silver { color: #c0c0c0; }
+.hof-medal.medal-bronze { color: #cd7f32; }
+
+/* Table legend dots */
+.table-legend {
+  margin-top: 8px;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.legend-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  margin-right: 4px;
+  vertical-align: -1px;
+}
+
+.legend-dot.legend-promote { background: var(--green); }
+.legend-dot.legend-relegate { background: var(--red); }
+
+/* Season recap */
+.recap-hero {
+  text-align: center;
+  padding: 24px 16px;
+  margin-bottom: 12px;
+  background: linear-gradient(135deg, var(--surface2), var(--surface));
+  border-top: 3px solid var(--accent);
+}
+
+.recap-hero-icon {
+  color: var(--gold);
+  margin-bottom: 8px;
+  filter: drop-shadow(0 0 8px rgba(227, 179, 65, 0.4));
+}
+
+.recap-sub-icon {
+  color: var(--accent);
+  margin-bottom: 4px;
+  display: inline-flex;
+}
+
+.recap-standings-row {
+  padding: 2px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.awards-title {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--accent);
+  margin-bottom: 12px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.award-icon {
+  color: var(--gold);
+  margin-bottom: 4px;
+  display: flex;
+  justify-content: center;
+}
+
+.award-label {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+
+.award-player {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.award-team {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.award-detail {
+  font-size: 0.72rem;
+  color: var(--accent);
+  margin-top: 2px;
+}
+
+/* Season recap fate (promotion / relegation status) */
+.fate-line {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.fate-line.fate-promote { color: var(--green); }
+.fate-line.fate-relegate { color: var(--red); }
+.fate-line.fate-retained { color: var(--text); }
+.fate-line.fate-out { color: var(--text-dim); }
+
+.season-earnings {
+  font-size: 0.88rem;
+  color: var(--green);
+  font-weight: 600;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.start-next-season-btn {
+  width: 100%;
+  padding: 16px;
+  font-size: 1.15rem;
+  margin-top: 8px;
+}
+
+/* Club facility tiles */
+.fac-tile {
+  background: var(--surface2);
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  transition: border-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.fac-tile:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.fac-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.fac-title .fac-icon {
+  color: var(--accent);
+}
+
+.fac-level {
+  font-size: 0.78rem;
+  color: var(--accent);
+  margin: 2px 0;
+  display: flex;
+  align-items: center;
+}
+
+.fac-card {
+  background: var(--surface2);
+  padding: 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  transition: border-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.fac-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.fac-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.fac-card-icon {
+  color: var(--accent);
+  display: inline-flex;
+}
+
+.fac-card-label {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.fac-card-effect {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.max-level-badge {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--green);
+  font-weight: 700;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* Sponsor section */
+.sponsor-current {
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  border-left: 3px solid;
+}
+
+.sponsor-current-active {
+  background: var(--surface2);
+  border-left-color: var(--green);
+}
+
+.sponsor-current-empty {
+  background: var(--surface2);
+  border-left-color: var(--red);
+}
+
+.sponsor-current-label {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sponsor-current-name {
+  font-weight: 700;
+  font-size: 1rem;
+  margin: 2px 0;
+}
+
+.sponsor-current-amount {
+  font-size: 0.85rem;
+  color: var(--green);
+}
+
+.sponsor-tile {
+  background: var(--surface2);
+  padding: 12px;
+  border-radius: 8px;
+  border: 2px solid var(--border);
+  transition: border-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.sponsor-tile:hover {
+  transform: translateY(-1px);
+}
+
+.sponsor-tile.eligible {
+  border-color: var(--accent);
+}
+
+.sponsor-tile.eligible:hover {
+  box-shadow: 0 4px 12px rgba(63, 185, 80, 0.2);
+}
+
+.sponsor-tile.active {
+  border-color: var(--green);
+  box-shadow: 0 0 12px rgba(63, 185, 80, 0.25);
+}
+
+.sponsor-tile.locked {
+  opacity: 0.6;
+}
+
+.sponsor-tile-name {
+  font-weight: 700;
+  font-size: 0.92rem;
+  margin-bottom: 4px;
+}
+
+.sponsor-tile-amount {
+  font-size: 0.95rem;
+  color: var(--green);
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.sponsor-tile-req {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  margin: 4px 0;
+}
+
+.sponsor-tile-status {
+  text-align: center;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 4px;
+}
+
+.sponsor-tile-status.active { color: var(--green); }
+.sponsor-tile-status.locked { color: var(--red); }
+
+/* Top bar season badge with SVG money icon */
+.season-sep {
+  color: var(--text-dim);
+  margin: 0 4px;
+}
+
+.season-budget-icon {
+  display: inline-flex;
+  vertical-align: -2px;
+  color: var(--green);
+  margin-right: 2px;
+}
+
+/* Strength separator dots in match view */
+.mp-sep {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.mp-sep-dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* Achievement icons now use SVG */
+.ach-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  font-size: 0;
+}
+
+.achievement-card.unlocked .ach-icon {
+  color: var(--gold);
+  filter: drop-shadow(0 0 6px rgba(227, 179, 65, 0.35));
+}
+
+.achievement-card.locked .ach-icon {
+  color: var(--text-dim);
+}
+
+.milestone-card .ms-icon {
+  color: var(--accent);
+  display: flex;
+  justify-content: center;
+  font-size: 0;
+}
+
+/* Hover interactions across the UI */
+.fa-card {
+  transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.fa-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+}
+
+/* Auto-clear legacy 2-tone flag if empty */
+.flag {
+  display: none !important;
+}
+
+/* Team picker cards: prepend a flag for preview */
+.tp-card {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.tp-card .tp-card-flag {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2px;
+}
+
+.tp-card .tp-card-flag .country-flag {
+  width: 60px;
+  height: 40px;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.tp-card .tp-card-plate {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.tp-card:hover .tp-card-flag .country-flag {
+  transform: scale(1.05);
+  transition: transform var(--transition-fast);
+}
+
+/* Light theme tweaks for new elements */
+html.light .player-portrait {
+  box-shadow: 0 0 0 1px var(--border), 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+html.light .team-plate-flag {
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
+}
+
+/* Print styling for flags -- keep them visible */
+@media print {
+  .country-flag,
+  .team-plate-flag,
+  .player-portrait {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+

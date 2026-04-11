@@ -18,6 +18,8 @@ import {
 } from '../../config';
 import { t } from '../../data/i18n';
 import { isTopScorer, isPreviousTopScorer } from './scorers';
+import { playerAvatar } from '../../utils/helpers';
+import { icon } from '../../assets/icons';
 
 /* ================================================================
    HELPER FUNCTIONS (self-contained within this module)
@@ -110,7 +112,7 @@ export function renderNews(
   if (injured.length) {
     let body = '';
     for (const p of injured) {
-      body += `<div class="inj-line">&#10014; <b>${p.name}</b> (${p.pos}) — ${p.injuredFor} ${p.injuredFor === 1 ? t(settings, 'match') : t(settings, 'matches')}</div>`;
+      body += `<div class="inj-line"><span class="inline-icon">${icon('cross', 14)}</span> <b>${p.name}</b> (${p.pos}) — ${p.injuredFor} ${p.injuredFor === 1 ? t(settings, 'match') : t(settings, 'matches')}</div>`;
     }
     items += `<div class="news-item news-injuries"><div class="news-label">${t(settings, 'newsInjuries')}</div><div class="news-body">${body}</div></div>`;
   }
@@ -139,8 +141,8 @@ export function renderNews(
     let body = '';
     for (const p of retiring) {
       const yrs = RETIREMENT_AGE - (p.age || 25);
-      if (yrs <= 1) body += `<div class="retire-line">&#9888;&#65039; <b>${p.name}</b> (${p.pos}, ${t(settings, 'age')} ${p.age}) — ${t(settings, 'retiringThisSeason')}</div>`;
-      else body += `<div class="retire-line">&#9203; <b>${p.name}</b> (${p.pos}, ${t(settings, 'age')} ${p.age}) — ${t(settings, 'retiresIn', { n: yrs })}</div>`;
+      if (yrs <= 1) body += `<div class="retire-line"><span class="inline-icon warn">${icon('warning', 14)}</span> <b>${p.name}</b> (${p.pos}, ${t(settings, 'age')} ${p.age}) — ${t(settings, 'retiringThisSeason')}</div>`;
+      else body += `<div class="retire-line"><span class="inline-icon">${icon('clock', 14)}</span> <b>${p.name}</b> (${p.pos}, ${t(settings, 'age')} ${p.age}) — ${t(settings, 'retiresIn', { n: yrs })}</div>`;
     }
     items += `<div class="news-item news-retire"><div class="news-label">${t(settings, 'newsRetiring')}</div><div class="news-body">${body}</div></div>`;
   }
@@ -149,7 +151,7 @@ export function renderNews(
   if (dadJokes && dadJokes.length) {
     const jokeIdx = Math.floor(Math.random() * dadJokes.length);
     const joke = dadJokes[jokeIdx];
-    items += `<div class="news-item news-joke"><div class="news-label">&#128516; ${t(settings, 'newsTitle')}</div><div class="news-body">${joke}</div></div>`;
+    items += `<div class="news-item news-joke"><div class="news-label"><span class="inline-icon">${icon('smile', 14)}</span> ${t(settings, 'newsTitle')}</div><div class="news-body">${joke}</div></div>`;
   }
 
   if (items) {
@@ -208,9 +210,9 @@ export function renderSquad(
   /* ===== Tactic Selector Bar ===== */
   const tacticBar = document.getElementById('tactic-bar');
   if (tacticBar) {
-    let tb = '<span class="tactic-label">&#9876;&#65039; Tactic:</span>';
+    let tb = `<span class="tactic-label"><span class="inline-icon">${icon('tactic', 14)}</span> Tactic:</span>`;
     for (const [k, v] of Object.entries(TACTICS)) {
-      tb += `<button class="tactic-btn${G.tactic === k ? ' active' : ''}" onclick="G.tactic='${k}';SFX.tactic();${saveFn}();renderSquad()">${v.icon} ${v.label}</button>`;
+      tb += `<button class="tactic-btn${G.tactic === k ? ' active' : ''}" onclick="G.tactic='${k}';SFX.tactic();${saveFn}();renderSquad()">${v.label}</button>`;
     }
     tacticBar.innerHTML = tb;
   }
@@ -219,13 +221,13 @@ export function renderSquad(
   const trainingBar = document.getElementById('training-bar');
   if (trainingBar) {
     const focuses = [
-      { key: 'balanced', label: 'Balanced', icon: '&#9878;&#65039;', desc: 'All positions +8%' },
-      { key: 'fitness', label: 'Fitness', icon: '&#128170;', desc: 'Stamina recovery' },
-      { key: 'development', label: 'Development', icon: '&#127793;', desc: 'Skill growth, youth bonus' },
+      { key: 'balanced', label: 'Balanced', iconKey: 'tactic' as const, desc: 'All positions +8%' },
+      { key: 'fitness', label: 'Fitness', iconKey: 'dumbbell' as const, desc: 'Stamina recovery' },
+      { key: 'development', label: 'Development', iconKey: 'seedling' as const, desc: 'Skill growth, youth bonus' },
     ];
-    let trb = '<span class="training-label">&#127919; Training:</span>';
+    let trb = `<span class="training-label"><span class="inline-icon">${icon('target', 14)}</span> Training:</span>`;
     for (const f of focuses) {
-      trb += `<button class="training-btn${(G.trainingFocus || 'balanced') === f.key ? ' active' : ''}" onclick="${trainingFn}('${f.key}')" title="${f.desc}">${f.icon} ${f.label}</button>`;
+      trb += `<button class="training-btn${(G.trainingFocus || 'balanced') === f.key ? ' active' : ''}" onclick="${trainingFn}('${f.key}')" title="${f.desc}"><span class="btn-icon">${icon(f.iconKey, 14)}</span> ${f.label}</button>`;
     }
     trainingBar.innerHTML = trb;
   }
@@ -235,7 +237,7 @@ export function renderSquad(
   if (rulesPanel) {
     const rules = G.squadRules || { restBelowStamina: null, alwaysStartBest: false };
     let rp = '<div class="squad-rules-bar">';
-    rp += '<span class="training-label">&#9881;&#65039; Auto:</span>';
+    rp += `<span class="training-label"><span class="inline-icon">${icon('gear', 14)}</span> Auto:</span>`;
     rp += `<button class="training-btn${rules.restBelowStamina != null ? ' active' : ''}" onclick="toggleSquadRule('restBelowStamina', 60)" title="Auto-bench players below 60% stamina">Rest Tired</button>`;
     rp += `<button class="training-btn${rules.alwaysStartBest ? ' active' : ''}" onclick="toggleSquadRule('alwaysStartBest')" title="Auto-pick best XI each week">Best XI</button>`;
     rp += '</div>';
@@ -268,7 +270,7 @@ export function renderSquad(
     if (selCount >= 2) {
       formBar.style.display = 'flex';
       formDisp.textContent = getFormationString(pt);
-      formStatus.innerHTML = `<span class="form-ok">&#10003; ${t(settings, 'balancedFormation')}</span>`;
+      formStatus.innerHTML = `<span class="form-ok"><span class="inline-icon">${icon('check', 14)}</span> ${t(settings, 'balancedFormation')}</span>`;
     } else {
       formBar.style.display = 'none';
     }
@@ -355,11 +357,11 @@ export function renderSquad(
 
     /* Retire icon */
     const retireIcon = retireYears <= 1
-      ? `<span class="retire-icon retire-urgent" title="${t(settings, 'retiringThisSeason')}">&#9888;&#65039;</span>`
+      ? `<span class="retire-icon retire-urgent" title="${t(settings, 'retiringThisSeason')}">${icon('warning', 14)}</span>`
       : retireYears === 2
-        ? `<span class="retire-icon" title="${t(settings, 'retiresIn', { n: 2 })}">&#9203;</span>`
+        ? `<span class="retire-icon" title="${t(settings, 'retiresIn', { n: 2 })}">${icon('clock', 14)}</span>`
         : retireYears === 3
-          ? `<span class="retire-icon" title="${t(settings, 'retiresIn', { n: 3 })}">&#9203;</span>`
+          ? `<span class="retire-icon" title="${t(settings, 'retiresIn', { n: 3 })}">${icon('clock', 14)}</span>`
           : '';
 
     const canSelect = !isInjured && !(p.suspendedFor > 0);
@@ -367,36 +369,57 @@ export function renderSquad(
     const isSuspended = p.suspendedFor > 0;
     const zebraClass = (rowIdx % 2 === 1) ? ' zebra' : '';
 
-    /* Form arrows — visual up/down indicators with On Fire status */
+    /* Form arrows -- visual up/down indicators with On Fire status */
     const formVal = p.form || 0;
     const isOnFire = p.onFire === true;
     const formBadge = isOnFire
-      ? `<span class="form-badge form-onfire" title="ON FIRE! Form +${formVal}, ${p.seasonGoals || 0} goals" style="color:#ff4500;font-weight:700">&#128293;&#128293;</span>`
-      : formVal >= 2 ? `<span class="form-badge" title="Hot form (+${formVal})" style="color:var(--green)">&#9650;&#9650;</span>`
-      : formVal >= 1 ? '<span class="form-badge" title="Good form (+1)" style="color:var(--green)">&#9650;</span>'
-      : formVal <= -2 ? `<span class="form-badge" title="Cold form (${formVal})" style="color:var(--red)">&#9660;&#9660;</span>`
-      : formVal <= -1 ? '<span class="form-badge" title="Poor form (-1)" style="color:var(--red)">&#9660;</span>'
-      : '<span class="form-badge" title="Neutral form" style="color:var(--text-dim)">&#9644;</span>';
+      ? `<span class="form-badge form-onfire" title="ON FIRE! Form +${formVal}, ${p.seasonGoals || 0} goals">${icon('fire', 14)}</span>`
+      : formVal >= 2 ? `<span class="form-badge form-hot" title="Hot form (+${formVal})">${icon('arrowUp', 12)}${icon('arrowUp', 12)}</span>`
+      : formVal >= 1 ? `<span class="form-badge form-good" title="Good form (+1)">${icon('arrowUp', 12)}</span>`
+      : formVal <= -2 ? `<span class="form-badge form-cold" title="Cold form (${formVal})">${icon('arrowDown', 12)}${icon('arrowDown', 12)}</span>`
+      : formVal <= -1 ? `<span class="form-badge form-poor" title="Poor form (-1)">${icon('arrowDown', 12)}</span>`
+      : `<span class="form-badge form-neutral" title="Neutral form">&mdash;</span>`;
 
     /* Suspension badge */
     const suspBadge = isSuspended
-      ? `<span class="card-badge suspended-badge" title="Suspended ${p.suspendedFor} match${p.suspendedFor > 1 ? 'es' : ''}">&#128683;${p.suspendedFor}</span>`
+      ? `<span class="card-badge suspended-badge" title="Suspended ${p.suspendedFor} match${p.suspendedFor > 1 ? 'es' : ''}">${icon('ban', 12)}${p.suspendedFor}</span>`
       : '';
 
-    /* Card stats */
+    /* Card stats -- coloured square badges stand in for yellow/red cards */
     const cardBadges =
-      ((p.seasonYellows || 0) > 0 ? `<span class="card-badge yellow-card-badge" title="${p.seasonYellows} yellow card${(p.seasonYellows || 0) > 1 ? 's' : ''}">&#129000;${(p.seasonYellows || 0) >= YELLOW_ACCUMULATION - 1 ? '!' : ''}</span>` : '') +
-      ((p.seasonReds || 0) > 0 ? `<span class="card-badge red-card-badge" title="${p.seasonReds} red card${(p.seasonReds || 0) > 1 ? 's' : ''}">&#129001;</span>` : '');
+      ((p.seasonYellows || 0) > 0 ? `<span class="card-badge yellow-card-badge" title="${p.seasonYellows} yellow card${(p.seasonYellows || 0) > 1 ? 's' : ''}"><span class="card-rect yellow"></span>${(p.seasonYellows || 0) >= YELLOW_ACCUMULATION - 1 ? '!' : ''}</span>` : '') +
+      ((p.seasonReds || 0) > 0 ? `<span class="card-badge red-card-badge" title="${p.seasonReds} red card${(p.seasonReds || 0) > 1 ? 's' : ''}"><span class="card-rect red"></span></span>` : '');
+
+    /* Procedural player portrait -- deterministic per name, tinted with team colours. */
+    const avatar = playerAvatar(p.name, { c1: pt.c1, c2: pt.c2, size: 40 });
+
+    /* Injury, fresh, and scorer icons -- built from the SVG icon library */
+    const injuryMark = isInjured
+      ? `<span class="injury-icon" title="${t(settings, 'injuredMatches', { n: p.injuredFor }) || ''}">${icon('cross', 12)}</span>`
+      : '';
+    const freshMark = isFresh
+      ? `<span class="fresh-icon" title="${t(settings, 'freshPlayer') || 'Fresh'}">${icon('bolt', 12)}</span>`
+      : '';
+    const starMark = starPlayer
+      ? `<span class="top-scorer-star" title="${t(settings, 'seasonTopScorer') || ''}">${icon('star', 12)}</span>`
+      : '';
+    const prevMark = prevScorer
+      ? `<span class="prev-scorer-ball" title="${t(settings, 'prevTopScorer') || ''}">${icon('ball', 12)}</span>`
+      : '';
+    const goalMark = (p.seasonGoals || 0) > 0
+      ? ` &middot; <span class="inline-icon">${icon('ball', 12)}</span>${p.seasonGoals}`
+      : '';
 
     h += `<div class="squad-row${isChecked ? ' selected' : ''}${isInjured ? ' injured-row' : ''}${isSuspended ? ' suspended-row' : ''}${zebraClass}" data-idx="${p._idx}"
          onclick="${toggleFn}(${p._idx},event)">
       <div class="pr-sel"><input type="checkbox" ${isChecked ? 'checked' : ''}
         ${!canSelect ? 'disabled' : ''} onclick="event.stopPropagation();${toggleFn}(${p._idx},event)"
         title="${isInjured ? (t(settings, 'injuredMatches', { n: p.injuredFor }) || 'Injured') : isSuspended ? 'Suspended ' + p.suspendedFor + ' match(es)' : ''}"></div>
+      <div class="pr-avatar">${avatar}</div>
       <span class="pr-pos ${posCssClass}">${p.pos}</span>
       <div class="pr-info">
-        <span class="pr-name"><a class="player-link" onclick="event.stopPropagation();${profileFn}(${p._idx})" title="View profile">${p.name}</a>${retireIcon}${isInjured ? `<span class="injury-icon" title="${t(settings, 'injuredMatches', { n: p.injuredFor }) || ''}">${'&#10014;'.repeat(Math.min(p.injuredFor, 3))}</span>` : ''}${isFresh ? '<span class="fresh-icon" title="' + (t(settings, 'freshPlayer') || 'Fresh') + '">&#9889;</span>' : ''}${starPlayer ? '<span class="top-scorer-star" title="' + (t(settings, 'seasonTopScorer') || '') + '">&#9733;</span>' : ''}${prevScorer ? '<span class="prev-scorer-ball" title="' + (t(settings, 'prevTopScorer') || '') + '">&#9917;</span>' : ''}${formBadge}${suspBadge}${cardBadges}</span>
-        <span class="pr-secondary">${t(settings, 'age') || 'Age'} ${p.age || '?'} &middot; STA <span class="${stamClass}">${stam}%</span> &middot; OVR ${ovr}${p.role ? ` &middot; <span class="role-tag">${p.role}</span>` : ''}${(p.seasonGoals || 0) > 0 ? ` &middot; &#9917;${p.seasonGoals}` : ''}</span>
+        <span class="pr-name"><a class="player-link" onclick="event.stopPropagation();${profileFn}(${p._idx})" title="View profile">${p.name}</a>${retireIcon}${injuryMark}${freshMark}${starMark}${prevMark}${formBadge}${suspBadge}${cardBadges}</span>
+        <span class="pr-secondary">${t(settings, 'age') || 'Age'} ${p.age || '?'} &middot; STA <span class="${stamClass}">${stam}%</span> &middot; OVR ${ovr}${p.role ? ` &middot; <span class="role-tag">${p.role}</span>` : ''}${goalMark}</span>
       </div>
       <span class="pr-skill">${p.skill}</span>
     </div>`;
@@ -420,15 +443,17 @@ export function renderSquad(
     grid.parentElement?.appendChild(youthContainer);
   }
   if (G.youthProspects && G.youthProspects.length > 0) {
-    let yh = `<div class="card" style="margin-top:12px"><div class="card-title">&#127891; Youth Academy Prospects</div>`;
-    yh += `<div style="font-size:.78rem;color:var(--text-dim);padding:4px 0">Young players from your academy — promote to first team or release:</div>`;
+    let yh = `<div class="card" style="margin-top:12px"><div class="card-title"><span class="title-icon">${icon('cap', 18)}</span> Youth Academy Prospects</div>`;
+    yh += `<div style="font-size:.78rem;color:var(--text-dim);padding:4px 0">Young players from your academy &mdash; promote to first team or release:</div>`;
     yh += `<div class="player-grid">`;
     G.youthProspects.forEach((yp, yi) => {
       if (yp.promoted) return;
       const p = yp.player;
       const canPromote = pt.players.length < 25;
+      const youthAvatar = playerAvatar(p.name, { c1: pt.c1, c2: pt.c2, size: 40 });
       yh += `<div class="fa-card" style="border-left:3px solid var(--green)">`;
       yh += `<div class="fa-header">`;
+      yh += `<div class="fa-avatar">${youthAvatar}</div>`;
       yh += `<span class="p-pos ${POS_CSS[p.pos]}">${p.pos}</span>`;
       yh += `<span class="p-name" style="font-weight:600;font-size:.92rem">${p.name}</span>`;
       yh += `<span class="p-skill-label">Skill: <b>${p.skill}</b></span>`;
