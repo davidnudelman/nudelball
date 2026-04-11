@@ -279,12 +279,15 @@ export function getDifficultyMultipliers(settings: Settings) {
  * @returns HTML string for the difficulty settings row
  */
 export function buildDifficultyRow(): string {
+  /* We build plain text labels here; `hydrateIcons()` is not called on the
+     settings overlay because it's pre-rendered in the DOM.  Instead we inject
+     SVG icons inline via data-icon placeholders and resolve them after. */
   return `<div class="settings-row">` +
-    `<span class="settings-label">\uD83C\uDFAE Difficulty</span>` +
+    `<span class="settings-label"><span data-icon="target"></span> Difficulty</span>` +
     `<div class="settings-toggle" id="difficulty-toggle">` +
-    `<button class="stoggle-opt" data-value="easy" onclick="setDifficulty('easy')">\uD83D\uDE0A Easy</button>` +
-    `<button class="stoggle-opt" data-value="normal" onclick="setDifficulty('normal')">\u2696\uFE0F Normal</button>` +
-    `<button class="stoggle-opt" data-value="hard" onclick="setDifficulty('hard')">\uD83D\uDD25 Hard</button>` +
+    `<button class="stoggle-opt" data-value="easy" onclick="setDifficulty('easy')"><span data-icon="smile"></span> Easy</button>` +
+    `<button class="stoggle-opt" data-value="normal" onclick="setDifficulty('normal')"><span data-icon="shield"></span> Normal</button>` +
+    `<button class="stoggle-opt" data-value="hard" onclick="setDifficulty('hard')"><span data-icon="fire"></span> Hard</button>` +
     `</div>` +
     `</div>`;
 }
@@ -314,6 +317,9 @@ export function injectDifficultyRow(settings: Settings): void {
     const newRow = diffRow.firstElementChild;
     if (newRow) {
       strengthRow.after(newRow);
+      /* Resolve any data-icon placeholders in the injected markup */
+      const hydrate = (window as unknown as { hydrateIcons?: (root?: HTMLElement | Document) => void }).hydrateIcons;
+      if (typeof hydrate === 'function') hydrate(newRow as HTMLElement);
     }
   }
 

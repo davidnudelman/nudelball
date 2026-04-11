@@ -6,7 +6,8 @@
  */
 
 import type { GameState, Settings, TopScorerEntry } from '../../types';
-import { teamLabel } from '../../utils/helpers';
+import { teamLabel, playerAvatar } from '../../utils/helpers';
+import { icon } from '../../assets/icons';
 import { t } from '../../data/i18n';
 
 /**
@@ -100,6 +101,7 @@ export function renderScorers(G: GameState, settings: Settings): void {
     const topGoals = scorers[0] ? scorers[0].goals : 0;
     h += `<table class="scorers-table"><thead><tr>` +
       `<th class="rank">${t(settings, 'thRank')}</th>` +
+      `<th></th>` +
       `<th>${t(settings, 'thPlayer')}</th>` +
       `<th>${t(settings, 'thTeam')}</th>` +
       `<th>${t(settings, 'thGoals')}</th></tr></thead><tbody>`;
@@ -109,9 +111,11 @@ export function renderScorers(G: GameState, settings: Settings): void {
       const isBest = s.goals === topGoals && topGoals > 0;
       const prevBall = !isBest && isPreviousTopScorer(G, s.name, s.teamId);
       let badge = '';
-      if (isBest) badge = '<span style="color:#fbbf24">&#9733;</span> ';
-      else if (prevBall) badge = '<span class="prev-scorer-ball">&#9917;</span> ';
+      if (isBest) badge = `<span class="scorer-badge scorer-star">${icon('star', 14)}</span> `;
+      else if (prevBall) badge = `<span class="scorer-badge scorer-prev">${icon('ball', 14)}</span> `;
+      const scAvatar = tm ? playerAvatar(s.name, { c1: tm.c1, c2: tm.c2, size: 32 }) : playerAvatar(s.name, { size: 32 });
       h += `<tr><td class="rank">${i + 1}</td>` +
+        `<td class="sc-avatar">${scAvatar}</td>` +
         `<td>${badge}${s.name}</td>` +
         `<td><div class="team-cell">${tm ? teamLabel(tm) : ''}</div></td>` +
         `<td class="goals">${s.goals}</td></tr>`;

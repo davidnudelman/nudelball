@@ -26,6 +26,7 @@ import {
   updateRivalResults,
 } from '../ui/views/match-view';
 import type { RivalResult } from '../ui/views/match-view';
+import { icon } from '../assets/icons';
 import { getCoachComment } from '../data/coach-comments';
 import { teamLabel } from '../utils/helpers';
 import { SFX } from '../audio/sfx';
@@ -175,13 +176,13 @@ export function runAnimatedMatch(
 
     if (ev.type === 'goal') {
       const isPlayerGoal = ev.teamId === G.playerTeamId;
-      const icon = isPlayerGoal ? '\u26BD' : '\uD83D\uDFE0';
+      const goalIcon = `<span class="inline-icon">${icon('ball', 14)}</span>`;
       /* Show narrative text if available, otherwise just scorer name */
       const narrativeText = ev.narrative
         ? `<div class="me-narrative">${ev.narrative}</div>`
         : '';
       html = `<div class="match-event goal ${sideClass}${isPlayerGoal ? ' player-goal' : ''}">` +
-        `<span class="me-min">${ev.minute}'</span> ${icon} ` +
+        `<span class="me-min">${ev.minute}'</span> ${goalIcon} ` +
         `<b>${ev.scorer}</b> <span class="me-team">(${teamName})</span>` +
         `${narrativeText}</div>`;
     } else if (ev.type === 'yellow') {
@@ -189,7 +190,7 @@ export function runAnimatedMatch(
         ? `<div class="me-narrative">${ev.narrative}</div>`
         : '';
       html = `<div class="match-event card-event ${sideClass}">` +
-        `<span class="me-min">${ev.minute}'</span> \uD83D\uDFE8 ` +
+        `<span class="me-min">${ev.minute}'</span> <span class="card-rect yellow"></span> ` +
         `<b>${ev.playerName}</b> <span class="me-team">(${teamName})</span>` +
         `${narrativeText}</div>`;
     } else if (ev.type === 'red') {
@@ -197,7 +198,7 @@ export function runAnimatedMatch(
         ? `<div class="me-narrative">${ev.narrative}</div>`
         : '';
       html = `<div class="match-event card-event red ${sideClass}">` +
-        `<span class="me-min">${ev.minute}'</span> \uD83D\uDFE5 ` +
+        `<span class="me-min">${ev.minute}'</span> <span class="card-rect red"></span> ` +
         `<b>${ev.playerName}</b> <span class="me-team">(${teamName})</span>` +
         `${narrativeText}</div>`;
     }
@@ -217,10 +218,10 @@ export function runAnimatedMatch(
 
     /* Goal scorers */
     if (goalEvents.length > 0) {
+      const goalIcon = `<span class="inline-icon">${icon('ball', 14)}</span>`;
       for (const g of goalEvents) {
         const team = g.teamId === fixture.home ? homeTeam : awayTeam;
-        const icon = g.teamId === G.playerTeamId ? '\u26BD' : '\uD83D\uDFE0';
-        html += `<div class="match-summary-row">${icon} <b>${g.scorer}</b> ${g.minute}' (${team.name})</div>`;
+        html += `<div class="match-summary-row">${goalIcon} <b>${g.scorer}</b> ${g.minute}' (${team.name})</div>`;
       }
     } else {
       html += '<div class="match-summary-row">No goals scored</div>';
@@ -229,20 +230,20 @@ export function runAnimatedMatch(
     /* Cards */
     if (cardEvents.length > 0) {
       for (const c of cardEvents) {
-        const icon = c.type === 'red' ? '\uD83D\uDFE5' : '\uD83D\uDFE8';
+        const cRect = c.type === 'red' ? '<span class="card-rect red"></span>' : '<span class="card-rect yellow"></span>';
         const team = c.teamId === fixture.home ? homeTeam : awayTeam;
-        html += `<div class="match-summary-row">${icon} <b>${c.playerName}</b> ${c.minute}' (${team.name})</div>`;
+        html += `<div class="match-summary-row">${cRect} <b>${c.playerName}</b> ${c.minute}' (${team.name})</div>`;
       }
     }
 
     /* MOTM */
     if (fixture.motm) {
-      html += `<div class="match-summary-row">\u2B50 <b>Man of the Match:</b> ${fixture.motm}</div>`;
+      html += `<div class="match-summary-row"><span class="inline-icon">${icon('star', 14)}</span> <b>Man of the Match:</b> ${fixture.motm}</div>`;
     }
 
     /* Team talk effect */
     if (G.activeTeamTalk) {
-      html += `<div class="match-summary-row">\uD83D\uDDE3\uFE0F Your team talk set the tone for this match</div>`;
+      html += `<div class="match-summary-row"><span class="inline-icon">${icon('users', 14)}</span> Your team talk set the tone for this match</div>`;
     }
 
     html += '</div>';
@@ -267,8 +268,8 @@ export function runAnimatedMatch(
     /* Show half-time event in feed */
     appendMatchEvent(
       `<div class="match-event ht-event">` +
-      `<span class="me-min">45'</span> \uD83D\uDD14 <b>HALF TIME</b> ` +
-      `${homeGoals} — ${awayGoals}</div>`,
+      `<span class="me-min">45'</span> <span class="inline-icon">${icon('clock', 14)}</span> <b>HALF TIME</b> ` +
+      `${homeGoals} &mdash; ${awayGoals}</div>`,
     );
 
     /* Show coach comment, auto-sub button, and continue button */
@@ -277,22 +278,22 @@ export function runAnimatedMatch(
       const isNeutral = options.isNeutral ?? false;
       const subsLeft = 3 - G.matchSubs;
       const autoSubBtn = (!isNeutral && subsLeft > 0)
-        ? `<button class="btn btn-secondary auto-sub-btn" onclick="autoSub()">` +
-          `\uD83D\uDD04 Auto Sub (${subsLeft})</button>`
+        ? `<button class="btn btn-secondary auto-sub-btn btn-has-icon" onclick="autoSub()">` +
+          `<span class="btn-icon">${icon('refresh', 14)}</span> Auto Sub (${subsLeft})</button>`
         : '';
 
       htContainer.style.display = 'block';
       htContainer.innerHTML =
         `<div class="ht-panel">` +
         `<div class="coach-comment">` +
-        `<span class="coach-icon">\uD83E\uDDD1\u200D\uD83C\uDFEB</span> ` +
+        `<span class="coach-icon">${icon('user', 18)}</span> ` +
         `<span class="coach-text">"${comment}"</span>` +
         `</div>` +
         `<div class="ht-actions">` +
-        `<div class="ht-label">\u23F8\uFE0F Half Time — Make substitutions or continue</div>` +
+        `<div class="ht-label"><span class="inline-icon">${icon('clock', 14)}</span> Half Time &mdash; Make substitutions or continue</div>` +
         `<div style="display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px">` +
-        `<button class="btn btn-accent ht-continue-btn" onclick="continueMatch()">` +
-        `\u25B6\uFE0F 2nd Half</button>` +
+        `<button class="btn btn-accent ht-continue-btn btn-has-icon" onclick="continueMatch()">` +
+        `<span class="btn-icon">${icon('arrowRight', 14)}</span> 2nd Half</button>` +
         autoSubBtn +
         `</div>` +
         `</div>` +
@@ -341,8 +342,8 @@ export function runAnimatedMatch(
     /* Show full-time event */
     appendMatchEvent(
       `<div class="match-event ft-event">` +
-      `<span class="me-min">90'</span> \uD83D\uDD14 <b>FULL TIME</b> ` +
-      `${homeGoals} — ${awayGoals}</div>`,
+      `<span class="me-min">90'</span> <span class="inline-icon">${icon('clock', 14)}</span> <b>FULL TIME</b> ` +
+      `${homeGoals} &mdash; ${awayGoals}</div>`,
     );
 
     /* Play crowd cheer if player won */
@@ -365,12 +366,12 @@ export function runAnimatedMatch(
       htContainer.innerHTML =
         `<div class="ht-panel">` +
         `<div class="coach-comment">` +
-        `<span class="coach-icon">\uD83E\uDDD1\u200D\uD83C\uDFEB</span> ` +
+        `<span class="coach-icon">${icon('user', 18)}</span> ` +
         `<span class="coach-text">"${comment}"</span>` +
         `</div>` +
         summaryHTML +
-        `<button class="btn btn-success ht-continue-btn" style="margin-top:12px" ` +
-        `onclick="finishMatch()">\u2705 Continue <span id="ft-countdown">(15s)</span></button>` +
+        `<button class="btn btn-success ht-continue-btn btn-has-icon" style="margin-top:12px" ` +
+        `onclick="finishMatch()"><span class="btn-icon">${icon('check', 14)}</span> Continue <span id="ft-countdown">(15s)</span></button>` +
         `</div>`;
     }
 

@@ -12,7 +12,8 @@
 import type { GameState, Settings, Player, AIPlayerForSale } from '../../types';
 import { SQUAD_MAX, SQUAD_MIN, POS_CSS, SELL_VALUE_RATIO, SCOUT_COSTS } from '../../config';
 import { t } from '../../data/i18n';
-import { teamLabel } from '../../utils/helpers';
+import { teamLabel, playerAvatar } from '../../utils/helpers';
+import { icon } from '../../assets/icons';
 
 /* ================================================================
    PRICE CALCULATION HELPERS
@@ -169,15 +170,15 @@ export function renderMarket(
     h += `<div class="market-reminder">`;
     h += `<div class="mr-text">`;
     h += hasFreeSign
-      ? `&#127873; ${t(settings, 'marketReminderFree')}`
-      : `&#128176; ${t(settings, 'marketReminder')}`;
+      ? `<span class="inline-icon">${icon('star', 14)}</span> ${t(settings, 'marketReminderFree')}`
+      : `<span class="inline-icon">${icon('money', 14)}</span> ${t(settings, 'marketReminder')}`;
     h += `</div>`;
     h += `<button class="btn btn-accent" onclick="${playFn}()" style="white-space:nowrap">${t(settings, 'marketSkip')}</button>`;
     h += `</div>`;
   }
 
   /* ===== Header ===== */
-  h += `<div class="card-title">&#128176; ${t(settings, 'transferMarket')}</div>`;
+  h += `<div class="card-title"><span class="title-icon">${icon('money', 18)}</span> ${t(settings, 'transferMarket')}</div>`;
   h += `<div class="market-header">`;
   h += `<div class="budget-display">${t(settings, 'budget')} <span class="amount">$${budget.toLocaleString()}</span></div>`;
   h += `<div class="squad-size-display">${t(settings, 'squadLabel')} <span>${squadSize}</span>/${SQUAD_MAX} (${t(settings, 'min')} ${SQUAD_MIN})</div>`;
@@ -205,8 +206,10 @@ export function renderMarket(
         : hasFreeSign ? t(settings, 'signFree')
         : t(settings, 'sign');
 
+      const faAvatar = playerAvatar(fa.name, { size: 40 });
       h += `<div class="fa-card">`;
       h += `<div class="fa-header">`;
+      h += `<div class="fa-avatar">${faAvatar}</div>`;
       h += `<span class="p-pos ${POS_CSS[fa.pos]}">${fa.pos}</span>`;
       h += `<span class="p-name" style="font-weight:600;font-size:.92rem">${fa.name}</span>`;
       h += `<span class="p-skill-label">${t(settings, 'skill')}: <b>${fa.skill}</b></span>`;
@@ -224,16 +227,18 @@ export function renderMarket(
   if (isOpen) {
     const aiPlayers = getAIPlayersForSale(G);
     if (aiPlayers.length) {
-      h += `<div class="market-section-title">&#128101; AI Team Players</div>`;
+      h += `<div class="market-section-title"><span class="inline-icon">${icon('users', 14)}</span> AI Team Players</div>`;
       h += '<div class="player-grid">';
       for (const ap of aiPlayers) {
         const canAfford = budget >= ap.price;
         const canBuy = canAfford && squadSize < SQUAD_MAX;
         const team = G.teams.find(tm => tm.players.includes(ap.player));
         const teamName = team ? teamLabel(team) : 'Unknown';
+        const apAvatar = playerAvatar(ap.player.name, team ? { c1: team.c1, c2: team.c2, size: 40 } : { size: 40 });
 
         h += `<div class="fa-card" style="border-left:3px solid var(--accent)">`;
         h += `<div class="fa-header">`;
+        h += `<div class="fa-avatar">${apAvatar}</div>`;
         h += `<span class="p-pos ${POS_CSS[ap.player.pos]}">${ap.player.pos}</span>`;
         h += `<span class="p-name" style="font-weight:600;font-size:.92rem">${ap.player.name}</span>`;
         h += `<span class="p-skill-label">${t(settings, 'skill')}: <b>${ap.player.skill}</b></span>`;
@@ -251,13 +256,13 @@ export function renderMarket(
 
   /* ===== Loan Players Section (#8) ===== */
   if (isOpen && G.loans !== undefined) {
-    h += `<div class="market-section-title">&#129309; Loan Players</div>`;
+    h += `<div class="market-section-title"><span class="inline-icon">${icon('handshake', 14)}</span> Loan Players</div>`;
     /* Show current loans */
     if (G.loans && G.loans.length > 0) {
       h += `<div style="font-size:.82rem;color:var(--text-dim);padding:4px 0">Active loans (returned at season end):</div>`;
       for (const loan of G.loans) {
         const fromTeam = G.teams[loan.fromTeamId];
-        h += `<div style="font-size:.82rem;padding:2px 8px">&#128100; <b>${loan.player.name}</b> (${loan.player.pos}, ${loan.player.skill}) from ${fromTeam ? fromTeam.name : 'Unknown'} — Fee: $${loan.loanFee.toLocaleString()}</div>`;
+        h += `<div style="font-size:.82rem;padding:2px 8px"><span class="inline-icon">${icon('user', 12)}</span> <b>${loan.player.name}</b> (${loan.player.pos}, ${loan.player.skill}) from ${fromTeam ? fromTeam.name : 'Unknown'} &mdash; Fee: $${loan.loanFee.toLocaleString()}</div>`;
       }
     }
     /* Available loans from higher-division teams */
@@ -270,8 +275,11 @@ export function renderMarket(
     for (const lc of loanCandidates.slice(0, 12)) {
       const canAfford = budget >= lc.fee;
       const canLoan = canAfford && squadSize < SQUAD_MAX;
+      const fromT = G.teams[lc.teamId];
+      const lcAvatar = playerAvatar(lc.player.name, fromT ? { c1: fromT.c1, c2: fromT.c2, size: 40 } : { size: 40 });
       h += `<div class="fa-card" style="border-left:3px solid var(--yellow)">`;
       h += `<div class="fa-header">`;
+      h += `<div class="fa-avatar">${lcAvatar}</div>`;
       h += `<span class="p-pos ${POS_CSS[lc.player.pos]}">${lc.player.pos}</span>`;
       h += `<span class="p-name" style="font-weight:600;font-size:.92rem">${lc.player.name}</span>`;
       h += `<span class="p-skill-label">Skill: <b>${lc.player.skill}</b></span>`;
@@ -287,7 +295,7 @@ export function renderMarket(
 
   /* ===== Scout Network (#18) ===== */
   const scoutLevel = G.scoutLevel ?? 0;
-  h += `<div class="market-section-title">&#128301; Scout Network — Level ${scoutLevel}</div>`;
+  h += `<div class="market-section-title"><span class="inline-icon">${icon('radar', 14)}</span> Scout Network &mdash; Level ${scoutLevel}</div>`;
   h += `<div style="font-size:.82rem;padding:4px 0;color:var(--text-dim)">`;
   h += scoutLevel === 0 ? 'Basic scouting — only nearby divisions visible.' :
        scoutLevel === 1 ? 'Advanced scouting — all divisions visible.' :
@@ -312,9 +320,11 @@ export function renderMarket(
       const canSell = squadSize > SQUAD_MIN;
       const stam = p.stamina != null ? p.stamina : 100;
       const stamColor = stam >= 70 ? 'stam-green' : stam >= 40 ? 'stam-yellow' : 'stam-red';
+      const ownAvatar = playerAvatar(p.name, { c1: pt.c1, c2: pt.c2, size: 40 });
 
       h += `<div class="fa-card">`;
       h += `<div class="fa-header">`;
+      h += `<div class="fa-avatar">${ownAvatar}</div>`;
       h += `<span class="p-pos ${POS_CSS[p.pos]}">${p.pos}</span>`;
       h += `<span class="p-name" style="font-weight:600;font-size:.92rem">${p.name}</span>`;
       h += `<span class="p-skill-label">${t(settings, 'skill')}: <b>${p.skill}</b></span>`;
@@ -337,8 +347,8 @@ export function renderMarket(
     for (const entry of recent) {
       const tm2 = G.teams.find(tm => tm.id === entry.teamId);
       const teamName = entry.teamName || (tm2 ? tm2.name : 'Unknown');
-      const icon = entry.type === 'buy' ? '&#128229;' : '&#128228;';
-      h += `<div class="transfer-entry ${entry.type}">${icon} S${entry.season}: <b>${teamName}</b> ${entry.type === 'buy' ? t(settings, 'signed') : t(settings, 'sold')} <b>${entry.playerName}</b> — $${entry.amount.toLocaleString()}</div>`;
+      const entryIcon = entry.type === 'buy' ? icon('inboxIn', 14) : icon('inboxOut', 14);
+      h += `<div class="transfer-entry ${entry.type}"><span class="inline-icon">${entryIcon}</span> S${entry.season}: <b>${teamName}</b> ${entry.type === 'buy' ? t(settings, 'signed') : t(settings, 'sold')} <b>${entry.playerName}</b> &mdash; $${entry.amount.toLocaleString()}</div>`;
     }
     h += '</div>';
   }

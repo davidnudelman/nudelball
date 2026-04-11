@@ -52,8 +52,8 @@
     </div>
 
     <!-- Welcome screen quick-access buttons -->
-    <button class="btn btn-secondary btn-sm" style="margin-top:var(--sp-sm);width:100%" onclick="toggleHelp()">&#128214; How to Play</button>
-    <button class="btn btn-secondary btn-sm" style="margin-top:var(--sp-xs);width:100%" onclick="toggleSettings()">&#9881; <span data-i18n="settings">Settings</span></button>
+    <button class="btn btn-secondary btn-sm btn-has-icon" style="margin-top:var(--sp-sm);width:100%" onclick="toggleHelp()"><span class="btn-icon" data-icon="book"></span> How to Play</button>
+    <button class="btn btn-secondary btn-sm btn-has-icon" style="margin-top:var(--sp-xs);width:100%" onclick="toggleSettings()"><span class="btn-icon" data-icon="gear"></span> <span data-i18n="settings">Settings</span></button>
 
     <div class="welcome-footer">A Game by DAV<span class="footer-red">ID</span> NUDELMAN</div>
   </div>
@@ -71,9 +71,9 @@
         <div class="season-badge" id="season-badge">Season 1</div>
       </div>
       <div class="top-bar-right">
-        <button class="top-bar-icon" id="mute-btn" onclick="toggleMute()" title="Mute/Unmute">&#128266;</button>
+        <button class="top-bar-icon" id="mute-btn" onclick="toggleMute()" title="Mute/Unmute"><span data-icon="volume"></span></button>
         <button class="btn btn-success" id="play-match-btn" onclick="playMatch()" data-i18n="playMatch">Play Match</button>
-        <button class="top-bar-icon" id="settings-btn" onclick="toggleSettings()" title="Settings">&#9881;</button>
+        <button class="top-bar-icon" id="settings-btn" onclick="toggleSettings()" title="Settings"><span data-icon="gear"></span></button>
       </div>
     </div>
   </div>
@@ -216,8 +216,8 @@
     <div class="settings-row">
       <span class="settings-label" data-i18n="theme">Theme</span>
       <div class="settings-toggle" id="theme-toggle">
-        <button class="stoggle-opt" data-value="dark" onclick="setTheme('dark')">&#127769; <span data-i18n="dark">Dark</span></button>
-        <button class="stoggle-opt" data-value="light" onclick="setTheme('light')">&#9728;&#65039; <span data-i18n="light">Light</span></button>
+        <button class="stoggle-opt" data-value="dark" onclick="setTheme('dark')"><span data-icon="moon"></span> <span data-i18n="dark">Dark</span></button>
+        <button class="stoggle-opt" data-value="light" onclick="setTheme('light')"><span data-icon="sun"></span> <span data-i18n="light">Light</span></button>
       </div>
     </div>
     <div class="settings-row">
@@ -238,15 +238,15 @@
     </div>
     <!-- Difficulty toggle is injected here dynamically by settings.ts -->
     <div class="settings-row">
-      <span class="settings-label">&#128266; Volume</span>
+      <span class="settings-label"><span data-icon="volume"></span> Volume</span>
       <div style="display:flex;align-items:center;gap:8px">
         <input type="range" class="volume-slider" id="volume-slider" min="0" max="100" oninput="setVolume(this.value/100)">
         <span id="volume-pct" style="font-family:'Oswald';font-size:.82rem;color:var(--text-dim);min-width:32px">50%</span>
       </div>
     </div>
-    <a class="settings-changelog-link" onclick="toggleSettings();showView('trophyroom')">&#127894; Coach Achievements</a>
-    <a class="settings-changelog-link" onclick="toggleSettings();toggleHelp()">&#128214; How to Play</a>
-    <a class="settings-changelog-link" onclick="toggleSettings();toggleChangelog()">&#128203; Changelog <span id="settings-version-label"></span></a>
+    <a class="settings-changelog-link" onclick="toggleSettings();showView('trophyroom')"><span data-icon="trophy"></span> Coach Achievements</a>
+    <a class="settings-changelog-link" onclick="toggleSettings();toggleHelp()"><span data-icon="book"></span> How to Play</a>
+    <a class="settings-changelog-link" onclick="toggleSettings();toggleChangelog()"><span data-icon="clipboard"></span> Changelog <span id="settings-version-label"></span></a>
   </div>
 </div>
 
@@ -254,7 +254,7 @@
 <div class="overlay help-overlay" id="help-overlay" style="display:none">
   <div class="overlay-content help-box">
     <div class="overlay-header help-header">
-      <h2>&#128214; How to Play</h2>
+      <h2><span data-icon="book"></span> How to Play</h2>
       <button class="overlay-close help-close" onclick="toggleHelp()">&times;</button>
     </div>
     <div class="help-body" id="help-body"></div>
@@ -265,7 +265,7 @@
 <div class="overlay changelog-overlay" id="changelog-overlay" style="display:none">
   <div class="overlay-content changelog-box">
     <div class="overlay-header changelog-header">
-      <h2>&#128203; Changelog</h2>
+      <h2><span data-icon="clipboard"></span> Changelog</h2>
       <button class="overlay-close changelog-close" onclick="toggleChangelog()">&times;</button>
     </div>
     <div class="changelog-body" id="changelog-body"></div>

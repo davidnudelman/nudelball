@@ -8,6 +8,7 @@
 import type { GameState, Settings } from '../../types';
 import { SEASON_WEEKS } from '../../config';
 import { teamLabel } from '../../utils/helpers';
+import { icon } from '../../assets/icons';
 import { t } from '../../data/i18n';
 
 /**
@@ -74,12 +75,12 @@ export function renderCalendar(G: GameState, settings: Settings): void {
         for (const e of (f.events || [])) {
           if (e.type === 'goal') {
             const side = e.teamId === f.home ? 'fr-home' : 'fr-away';
-            h += `<div class="fr-event ${side}"><span class="fr-min">${e.minute}'</span> &#9917; <b>${e.scorer}</b></div>`;
+            h += `<div class="fr-event ${side}"><span class="fr-min">${e.minute}'</span> <span class="inline-icon">${icon('ball', 12)}</span> <b>${e.scorer}</b></div>`;
           }
         }
         for (const inj of (f.injuries || [])) {
           const side = inj.teamId === f.home ? 'fr-home' : 'fr-away';
-          h += `<div class="fr-event fr-injury ${side}"><span class="fr-min">&#10014;</span> <b>${inj.name}</b> (${inj.duration})</div>`;
+          h += `<div class="fr-event fr-injury ${side}"><span class="fr-min">${icon('cross', 12)}</span> <b>${inj.name}</b> (${inj.duration})</div>`;
         }
         h += '</div>';
       }

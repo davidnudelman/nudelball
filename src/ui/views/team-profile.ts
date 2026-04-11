@@ -7,7 +7,8 @@
 
 import type { GameState, Settings, Player, Position } from '../../types';
 import { FORMATIONS, DEFAULT_FORMATION_IDX, POS_CSS, POS_DISTANCE, OOP_PENALTY_PER_STEP, FORM_OVR_PCT } from '../../config';
-import { teamLabel, plateColors } from '../../utils/helpers';
+import { teamLabel, plateColors, teamFlag, playerAvatar } from '../../utils/helpers';
+import { icon } from '../../assets/icons';
 import { t } from '../../data/i18n';
 
 /* ================================================================
@@ -143,23 +144,34 @@ export function renderTeamProfile(G: GameState, settings: Settings): void {
   let h = '';
 
   /* Back button */
-  h += `<button class="tp-back" onclick="showView('table')">&#8592; ${t(settings, 'tpBack')}</button>`;
+  h += `<button class="tp-back btn-has-icon" onclick="showView('table')"><span class="btn-icon">${icon('arrowLeft', 14)}</span> ${t(settings, 'tpBack')}</button>`;
 
-  /* Header with team plate */
-  h += `<div class="tp-header">`;
+  /* Header with team plate and hero flag */
   const _tpc = plateColors(tm.c1, tm.c2);
-  h += `<span class="team-plate" style="background:${_tpc.bg};color:${_tpc.txt};font-size:1.3rem;padding:4px 14px">${tm.name}</span>`;
-  h += `<span class="tp-div">${t(settings, 'division')} ${tm.div}</span>`;
+  h += `<div class="tp-hero" style="background:linear-gradient(135deg, ${_tpc.bg}, ${tm.c1});">`;
+  h += `<div class="tp-hero-flag">${teamFlag(tm.country, 'tp-flag-big')}</div>`;
+  h += `<div class="tp-hero-info">`;
+  h += `<div class="tp-hero-name" style="color:${_tpc.txt}">${tm.name.toUpperCase()}</div>`;
+  h += `<div class="tp-hero-div" style="color:${_tpc.txt}">${t(settings, 'division')} ${tm.div}</div>`;
   if (tm.trophies && tm.trophies.length) {
-    h += ' ';
+    h += `<div class="tp-hero-trophies">`;
     for (const tr of tm.trophies) {
-      if (tr.type === 'gold_trophy') h += `<span class="trophy" title="${t(settings, 'div1Champion')} S${tr.season}">&#127942;</span>`;
-      else if (tr.type === 'silver_trophy') h += `<span class="trophy silver" title="${t(settings, 'div1RunnerUp')} S${tr.season}">&#127942;</span>`;
-      else if (tr.type === 'gold_medal') h += `<span class="trophy" title="${t(settings, 'div2Champion')} S${tr.season}">&#129351;</span>`;
-      else if (tr.type === 'silver_medal') h += `<span class="trophy" title="${t(settings, 'div2RunnerUp')} S${tr.season}">&#129352;</span>`;
+      const title =
+        tr.type === 'gold_trophy' ? `${t(settings, 'div1Champion')} S${tr.season}` :
+        tr.type === 'silver_trophy' ? `${t(settings, 'div1RunnerUp')} S${tr.season}` :
+        tr.type === 'gold_medal' ? `${t(settings, 'div2Champion')} S${tr.season}` :
+        `${t(settings, 'div2RunnerUp')} S${tr.season}`;
+      const cls =
+        tr.type === 'gold_trophy' ? 'trophy trophy-gold' :
+        tr.type === 'silver_trophy' ? 'trophy trophy-silver' :
+        tr.type === 'gold_medal' ? 'trophy trophy-gold-medal' :
+        'trophy trophy-silver-medal';
+      const tIcon = tr.type.includes('trophy') ? icon('trophy', 18) : icon('medal', 18);
+      h += `<span class="${cls}" title="${title}">${tIcon}</span>`;
     }
+    h += `</div>`;
   }
-  h += `</div>`;
+  h += `</div></div>`;
 
   /* Head-to-Head (only for rival teams) */
   if (!isPlayer) {
@@ -201,11 +213,12 @@ export function renderTeamProfile(G: GameState, settings: Settings): void {
     const order: Record<string, number> = { GK: 0, DEF: 1, MID: 2, STR: 3 };
     return (order[a.pos] || 99) - (order[b.pos] || 99) || playerOvr(b) - playerOvr(a);
   });
-  h += `<table class="tp-player-list"><thead><tr><th>${t(settings, 'tpPos')}</th><th>${t(settings, 'thPlayer')}</th><th>OVR</th></tr></thead><tbody>`;
+  h += `<table class="tp-player-list"><thead><tr><th></th><th>${t(settings, 'tpPos')}</th><th>${t(settings, 'thPlayer')}</th><th>OVR</th></tr></thead><tbody>`;
   for (const p of sorted) {
     const ovr = playerOvr(p);
     const posClass = POS_CSS[p.pos] || '';
-    h += `<tr><td><span class="p-pos ${posClass}" style="font-size:.75rem;padding:2px 6px">${p.pos}</span></td><td>${p.name}</td><td style="font-family:'Oswald';font-weight:600">${ovr}</td></tr>`;
+    const tpAvatar = playerAvatar(p.name, { c1: tm.c1, c2: tm.c2, size: 32 });
+    h += `<tr><td class="tp-pl-avatar">${tpAvatar}</td><td><span class="p-pos ${posClass}" style="font-size:.75rem;padding:2px 6px">${p.pos}</span></td><td>${p.name}</td><td style="font-family:'Oswald';font-weight:600">${ovr}</td></tr>`;
   }
   h += `</tbody></table></div>`;
 

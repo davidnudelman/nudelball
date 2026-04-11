@@ -14,7 +14,8 @@
  */
 
 import type { GameState, Settings, SaveSlot } from '../../types';
-import { teamLabel, clearPlateCache } from '../../utils/helpers';
+import { teamLabel, teamFlag, clearPlateCache } from '../../utils/helpers';
+import { icon } from '../../assets/icons';
 import { t } from '../../data/i18n';
 import { listSaveSlots } from '../../state/save-manager';
 
@@ -46,7 +47,10 @@ export function renderTeamPicker(G: GameState, settings: Settings): void {
     h += `<div class="tp-div"><div class="tp-label">${t(settings, 'div')} ${d}</div><div class="tp-grid">`;
     for (const tm of divTeams) {
       const sel = tm.id === G.playerTeamId ? 'selected' : '';
-      h += `<div class="tp-card ${sel}" onclick="selectTeam(${tm.id})">${teamLabel(tm)}</div>`;
+      h += `<div class="tp-card ${sel}" onclick="selectTeam(${tm.id})">` +
+        `<div class="tp-card-flag">${teamFlag(tm.country)}</div>` +
+        `<div class="tp-card-plate">${teamLabel(tm)}</div>` +
+        `</div>`;
     }
     h += '</div></div>';
   }
@@ -373,13 +377,15 @@ export function renderSaveSlots(
 
   container.style.display = 'block';
 
-  let h = `<div class="save-slots-title">\uD83D\uDCBE Saved Games</div>`;
+  let h = `<div class="save-slots-title"><span class="inline-icon">${icon('clipboard', 14)}</span> Saved Games</div>`;
   h += `<div class="save-slots-list">`;
 
   for (const slot of slots) {
     const slotId = parseInt(slot.id, 10);
     const isAuto = slotId === 0;
-    const label = isAuto ? '\uD83D\uDD04 Autosave' : `\uD83D\uDCBE ${slot.name || ('Slot ' + slot.id)}`;
+    const label = isAuto
+      ? `<span class="inline-icon">${icon('refresh', 14)}</span> Autosave`
+      : `<span class="inline-icon">${icon('clipboard', 14)}</span> ${slot.name || ('Slot ' + slot.id)}`;
 
     /* Format the timestamp */
     let timeStr = '';
@@ -433,7 +439,7 @@ export function buildSaveSlotsHTML(settings: Settings): string {
   const slots = listSaveSlots();
 
   let h = `<div class="save-slots-section">`;
-  h += `<div class="save-slots-title">\uD83D\uDCBE Save Slots</div>`;
+  h += `<div class="save-slots-title"><span class="inline-icon">${icon('clipboard', 14)}</span> Save Slots</div>`;
 
   /* Render existing slots */
   if (slots.length === 0) {
@@ -442,7 +448,9 @@ export function buildSaveSlotsHTML(settings: Settings): string {
     for (const slot of slots) {
       const slotId = parseInt(slot.id, 10);
       const isAuto = slotId === 0;
-      const label = isAuto ? '\uD83D\uDD04 Autosave' : `Slot ${slot.id}: ${slot.name || 'Unnamed'}`;
+      const label = isAuto
+        ? `<span class="inline-icon">${icon('refresh', 14)}</span> Autosave`
+        : `Slot ${slot.id}: ${slot.name || 'Unnamed'}`;
 
       let timeStr = '';
       if (slot.timestamp) {
@@ -480,8 +488,8 @@ export function buildSaveSlotsHTML(settings: Settings): string {
 
   if (nextFreeSlot !== null) {
     h += `<div class="save-slot-new">` +
-      `<button class="save-slot-btn save-slot-save" onclick="quickSaveToSlot(${nextFreeSlot})">` +
-      `\uD83D\uDCBE Save to Slot ${nextFreeSlot}</button>` +
+      `<button class="save-slot-btn save-slot-save btn-has-icon" onclick="quickSaveToSlot(${nextFreeSlot})">` +
+      `<span class="btn-icon">${icon('clipboard', 14)}</span> Save to Slot ${nextFreeSlot}</button>` +
       `</div>`;
   }
 

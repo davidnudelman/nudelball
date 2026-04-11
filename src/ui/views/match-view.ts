@@ -19,7 +19,8 @@
 
 import type { GameState, Settings, Team, Player, Position, AnimatedMatchEvent, Fixture, PowerLevels } from '../../types';
 import { TACTICS, POS_CSS } from '../../config';
-import { teamLabel, teamPlate } from '../../utils/helpers';
+import { teamLabel, teamLabelSm } from '../../utils/helpers';
+import { icon } from '../../assets/icons';
 import { t } from '../../data/i18n';
 
 /* ================================================================
@@ -98,6 +99,9 @@ export interface RivalResult {
   homeC2: string;
   awayC1: string;
   awayC2: string;
+  /** Optional country codes so the live ticker can show flags */
+  homeCountry?: string;
+  awayCountry?: string;
   finalH: number;
   finalA: number;
   goalEvents: Array<{ min: number; teamId: number }>;
@@ -155,13 +159,15 @@ export function setupMatchUI(
     const aa = getTeamAvgRating(awayTeam);
     strengthHTML = `<div class="match-power">` +
       `<div><span class="mp-label">${t(settings, 'avgRating')} </span><span class="mp-value" style="color:var(--accent)">${ha}</span></div>` +
-      `<div><span class="mp-label">&#9889;</span></div>` +
+      `<div class="mp-sep"><span class="mp-sep-dot"></span><span class="mp-sep-dot"></span><span class="mp-sep-dot"></span></div>` +
       `<div><span class="mp-value" style="color:var(--accent)">${aa}</span><span class="mp-label"> ${t(settings, 'avgRating')}</span></div></div>`;
   }
 
   /* Derby banner (#13) */
   const isDerby = (homeTeam.rivals?.includes(awayTeam.id)) || (awayTeam.rivals?.includes(homeTeam.id));
-  const derbyBanner = isDerby ? '<div style="text-align:center;padding:6px;font-weight:700;color:#fff;background:linear-gradient(90deg,#e53935,#ff6f00);border-radius:6px;margin-bottom:8px">&#128293; DERBY MATCH &#128293;</div>' : '';
+  const derbyBanner = isDerby
+    ? `<div class="derby-banner"><span class="db-icon">${icon('fire', 16)}</span><span class="db-label">DERBY MATCH</span><span class="db-icon">${icon('fire', 16)}</span></div>`
+    : '';
 
   /* Tactic buttons for mid-match adjustments */
   const tacticBtns = Object.entries(TACTICS)
@@ -179,7 +185,7 @@ export function setupMatchUI(
     const bench = playerTeam.players.filter(p => !p.selected && !p.injuredFor && !p.suspendedFor);
     if (bench.length > 0) {
       benchHTML = `<div class="subs-panel" id="subs-panel">` +
-        `<div class="subs-title">&#128260; Substitutions (<span id="subs-remaining">3</span>/3 remaining)</div>` +
+        `<div class="subs-title"><span class="title-icon">${icon('refresh', 16)}</span> Substitutions (<span id="subs-remaining">3</span>/3 remaining)</div>` +
         `<div id="subs-list">`;
       for (const bp of bench) {
         const posClass = bp.pos.toLowerCase();
@@ -209,7 +215,7 @@ export function setupMatchUI(
     tacticsBar +
     `<div class="match-events" id="match-events"></div>` +
     `<div class="rival-results" id="rival-results-panel" style="display:none">` +
-    `<div class="rr-title">&#128202; Other Results</div>` +
+    `<div class="rr-title"><span class="title-icon">${icon('chartUp', 16)}</span> Other Results</div>` +
     `<div id="rival-results-list"></div></div>` +
     benchHTML;
 
@@ -241,9 +247,9 @@ export function updateRivalResults(rivalResults: RivalResult[], currentMin: numb
       }
     }
     const done = currentMin >= 90;
-    rh += `<div class="rival-result">${teamPlate(rr.homeC1, rr.homeC2, rr.home, true)}` +
+    rh += `<div class="rival-result">${teamLabelSm({ c1: rr.homeC1, c2: rr.homeC2, name: rr.home, country: rr.homeCountry })}` +
       `<span class="rr-score">${rH} — ${rA}${done ? ' (FT)' : ''}</span>` +
-      `${teamPlate(rr.awayC1, rr.awayC2, rr.away, true)}</div>`;
+      `${teamLabelSm({ c1: rr.awayC1, c2: rr.awayC2, name: rr.away, country: rr.awayCountry })}</div>`;
   }
   rrList.innerHTML = rh;
 }

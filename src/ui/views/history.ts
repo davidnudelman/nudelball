@@ -6,7 +6,8 @@
  */
 
 import type { GameState, Settings } from '../../types';
-import { teamPlate } from '../../utils/helpers';
+import { teamLabelSm } from '../../utils/helpers';
+import { icon } from '../../assets/icons';
 import { t } from '../../data/i18n';
 
 /**
@@ -28,7 +29,7 @@ export function renderHistory(G: GameState, settings: Settings): void {
   if (!card) return;
 
   const history = G.seasonHistory || [];
-  let h = `<div class="card-title">&#127942; ${t(settings, 'seasonHistory')}</div>`;
+  let h = `<div class="card-title"><span class="title-icon">${icon('trophy', 18)}</span> ${t(settings, 'seasonHistory')}</div>`;
 
   if (!history.length) {
     h += `<p class="history-empty">${t(settings, 'noHistoryYet')}</p>`;
@@ -53,8 +54,8 @@ export function renderHistory(G: GameState, settings: Settings): void {
     h += '<td>';
     if (rec.div1Champion) {
       const tm2 = G.teams.find(tm => tm.name === rec.div1Champion!.name);
-      h += '<span class="trophy-icon">&#127942;</span>';
-      h += tm2 ? teamPlate(tm2.c1, tm2.c2, rec.div1Champion.name, true) : rec.div1Champion.name;
+      h += `<span class="trophy-icon trophy-gold">${icon('trophy', 14)}</span>`;
+      h += tm2 ? teamLabelSm({ c1: tm2.c1, c2: tm2.c2, name: rec.div1Champion.name, country: tm2.country }) : rec.div1Champion.name;
     } else { h += '—'; }
     h += '</td>';
 
@@ -62,8 +63,8 @@ export function renderHistory(G: GameState, settings: Settings): void {
     h += '<td>';
     if (rec.div1RunnerUp) {
       const tm2 = G.teams.find(tm => tm.name === rec.div1RunnerUp!.name);
-      h += '<span class="trophy-icon" style="filter:grayscale(.6) brightness(1.2)">&#127942;</span>';
-      h += tm2 ? teamPlate(tm2.c1, tm2.c2, rec.div1RunnerUp.name, true) : rec.div1RunnerUp.name;
+      h += `<span class="trophy-icon trophy-silver">${icon('trophy', 14)}</span>`;
+      h += tm2 ? teamLabelSm({ c1: tm2.c1, c2: tm2.c2, name: rec.div1RunnerUp.name, country: tm2.country }) : rec.div1RunnerUp.name;
     } else { h += '—'; }
     h += '</td>';
 
@@ -71,8 +72,8 @@ export function renderHistory(G: GameState, settings: Settings): void {
     h += '<td>';
     if (rec.div2Champion) {
       const tm2 = G.teams.find(tm => tm.name === rec.div2Champion!.name);
-      h += '<span class="trophy-icon">&#129351;</span>';
-      h += tm2 ? teamPlate(tm2.c1, tm2.c2, rec.div2Champion.name, true) : rec.div2Champion.name;
+      h += `<span class="trophy-icon trophy-bronze">${icon('medal', 14)}</span>`;
+      h += tm2 ? teamLabelSm({ c1: tm2.c1, c2: tm2.c2, name: rec.div2Champion.name, country: tm2.country }) : rec.div2Champion.name;
     } else { h += '—'; }
     h += '</td>';
 
@@ -80,8 +81,8 @@ export function renderHistory(G: GameState, settings: Settings): void {
     h += '<td>';
     if (rec.div2RunnerUp) {
       const tm2 = G.teams.find(tm => tm.name === rec.div2RunnerUp!.name);
-      h += '<span class="trophy-icon">&#129352;</span>';
-      h += tm2 ? teamPlate(tm2.c1, tm2.c2, rec.div2RunnerUp.name, true) : rec.div2RunnerUp.name;
+      h += `<span class="trophy-icon trophy-silver">${icon('medal', 14)}</span>`;
+      h += tm2 ? teamLabelSm({ c1: tm2.c1, c2: tm2.c2, name: rec.div2RunnerUp.name, country: tm2.country }) : rec.div2RunnerUp.name;
     } else { h += '—'; }
     h += '</td>';
 
@@ -89,8 +90,8 @@ export function renderHistory(G: GameState, settings: Settings): void {
     h += '<td>';
     if (rec.topScorer) {
       const tm2 = G.teams.find(tm => tm.name === rec.topScorer!.teamName);
-      h += '&#9917; ' + rec.topScorer.name + ' (' +
-        (tm2 ? teamPlate(tm2.c1, tm2.c2, rec.topScorer.teamName, true) : rec.topScorer.teamName) +
+      h += `<span class="inline-icon">${icon('ball', 14)}</span> ` + rec.topScorer.name + ' (' +
+        (tm2 ? teamLabelSm({ c1: tm2.c1, c2: tm2.c2, name: rec.topScorer.teamName, country: tm2.country }) : rec.topScorer.teamName) +
         ') — ' + rec.topScorer.goals + ' ' + t(settings, 'goals');
     } else { h += '—'; }
     h += '</td>';
