@@ -6,7 +6,7 @@
  */
 
 import type { GameState, Settings, Team, Fixture, SeasonRecapData } from '../../types';
-import { SEASON_WEEKS, FORMATIONS, MORALE_MAX, FACILITY_COSTS, SPONSORSHIP_TIERS, SCOUT_COSTS, STADIUM_HOME_GAME_BONUS, STADIUM_INCOME_BONUS } from '../../config';
+import { SEASON_WEEKS, FORMATIONS, MORALE_MAX, SCOUT_COSTS } from '../../config';
 import { teamLabel, plateColors } from '../../utils/helpers';
 import { icon } from '../../assets/icons';
 import { t } from '../../data/i18n';
@@ -324,71 +324,11 @@ export function renderDashboard(
   /* ===== Mini League Table (get reference early for status panel insertion) ===== */
   const dashTableWrap = document.getElementById('dash-table-wrap');
 
-  /* ===== Morale & Scouting Panel (#3, #4) ===== */
-  const morale = pt.morale ?? 0;
-  const moraleLabel = morale >= 7 ? 'Euphoric' : morale >= 3 ? 'Happy' : morale >= -2 ? 'Neutral' : morale >= -6 ? 'Low' : 'Crisis';
-  const moraleColor = morale >= 3 ? 'var(--green)' : morale <= -3 ? 'var(--red)' : 'var(--text-dim)';
-
-  const budget = G.budgets[pt.id] || 0;
-
-  let extraHtml = `<div class="card" style="margin-top:8px"><div class="card-title"><span class="title-icon">${icon('stadium', 18)}</span> Club Development</div>`;
-
-  /* ===== Morale & Transfer Window status ===== */
-  const windowStatus = G.transferWindow
-    ? `<span style="color:var(--green);font-weight:700">OPEN</span>`
-    : '<span style="color:var(--text-dim)">Closed</span>';
-  extraHtml += `<div style="display:flex;gap:16px;flex-wrap:wrap;padding:8px 0;font-size:.85rem">`;
-  extraHtml += `<div>Morale: <b style="color:${moraleColor}">${moraleLabel}</b> <span style="font-size:.75rem;color:var(--text-dim)">(${morale > 0 ? '+' : ''}${morale})</span></div>`;
-  extraHtml += `<div>Transfer Window: ${windowStatus}</div>`;
-  extraHtml += `</div>`;
-
-  /* ===== Facilities + Sponsorship merged into upgrade tree ===== */
-  const fac = G.facilities || { trainingFacility: 0, youthAcademy: 0, stadium: 0 };
-  extraHtml += `<div style="margin-top:4px;border-top:1px solid var(--border);padding-top:8px">`;
-  extraHtml += `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px">`;
-
-  const facTypes: Array<{ key: string; label: string; iconKey: 'dumbbell' | 'cap' | 'stadium'; level: number; effect: string }> = [
-    { key: 'trainingFacility', label: 'Training Ground', iconKey: 'dumbbell', level: fac.trainingFacility || 0, effect: '+3% skill growth/lv' },
-    { key: 'youthAcademy', label: 'Youth Academy', iconKey: 'cap', level: fac.youthAcademy || 0, effect: '+2 regen skill/lv' },
-    { key: 'stadium', label: 'Stadium', iconKey: 'stadium', level: fac.stadium || 0, effect: `+$${STADIUM_HOME_GAME_BONUS}/home game + $${STADIUM_INCOME_BONUS}/season per lv` },
-  ];
-  for (const f of facTypes) {
-    const costs = FACILITY_COSTS[f.key] || [];
-    const nextCost = f.level < costs.length ? costs[f.level] : null;
-    const canUpgrade = nextCost !== null && budget >= nextCost;
-    const lvlPips = '<span class="pip on"></span>'.repeat(f.level) + '<span class="pip"></span>'.repeat(3 - f.level);
-    extraHtml += `<div class="fac-tile">`;
-    extraHtml += `<div class="fac-title"><span class="fac-icon">${icon(f.iconKey, 16)}</span> ${f.label}</div>`;
-    extraHtml += `<div class="fac-level">${lvlPips} Lv${f.level}/3</div>`;
-    extraHtml += `<div style="font-size:.72rem;color:var(--text-dim)">${f.effect}</div>`;
-    if (nextCost !== null) {
-      extraHtml += `<button class="btn-sign" style="margin-top:4px;font-size:.72rem;padding:2px 8px;width:100%" ${canUpgrade ? `onclick="upgradeFacility('${f.key}')"` : 'disabled'}>Upgrade $${nextCost.toLocaleString()}</button>`;
-    } else {
-      extraHtml += `<div style="font-size:.72rem;color:var(--green);font-weight:700;margin-top:4px">MAX LEVEL</div>`;
-    }
-    extraHtml += `</div>`;
-  }
-
-  /* Sponsorship as part of the upgrade grid */
-  const spLabel = G.sponsorship
-    ? `<b style="color:var(--green)">${G.sponsorship.tier}</b> $${G.sponsorship.incomePerSeason}/s`
-    : '<span style="color:var(--text-dim)">None</span>';
-  extraHtml += `<div class="fac-tile">`;
-  extraHtml += `<div class="fac-title"><span class="fac-icon">${icon('money', 16)}</span> Sponsor</div>`;
-  extraHtml += `<div style="font-size:.78rem;margin:2px 0">${spLabel}</div>`;
-  extraHtml += `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">`;
-  for (const sp of SPONSORSHIP_TIERS) {
-    const eligible = pt.div <= sp.requiredDiv;
-    const isActive = G.sponsorship?.tier === sp.tier;
-    extraHtml += `<button class="btn-sign" style="padding:2px 6px;font-size:.68rem;${isActive ? 'background:var(--green);color:#fff;' : ''}" `;
-    extraHtml += eligible && !isActive ? `onclick="selectSponsor('${sp.tier}')"` : 'disabled';
-    extraHtml += `>${sp.tier}${!eligible ? '*' : ''}${isActive ? ' ✓' : ''}</button>`;
-  }
-  extraHtml += `</div></div>`;
-
-  extraHtml += `</div></div>`;
-
-  /* Pre-Match Scouting Report (#3) */
+  /* ===== Pre-Match Scout Report =====
+   * Shown just below the Next Fixture card when an upcoming match exists.
+   * Club development (facilities, sponsorship, morale summary) lives in the
+   * office view (club.ts) and is no longer duplicated on the dashboard. */
+  let scoutHtml = '';
   if (G.week <= SEASON_WEEKS && G.fixtures[div]) {
     const fix = G.fixtures[div][G.week - 1];
     if (fix) {
@@ -403,27 +343,28 @@ export function renderDashboard(
           const oppFormation = FORMATIONS[opp.aiFormation]?.label || '4-4-2';
           const bestPlayer = [...opp.players].sort((a, b) => b.skill - a.skill)[0];
 
-          extraHtml += `<div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px">`;
-          extraHtml += `<div style="font-size:.82rem;font-weight:700;color:var(--text-dim);margin-bottom:4px"><span class="inline-icon">${icon('radar', 14)}</span> ${t(settings, 'scoutReport')} — ${teamLabel(opp)}</div>`;
-          extraHtml += `<div style="display:flex;gap:14px;flex-wrap:wrap;font-size:.82rem">`;
-          extraHtml += `<span>Form: <b style="color:${formColor}">${formStr}</b></span>`;
-          extraHtml += `<span>Formation: <b>${oppFormation}</b></span>`;
-          extraHtml += `<span>Record: ${opp.seasonStats.w}W ${opp.seasonStats.d}D ${opp.seasonStats.l}L</span>`;
+          scoutHtml += `<div class="card" style="margin-top:8px">`;
+          scoutHtml += `<div class="card-title"><span class="title-icon">${icon('radar', 18)}</span> ${t(settings, 'scoutReport')} — ${teamLabel(opp)}</div>`;
+          scoutHtml += `<div style="display:flex;gap:14px;flex-wrap:wrap;font-size:.82rem;padding:4px 0">`;
+          scoutHtml += `<span>Form: <b style="color:${formColor}">${formStr}</b></span>`;
+          scoutHtml += `<span>Formation: <b>${oppFormation}</b></span>`;
+          scoutHtml += `<span>Record: ${opp.seasonStats.w}W ${opp.seasonStats.d}D ${opp.seasonStats.l}L</span>`;
           if (bestPlayer) {
-            extraHtml += `<span>Key Player: <b>${bestPlayer.name}</b> (${bestPlayer.pos}, ${bestPlayer.skill})</span>`;
+            scoutHtml += `<span>Key Player: <b>${bestPlayer.name}</b> (${bestPlayer.pos}, ${bestPlayer.skill})</span>`;
           }
           const oppMorale = opp.morale ?? 0;
           if (oppMorale !== 0) {
-            extraHtml += `<span>Morale: ${oppMorale > 0 ? '+' : ''}${oppMorale}</span>`;
+            scoutHtml += `<span>Morale: ${oppMorale > 0 ? '+' : ''}${oppMorale}</span>`;
           }
-          extraHtml += `</div></div>`;
+          scoutHtml += `</div></div>`;
         }
       }
     }
   }
-  extraHtml += `</div>`;
 
-  /* Insert the status card before the mini table card in the dashboard view */
+  /* Insert (or clear) the scout-report card directly after Next Fixture.
+   * The element id is kept as `team-status-card` for backwards compatibility
+   * with existing style hooks and the recap-gate cleanup above. */
   if (dashTableWrap) {
     const dashView = document.getElementById('view-dashboard');
     const tableCard = dashTableWrap.closest('.card');
@@ -434,7 +375,7 @@ export function renderDashboard(
         statusCard.id = 'team-status-card';
         dashView.insertBefore(statusCard, tableCard);
       }
-      statusCard.innerHTML = extraHtml;
+      statusCard.innerHTML = scoutHtml;
     }
   }
 
