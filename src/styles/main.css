@@ -2458,56 +2458,57 @@ html.light .overlay {
     font-size: 13px;
   }
 
-  /* ---- BOTTOM TAB NAV BAR ---- */
-  /* Reposition nav bar to bottom of screen as a fixed tab bar */
+  /* ---- TOP STICKY NAV BAR ---- */
+  /* Nav bar sits at the top of the viewport like on tablet/desktop. */
   .nav-bar {
-    position: fixed;
-    bottom: 0;
+    position: sticky;
+    top: 0;
     left: 0;
     right: 0;
-    top: auto;
+    bottom: auto;
     z-index: 200;
-    border-bottom: none;
-    border-top: 1px solid var(--border);
-    padding: var(--sp-xs) var(--sp-xs) calc(var(--sp-xs) + env(safe-area-inset-bottom));
-    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.3);
+    border-top: none;
+    border-bottom: 1px solid var(--border);
+    padding: var(--sp-xs) var(--sp-xs);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
   }
 
   .nav-bar-inner {
     flex-wrap: nowrap;
-    gap: 0;
-    justify-content: space-around;
+    gap: var(--sp-xs);
+    justify-content: flex-start;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
   }
 
   .nav-btn {
-    flex-direction: column;
-    padding: 4px 2px;
-    font-size: 0.62rem;
-    gap: 2px;
-    min-height: 48px;
+    flex-direction: row;
+    padding: 6px 10px;
+    font-size: 0.72rem;
+    gap: 4px;
+    min-height: 38px;
     min-width: 0;
-    flex: 1;
+    flex-shrink: 0;
     justify-content: center;
     align-items: center;
     border-radius: var(--radius-sm);
+    scroll-snap-align: start;
   }
 
   .nav-btn .nav-icon {
-    font-size: 1.15rem;
+    font-size: 0.95rem;
     display: block;
   }
 
-  /* Show short labels under icons on phone bottom nav */
+  /* Compact labels alongside the icon on phone */
   .nav-btn .nav-label {
-    display: block;
-    font-size: 0.58rem;
+    display: inline;
+    font-size: 0.72rem;
     line-height: 1.1;
-    text-align: center;
-    max-width: 48px;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    text-align: left;
+    max-width: none;
+    overflow: visible;
     white-space: nowrap;
   }
 
@@ -2515,30 +2516,16 @@ html.light .overlay {
     display: none;
   }
 
-  /* Active state: subtle background instead of full green fill */
+  /* Active state: full green pill for clear feedback */
   .nav-btn.active {
-    background: var(--accent-glow);
-    color: var(--accent);
-    box-shadow: none;
-  }
-
-  /* Play Match button: prominent in bottom nav */
-  .nav-btn.play-match {
-    margin-left: 0;
-    order: 0;
-    background: var(--green);
+    background: var(--accent);
     color: #fff;
-    border-radius: var(--radius-md);
-    padding: 4px 6px;
+    box-shadow: 0 0 12px rgba(63, 185, 80, 0.3);
   }
 
-  .nav-btn.play-match .nav-label {
-    display: block;
-  }
-
-  /* Market open animation in bottom nav */
+  /* Market open animation in top nav */
   .nav-btn.market-open {
-    font-size: 0.62rem;
+    font-size: 0.72rem;
   }
 
   /* ---- TOP BAR: compact two-row for phone ---- */
@@ -2569,9 +2556,9 @@ html.light .overlay {
     display: none;
   }
 
-  /* ---- MAIN CONTENT: bottom padding for tab bar ---- */
+  /* ---- MAIN CONTENT: standard bottom padding (nav is at top now) ---- */
   #main {
-    padding-bottom: calc(var(--sp-xl) + 68px + env(safe-area-inset-bottom));
+    padding-bottom: calc(var(--sp-md) + env(safe-area-inset-bottom));
   }
 
   /* ---- WELCOME SCREEN ---- */
@@ -2768,9 +2755,9 @@ html.light .overlay {
     min-width: unset;
   }
 
-  /* ---- TOAST: positioned above bottom nav ---- */
+  /* ---- TOAST: anchored to bottom of viewport (nav is at top now) ---- */
   .toast {
-    bottom: calc(68px + env(safe-area-inset-bottom) + 12px);
+    bottom: calc(env(safe-area-inset-bottom) + 12px);
   }
 
   /* ---- SEASON OVERLAY: full screen on phone ---- */
@@ -2952,9 +2939,9 @@ html.light .overlay {
    31c. Landscape Phone Bottom Nav Adjustments
    -------------------------------------------------------------------------- */
 @media (max-width: 480px) and (orientation: landscape) {
-  /* Bottom nav: slim row in landscape */
+  /* Top nav: slim row in landscape */
   .nav-bar {
-    padding: 2px var(--sp-xs) calc(2px + env(safe-area-inset-bottom));
+    padding: 2px var(--sp-xs);
   }
 
   .nav-btn {
@@ -2974,13 +2961,13 @@ html.light .overlay {
     max-width: none;
   }
 
-  /* Less bottom padding needed for slimmer nav */
+  /* Standard bottom spacing -- nav no longer occupies the footer */
   #main {
-    padding-bottom: calc(var(--sp-lg) + 44px + env(safe-area-inset-bottom));
+    padding-bottom: calc(var(--sp-md) + env(safe-area-inset-bottom));
   }
 
   .toast {
-    bottom: calc(44px + env(safe-area-inset-bottom) + 8px);
+    bottom: calc(env(safe-area-inset-bottom) + 8px);
   }
 }
 
@@ -3817,25 +3804,26 @@ html.light .pr-pos.str {
 .training-bar {
   display: flex;
   align-items: center;
-  gap: var(--sp-sm);
+  gap: var(--sp-xs);
   flex-wrap: wrap;
 }
 
 .training-label {
-  font-size: 0.82rem;
+  font-size: 0.74rem;
   font-weight: 600;
   color: var(--text-dim);
   white-space: nowrap;
 }
 
 .training-btn {
-  padding: 6px 14px;
+  padding: 3px 8px;
   border-radius: var(--radius-sm);
-  font-size: 0.78rem;
+  font-size: 0.7rem;
   font-weight: 500;
   background: var(--surface2);
   color: var(--text-dim);
   border: 1px solid var(--border);
+  line-height: 1.2;
   transition: background var(--transition-fast),
               color var(--transition-fast),
               border-color var(--transition-fast);
@@ -5929,9 +5917,9 @@ html.light .changelog-overlay {
     padding: var(--sp-sm);
   }
 
-  /* App footer: account for bottom nav */
+  /* App footer: standard bottom padding -- nav is at top now */
   .app-footer {
-    padding-bottom: calc(var(--sp-xl) + 60px + env(safe-area-inset-bottom));
+    padding-bottom: calc(var(--sp-md) + env(safe-area-inset-bottom));
   }
 
   /* Sponsor cards: full width */
