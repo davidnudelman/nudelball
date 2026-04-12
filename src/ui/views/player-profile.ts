@@ -6,9 +6,11 @@
  */
 
 import type { GameState, Settings, Player, Position } from '../../types';
-import { POS_CSS, POS_DISTANCE, OOP_PENALTY_PER_STEP, FORM_OVR_PCT, RETIREMENT_AGE } from '../../config';
+import { POS_CSS, POS_DISTANCE, OOP_PENALTY_PER_STEP, FORM_OVR_PCT, RETIREMENT_AGE, SQUAD_MIN } from '../../config';
 import { playerAvatar } from '../../utils/helpers';
 import { icon } from '../../assets/icons';
+import { t } from '../../data/i18n';
+import { playerSellValue } from './market';
 
 /* ================================================================
    HELPERS
@@ -137,6 +139,52 @@ export function renderPlayerProfile(G: GameState, settings: Settings): void {
     } Players who retire are automatically replaced by a new 18-year-old in the same position, with skill matching your division level.</p>`;
     h += `</div>`;
   }
+
+  /* ================================================================
+     Transfer / Sell Section
+     ================================================================
+     Allow the user to sell this player directly from the profile page.
+     The UI mirrors the market's sell button: disabled when the transfer
+     window is shut or when the squad is already at the minimum size.
+     A confirmation dialog (reusing the existing i18n string) guards the
+     destructive action. The `onSellPlayer` callback is wired through
+     main.ts and navigates back to the squad view on success. */
+  const sellVal = playerSellValue(p);
+  const windowOpen = !!G.transferWindow;
+  const squadSize = pt.players.length;
+  const canSellSquadSize = squadSize > SQUAD_MIN;
+  const canSell = windowOpen && canSellSquadSize && p.injuredFor === 0 && p.suspendedFor === 0;
+
+  h += `<div class="pp-section pp-sell-section">`;
+  h += `<div class="pp-section-title">${icon('money', 14)} ${t(settings, 'transferMarket')}</div>`;
+  h += `<div class="pp-sell-row">`;
+  h += `<div class="pp-sell-info">`;
+  h += `<div class="pp-sell-label">${t(settings, 'sell')} value</div>`;
+  h += `<div class="pp-sell-value">$${sellVal.toLocaleString()}</div>`;
+  h += `</div>`;
+
+  /* Build the sell button - the disabled reason is shown in a tooltip-like note below */
+  const confirmText = t(settings, 'sellConfirm', {
+    name: p.name.replace(/'/g, "\\'"),
+    amount: sellVal.toLocaleString(),
+  });
+  const sellBtnOnClick = `if(confirm('${confirmText}'))sellPlayerFromProfile(${idx})`;
+  h += `<button class="btn btn-danger pp-sell-btn" ${canSell ? `onclick="${sellBtnOnClick}"` : 'disabled'}>`;
+  h += `${icon('inboxOut', 14)} ${t(settings, 'sell')}`;
+  h += `</button>`;
+  h += `</div>`;
+
+  /* Explanation of why the button is disabled, if applicable */
+  if (!windowOpen) {
+    h += `<div class="pp-sell-reason">${t(settings, 'windowClosedMsg')}</div>`;
+  } else if (!canSellSquadSize) {
+    h += `<div class="pp-sell-reason">${t(settings, 'minSquad')} (${SQUAD_MIN})</div>`;
+  } else if (p.injuredFor > 0) {
+    h += `<div class="pp-sell-reason">Cannot sell an injured player.</div>`;
+  } else if (p.suspendedFor > 0) {
+    h += `<div class="pp-sell-reason">Cannot sell a suspended player.</div>`;
+  }
+  h += `</div>`;
 
   /* Back button */
   h += `<div style="margin-top:16px"><button class="btn btn-outline btn-has-icon" onclick="showView('squad')"><span class="btn-icon">${icon('arrowLeft', 14)}</span> Back to Squad</button></div>`;
