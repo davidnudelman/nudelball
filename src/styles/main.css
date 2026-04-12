@@ -6928,6 +6928,252 @@ html.light .changelog-overlay {
 .sponsor-tile-status.active { color: var(--green); }
 .sponsor-tile-status.locked { color: var(--red); }
 
+/* ================================================================
+   OFFICE VIEW -- evolving facility & sponsor cards
+   ================================================================ */
+
+.of-facility-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.of-sponsor-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+/* Generic card shell shared by facility & sponsor cards */
+.of-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: border-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.of-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+
+/* Visual scene area at the top of facility cards */
+.of-card-visual {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 200 / 110;
+  background: #15202b;
+  overflow: hidden;
+}
+
+.of-card-visual .of-scene {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Level badge floating over the scene */
+.of-card-level-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(13, 17, 23, 0.85);
+  color: var(--accent);
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 3px 7px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+/* Card body below the visual */
+.of-card-body {
+  padding: 12px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.of-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.of-card-icon {
+  color: var(--accent);
+  display: inline-flex;
+}
+
+.of-card-label {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.02em;
+}
+
+.of-card-effect {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  margin-top: 1px;
+}
+
+.of-card-flavour {
+  font-size: 0.74rem;
+  color: var(--text-dim);
+  font-style: italic;
+  line-height: 1.35;
+}
+
+.of-card-current {
+  font-size: 0.72rem;
+  color: var(--accent);
+}
+
+.of-upgrade-btn {
+  width: 100%;
+  padding: 7px 8px;
+  font-size: 0.82rem;
+  margin-top: 4px;
+}
+
+.of-need-more {
+  font-size: 0.7rem;
+  color: var(--red);
+  text-align: center;
+  margin-top: 2px;
+}
+
+.of-max-badge {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--green);
+  font-weight: 700;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(63, 185, 80, 0.08);
+  border: 1px solid rgba(63, 185, 80, 0.25);
+  border-radius: 6px;
+  margin-top: 4px;
+}
+
+/* Level pip bar -- one filled pip per upgrade level */
+.of-level-pips {
+  display: flex;
+  gap: 5px;
+  margin: 2px 0 4px;
+}
+
+.of-pip {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--border);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.of-pip.filled {
+  background: var(--accent);
+  box-shadow: 0 0 6px rgba(63, 185, 80, 0.45);
+}
+
+/* Per-level glow accent on facility cards: subtle hint of progression */
+.of-facility-card[data-level="1"] { box-shadow: inset 0 -2px 0 rgba(63, 185, 80, 0.15); }
+.of-facility-card[data-level="2"] { box-shadow: inset 0 -3px 0 rgba(63, 185, 80, 0.30); }
+.of-facility-card[data-level="3"] {
+  box-shadow: inset 0 -4px 0 rgba(255, 211, 74, 0.5), 0 0 12px rgba(255, 211, 74, 0.18);
+  border-color: rgba(255, 211, 74, 0.45);
+}
+
+/* Sponsor cards -- centred badge above text */
+.of-sponsor-card .of-sponsor-badge-wrap {
+  background: linear-gradient(180deg, #1a222d, #11171f);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 0 8px;
+}
+
+.of-sponsor-badge {
+  width: 96px;
+  height: 96px;
+  display: block;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.45));
+  transition: transform var(--transition-fast);
+}
+
+.of-sponsor-card:hover .of-sponsor-badge {
+  transform: scale(1.04);
+}
+
+.of-sponsor-badge.is-active {
+  animation: of-sponsor-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes of-sponsor-pulse {
+  0%, 100% { filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.45)); }
+  50% { filter: drop-shadow(0 4px 14px rgba(63, 185, 80, 0.6)); }
+}
+
+/* Player profile sell section */
+.pp-sell-section {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  margin-top: 12px;
+}
+
+.pp-sell-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pp-sell-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.pp-sell-label {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.pp-sell-value {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--red);
+}
+
+.pp-sell-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pp-sell-reason {
+  font-size: 0.74rem;
+  color: var(--text-dim);
+  margin-top: 6px;
+  font-style: italic;
+}
+
 /* Top bar season badge with SVG money icon */
 .season-sep {
   color: var(--text-dim);

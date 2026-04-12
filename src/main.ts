@@ -1107,6 +1107,30 @@ function globalSellPlayer(playerIdx: number): void {
 }
 
 /**
+ * Sell a player triggered from the Player Profile page.
+ *
+ * On success, navigates back to the squad view since the profile we
+ * were looking at no longer exists in the roster. Mirrors globalSellPlayer
+ * but takes care of the post-sale navigation.
+ *
+ * @param playerIdx - Index into the player team's roster.
+ */
+function sellPlayerFromProfile(playerIdx: number): void {
+  const success = engineSellPlayer(G, playerIdx);
+  if (success) {
+    SFX.click();
+    saveGame();
+    updateTopBar(G, settings);
+    /* Clear the viewing player since they are no longer on the team */
+    G.viewingPlayerId = null;
+    wrappedRenderMarket();
+    wrappedRenderSquad();
+    updatePlayBtn();
+    showView('squad');
+  }
+}
+
+/**
  * Buy a player from an AI team (inter-team transfer).
  *
  * Price is calculated as: skill * skill * 50 * 1.5 (AI premium),
@@ -1662,6 +1686,7 @@ declare global {
     /* Market */
     signPlayer: typeof globalSignPlayer;
     sellPlayer: typeof globalSellPlayer;
+    sellPlayerFromProfile: typeof sellPlayerFromProfile;
     buyAIPlayer: typeof globalBuyAIPlayer;
 
     /* New Feature Actions */
@@ -1752,6 +1777,7 @@ window.showTeamProfile = globalOpenTeamProfile;
 /* --- Market --- */
 window.signPlayer = globalSignPlayer;
 window.sellPlayer = globalSellPlayer;
+window.sellPlayerFromProfile = sellPlayerFromProfile;
 window.buyAIPlayer = globalBuyAIPlayer;
 
 /* --- New Feature Actions --- */
