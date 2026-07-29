@@ -133,3 +133,134 @@ export function statBadge(label: string, value: string | number, color?: string)
   const style = color ? ` style="color:${color}"` : '';
   return `<div class="stat-badge"><span class="sb-value"${style}>${value}</span><span class="sb-label">${label}</span></div>`;
 }
+
+/* ================================================================
+   MODALS & TOASTS
+   ================================================================ */
+
+export interface ConfirmDialogOptions {
+  title: string;
+  message: string;
+  confirmLabel: string;
+  cancelLabel: string;
+  severity?: 'info' | 'warning' | 'danger';
+}
+
+export interface PromptDialogOptions {
+  title: string;
+  message: string;
+  confirmLabel: string;
+  cancelLabel: string;
+  placeholder?: string;
+  initialValue?: string;
+}
+
+/**
+ * Show a floating toast notification.
+ */
+export function showToast(message: string, type: 'success' | 'error' | 'info' = 'info', durationMs = 2200): void {
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+
+  requestAnimationFrame(() => toast.classList.add('show'));
+
+  const cleanup = (): void => {
+    toast.classList.remove('show');
+    window.setTimeout(() => {
+      if (toast.parentElement) toast.parentElement.removeChild(toast);
+    }, 200);
+  };
+
+  window.setTimeout(cleanup, durationMs);
+}
+
+/**
+ * Show a modal confirm dialog.
+ */
+export function showConfirmDialog(options: ConfirmDialogOptions): Promise<boolean> {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'overlay app-dialog-overlay';
+    overlay.style.display = 'flex';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+
+    const severityClass = options.severity ? ` is-${options.severity}` : '';
+    overlay.innerHTML =
+      `<div class="overlay-content app-dialog${severityClass}">` +
+      `<div class="app-dialog-title">${escapeHtml(options.title)}</div>` +
+      `<div class="app-dialog-message">${escapeHtml(options.message)}</div>` +
+      `<div class="app-dialog-actions">` +
+      `<button class="btn btn-secondary app-dialog-cancel">${escapeHtml(options.cancelLabel)}</button>` +
+      `<button class="btn btn-accent app-dialog-confirm">${escapeHtml(options.confirmLabel)}</button>` +
+      `</div>` +
+      `</div>`;
+
+    const confirmBtn = overlay.querySelector('.app-dialog-confirm') as HTMLButtonElement | null;
+    const cancelBtn = overlay.querySelector('.app-dialog-cancel') as HTMLButtonElement | null;
+    const close = (value: boolean): void => {
+      if (overlay.parentElement) overlay.parentElement.removeChild(overlay);
+      resolve(value);
+    };
+
+    overlay.addEventListener('click', (event) => {
+      if (event.target === overlay) close(false);
+    });
+    overlay.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') close(false);
+    });
+    confirmBtn?.addEventListener('click', () => close(true));
+    cancelBtn?.addEventListener('click', () => close(false));
+
+    document.body.appendChild(overlay);
+    confirmBtn?.focus();
+  });
+}
+
+/**
+ * Show a modal prompt dialog with text input.
+ */
+export function showPromptDialog(options: PromptDialogOptions): Promise<string | null> {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'overlay app-dialog-overlay';
+    overlay.style.display = 'flex';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+
+    overlay.innerHTML =
+      `<div class="overlay-content app-dialog">` +
+      `<div class="app-dialog-title">${escapeHtml(options.title)}</div>` +
+      `<div class="app-dialog-message">${escapeHtml(options.message)}</div>` +
+      `<input class="app-dialog-input" type="text" maxlength="40" placeholder="${escapeHtml(options.placeholder || '')}" value="${escapeHtml(options.initialValue || '')}" />` +
+      `<div class="app-dialog-actions">` +
+      `<button class="btn btn-secondary app-dialog-cancel">${escapeHtml(options.cancelLabel)}</button>` +
+      `<button class="btn btn-accent app-dialog-confirm">${escapeHtml(options.confirmLabel)}</button>` +
+      `</div>` +
+      `</div>`;
+
+    const confirmBtn = overlay.querySelector('.app-dialog-confirm') as HTMLButtonElement | null;
+    const cancelBtn = overlay.querySelector('.app-dialog-cancel') as HTMLButtonElement | null;
+    const input = overlay.querySelector('.app-dialog-input') as HTMLInputElement | null;
+    const close = (value: string | null): void => {
+      if (overlay.parentElement) overlay.parentElement.removeChild(overlay);
+      resolve(value);
+    };
+
+    overlay.addEventListener('click', (event) => {
+      if (event.target === overlay) close(null);
+    });
+    overlay.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') close(null);
+      if (event.key === 'Enter') close((input?.value || '').trim());
+    });
+    confirmBtn?.addEventListener('click', () => close((input?.value || '').trim()));
+    cancelBtn?.addEventListener('click', () => close(null));
+
+    document.body.appendChild(overlay);
+    input?.focus();
+    input?.select();
+  });
+}

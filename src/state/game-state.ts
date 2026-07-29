@@ -48,6 +48,7 @@ import {
 } from '../config';
 
 import { genName, genSkill, makePlayer, rand } from '../engine/player';
+import { randomTeamLogo } from '../assets/logos';
 import { generateSeasonFreeAgents, initBudgets as _initBudgets } from '../engine/transfers';
 
 // ---------------------------------------------------------------------------
@@ -361,6 +362,7 @@ export const initNewGame = (): void => {
       c1: td.c1,
       c2: td.c2,
       country: td.country,
+      logo: randomTeamLogo(`${td.name}|${td.country}|${td.c1}|${td.c2}`),
       players: [],
       stats: emptyStats(),
       seasonStats: emptyStats(),
@@ -391,6 +393,7 @@ export const initNewGame = (): void => {
     c1: td.c1,
     c2: td.c2,
     country: td.country,
+    logo: randomTeamLogo(`${td.name}|${td.country}|${td.c1}|${td.c2}`),
   }));
   G.returnPool = [];
 
@@ -434,6 +437,7 @@ export const initNewGame = (): void => {
       c1: tm.c1,
       c2: tm.c2,
       country: tm.country,
+      logo: tm.logo,
     });
   }
 

@@ -20,6 +20,10 @@
 
     <!-- New Game Form -->
     <div id="welcome-new">
+      <div class="manager-input-group">
+        <input type="text" class="form-input" id="manager-name" data-i18n-placeholder="managerPlaceholder" placeholder="Enter your name, Manager..." maxlength="24">
+      </div>
+      <div class="team-picker-gate-text" id="team-picker-gate-text"></div>
       <div class="team-picker" id="team-picker"></div>
       <div class="team-assign" id="team-selected" style="display:none">
         <div class="label" data-i18n="selectedTeam">Selected Team</div>
@@ -38,9 +42,6 @@
             <input type="color" id="team-color-c2" class="team-color-input" value="#fcdd09">
           </div>
         </div>
-      </div>
-      <div class="manager-input-group" style="display:none">
-        <input type="text" class="form-input" id="manager-name" data-i18n-placeholder="managerPlaceholder" placeholder="Enter your name, Manager..." maxlength="24">
       </div>
       <button class="btn btn-success btn-start" id="start-btn" disabled data-i18n="enterDugout">Enter The Dugout</button>
     </div>
@@ -71,9 +72,9 @@
         <div class="season-badge" id="season-badge">Season 1</div>
       </div>
       <div class="top-bar-right">
-        <button class="top-bar-icon" id="mute-btn" onclick="toggleMute()" title="Mute/Unmute"><span data-icon="volume"></span></button>
+        <button class="top-bar-icon" id="mute-btn" onclick="toggleMute()" title="Mute/Unmute" aria-label="Mute or unmute audio"><span data-icon="volume"></span></button>
         <button class="btn btn-success" id="play-match-btn" onclick="playMatch()" data-i18n="playMatch">Play Match</button>
-        <button class="top-bar-icon" id="settings-btn" onclick="toggleSettings()" title="Settings"><span data-icon="gear"></span></button>
+        <button class="top-bar-icon" id="settings-btn" onclick="toggleSettings()" title="Settings" aria-label="Open settings"><span data-icon="gear"></span></button>
       </div>
     </div>
   </div>
@@ -95,7 +96,7 @@
 </div>
 
 <!-- ===== MAIN CONTENT ===== -->
-<div id="main" class="container" style="display:none">
+<div id="main" class="container" style="display:none" role="main">
 
   <!-- Dashboard -->
   <div id="view-dashboard" class="view active">
@@ -207,11 +208,11 @@
 </div>
 
 <!-- ===== SETTINGS OVERLAY ===== -->
-<div class="overlay settings-overlay" id="settings-overlay" style="display:none">
+<div class="overlay settings-overlay" id="settings-overlay" style="display:none" role="dialog" aria-modal="true" aria-labelledby="settings-title">
   <div class="overlay-content settings-box">
     <div class="overlay-header settings-header">
-      <h2 data-i18n="settings">Settings</h2>
-      <button class="overlay-close settings-close" onclick="toggleSettings()">&times;</button>
+      <h2 id="settings-title" data-i18n="settings">Settings</h2>
+      <button class="overlay-close settings-close" onclick="toggleSettings()" aria-label="Close settings">&times;</button>
     </div>
     <div class="settings-row">
       <span class="settings-label" data-i18n="theme">Theme</span>
@@ -251,22 +252,22 @@
 </div>
 
 <!-- ===== HELP OVERLAY ===== -->
-<div class="overlay help-overlay" id="help-overlay" style="display:none">
+<div class="overlay help-overlay" id="help-overlay" style="display:none" role="dialog" aria-modal="true" aria-labelledby="help-title">
   <div class="overlay-content help-box">
     <div class="overlay-header help-header">
-      <h2><span data-icon="book"></span> How to Play</h2>
-      <button class="overlay-close help-close" onclick="toggleHelp()">&times;</button>
+      <h2 id="help-title"><span data-icon="book"></span> How to Play</h2>
+      <button class="overlay-close help-close" onclick="toggleHelp()" aria-label="Close help">&times;</button>
     </div>
     <div class="help-body" id="help-body"></div>
   </div>
 </div>
 
 <!-- ===== CHANGELOG OVERLAY ===== -->
-<div class="overlay changelog-overlay" id="changelog-overlay" style="display:none">
+<div class="overlay changelog-overlay" id="changelog-overlay" style="display:none" role="dialog" aria-modal="true" aria-labelledby="changelog-title">
   <div class="overlay-content changelog-box">
     <div class="overlay-header changelog-header">
-      <h2><span data-icon="clipboard"></span> Changelog</h2>
-      <button class="overlay-close changelog-close" onclick="toggleChangelog()">&times;</button>
+      <h2 id="changelog-title"><span data-icon="clipboard"></span> Changelog</h2>
+      <button class="overlay-close changelog-close" onclick="toggleChangelog()" aria-label="Close changelog">&times;</button>
     </div>
     <div class="changelog-body" id="changelog-body"></div>
   </div>

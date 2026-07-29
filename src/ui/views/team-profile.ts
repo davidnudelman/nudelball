@@ -7,7 +7,7 @@
 
 import type { GameState, Settings, Player, Position } from '../../types';
 import { FORMATIONS, DEFAULT_FORMATION_IDX, POS_CSS, POS_DISTANCE, OOP_PENALTY_PER_STEP, FORM_OVR_PCT } from '../../config';
-import { teamLabel, plateColors, teamFlag, playerAvatar } from '../../utils/helpers';
+import { teamLabel, plateColors, teamLogo, playerAvatar } from '../../utils/helpers';
 import { icon } from '../../assets/icons';
 import { t } from '../../data/i18n';
 
@@ -149,7 +149,7 @@ export function renderTeamProfile(G: GameState, settings: Settings): void {
   /* Header with team plate and hero flag */
   const _tpc = plateColors(tm.c1, tm.c2);
   h += `<div class="tp-hero" style="background:linear-gradient(135deg, ${_tpc.bg}, ${tm.c1});">`;
-  h += `<div class="tp-hero-flag">${teamFlag(tm.country, 'tp-flag-big')}</div>`;
+  h += `<div class="tp-hero-flag">${teamLogo(tm, 'tp-flag-big')}</div>`;
   h += `<div class="tp-hero-info">`;
   h += `<div class="tp-hero-name" style="color:${_tpc.txt}">${tm.name.toUpperCase()}</div>`;
   h += `<div class="tp-hero-div" style="color:${_tpc.txt}">${t(settings, 'division')} ${tm.div}</div>`;
