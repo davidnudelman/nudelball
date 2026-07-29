@@ -14,7 +14,7 @@
  */
 
 import type { GameState, Settings, SaveSlot } from '../../types';
-import { teamLabel, teamFlag, clearPlateCache } from '../../utils/helpers';
+import { teamLabel, teamLogo, clearPlateCache } from '../../utils/helpers';
 import { icon } from '../../assets/icons';
 import { t } from '../../data/i18n';
 import { listSaveSlots } from '../../state/save-manager';
@@ -36,6 +36,8 @@ import { listSaveSlots } from '../../state/save-manager';
 export function renderTeamPicker(G: GameState, settings: Settings): void {
   const picker = document.getElementById('team-picker');
   if (!picker) return;
+  const nameInput = document.getElementById('manager-name') as HTMLInputElement | null;
+  const hasManagerName = !!nameInput?.value.trim();
 
   let h = '';
   for (let d = 1; d <= 4; d++) {
@@ -47,8 +49,10 @@ export function renderTeamPicker(G: GameState, settings: Settings): void {
     h += `<div class="tp-div"><div class="tp-label">${t(settings, 'div')} ${d}</div><div class="tp-grid">`;
     for (const tm of divTeams) {
       const sel = tm.id === G.playerTeamId ? 'selected' : '';
-      h += `<div class="tp-card ${sel}" onclick="selectTeam(${tm.id})">` +
-        `<div class="tp-card-flag">${teamFlag(tm.country)}</div>` +
+      const lockCls = hasManagerName ? '' : ' locked';
+      const clickAttr = hasManagerName ? ` onclick="selectTeam(${tm.id})"` : '';
+      h += `<div class="tp-card ${sel}${lockCls}" data-team-id="${tm.id}"${clickAttr}>` +
+        `<div class="tp-card-flag">${teamLogo(tm)}</div>` +
         `<div class="tp-card-plate">${teamLabel(tm)}</div>` +
         `</div>`;
     }
@@ -72,6 +76,17 @@ export function renderTeamPicker(G: GameState, settings: Settings): void {
  * @param event  - The click event (for currentTarget highlighting)
  */
 export function selectTeam(G: GameState, teamId: number, event?: Event): void {
+  const nameInput = document.getElementById('manager-name') as HTMLInputElement | null;
+  if (!nameInput || !nameInput.value.trim()) {
+    nameInput?.focus();
+    const picker = document.getElementById('team-picker');
+    if (picker) {
+      picker.classList.add('require-name');
+      window.setTimeout(() => picker.classList.remove('require-name'), 500);
+    }
+    return;
+  }
+
   G.playerTeamId = teamId;
   const team = G.teams[teamId];
 
@@ -79,6 +94,9 @@ export function selectTeam(G: GameState, teamId: number, event?: Event): void {
   document.querySelectorAll('.tp-card').forEach(c => c.classList.remove('selected'));
   if (event && event.currentTarget) {
     (event.currentTarget as HTMLElement).classList.add('selected');
+  } else {
+    const card = document.querySelector(`.tp-card[data-team-id="${teamId}"]`);
+    if (card) card.classList.add('selected');
   }
 
   /* Show selected team info + rename input */
@@ -95,14 +113,6 @@ export function selectTeam(G: GameState, teamId: number, event?: Event): void {
     const c2Input = document.getElementById('team-color-c2') as HTMLInputElement | null;
     if (c1Input) c1Input.value = team.c1;
     if (c2Input) c2Input.value = team.c2;
-  }
-
-  /* Show the manager name input (positioned after team customization) */
-  const managerGroup = document.querySelector('.manager-input-group') as HTMLElement | null;
-  if (managerGroup) {
-    managerGroup.style.display = 'block';
-    const nameInput = document.getElementById('manager-name') as HTMLInputElement | null;
-    if (nameInput) nameInput.focus();
   }
 
   /* Check if start button should be enabled */
@@ -184,6 +194,8 @@ export function bootWelcome(
   const continueBtn = document.getElementById('continue-btn') as HTMLButtonElement | null;
   const newGameBtn = document.getElementById('newgame-btn') as HTMLButtonElement | null;
   const teamRenameInput = document.getElementById('team-rename') as HTMLInputElement | null;
+  const picker = document.getElementById('team-picker');
+  const pickerGateText = document.getElementById('team-picker-gate-text');
 
   if (!nameInput || !startBtn) return;
 
@@ -207,8 +219,24 @@ export function bootWelcome(
     renderTeamPicker(G, settings);
   }
 
+  const updateTeamPickerGate = (): void => {
+    const hasName = nameInput.value.trim().length > 0;
+    if (picker) picker.classList.toggle('locked', !hasName);
+    if (pickerGateText) {
+      pickerGateText.style.display = hasName ? 'none' : 'block';
+      pickerGateText.textContent = hasName ? '' : t(settings, 'pickTeamAfterManager');
+    }
+    if (!hasName) {
+      G.playerTeamId = null;
+      const selected = document.getElementById('team-selected');
+      if (selected) selected.style.display = 'none';
+    }
+    renderTeamPicker(G, settings);
+    checkStartReady();
+  };
+
   /* Bind input listeners */
-  nameInput.addEventListener('input', checkStartReady);
+  nameInput.addEventListener('input', updateTeamPickerGate);
   nameInput.addEventListener('keydown', (e: KeyboardEvent) => {
     if (e.key === 'Enter' && !startBtn.disabled) {
       startNewGame(G, settings, callbacks);
@@ -239,12 +267,11 @@ export function bootWelcome(
       if (welcomeContinue) welcomeContinue.style.display = 'none';
       const teamSelected = document.getElementById('team-selected');
       if (teamSelected) teamSelected.style.display = 'none';
-      const managerGroup = document.querySelector('.manager-input-group') as HTMLElement | null;
-      if (managerGroup) managerGroup.style.display = 'none';
 
       renderTeamPicker(G, settings);
       nameInput.value = '';
       startBtn.disabled = true;
+      updateTeamPickerGate();
     });
   }
 
@@ -264,6 +291,7 @@ export function bootWelcome(
 
   /* Render save slots panel (NEW) */
   renderSaveSlots(settings, callbacks);
+  updateTeamPickerGate();
 }
 
 /* ================================================================

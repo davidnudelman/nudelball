@@ -63,6 +63,9 @@ export type Difficulty = 'easy' | 'normal' | 'hard';
 /** Team strength display modes in settings */
 export type StrengthDisplay = 'none' | 'power' | 'avg';
 
+/** Match animation speed multipliers */
+export type MatchSpeed = 1 | 2 | 4;
+
 /** Theme modes */
 export type Theme = 'dark' | 'light';
 
@@ -80,6 +83,19 @@ export type ReputationTier = 'novice' | 'amateur' | 'semiPro' | 'professional' |
 
 /** Trophy types awarded at season end */
 export type TrophyType = 'gold_trophy' | 'silver_trophy' | 'gold_medal' | 'silver_medal';
+
+/** Procedural team logo shape options */
+export type TeamLogoShape = 'shield' | 'circle' | 'hex' | 'diamond' | 'pennant';
+
+/** Procedural team logo motif options */
+export type TeamLogoMotif = 'paw' | 'ball' | 'wings' | 'horns' | 'stripe' | 'star';
+
+/** Procedural logo configuration stored per team */
+export interface TeamLogo {
+  shape: TeamLogoShape;
+  motif: TeamLogoMotif;
+  variant: number;
+}
 
 /** Match event types (used in both quick-sim and animated matches) */
 export type MatchEventType = 'goal' | 'yellow' | 'red';
@@ -186,6 +202,8 @@ export interface Team {
   c2: string;
   /** ISO-ish country code for name generation (e.g. "ES", "EN", "BR") */
   country: string;
+  /** Procedural team logo style */
+  logo?: TeamLogo;
   /** Full squad roster */
   players: Player[];
   /** Cumulative all-time stats */
@@ -217,6 +235,9 @@ export interface WaitingTeam {
   c1: string;
   c2: string;
   country: string;
+  logo?: TeamLogo;
+  stats?: Stats;
+  trophies?: Trophy[];
 }
 
 /* ===== Fixtures & Match Events ===== */
@@ -537,6 +558,12 @@ export interface Settings {
   muted: boolean;
   /** Game difficulty level (new in modular version) */
   difficulty?: Difficulty;
+  /** Preferred animated match speed multiplier */
+  matchSpeed?: MatchSpeed;
+  /** Skip weekly team-talk picker and auto-select a random talk */
+  autoTeamTalk?: boolean;
+  /** Disable the low-stamina confirmation before match day */
+  skipLowStaminaWarning?: boolean;
 }
 
 /* ===== Save Slots (Multi-Save Feature) ===== */

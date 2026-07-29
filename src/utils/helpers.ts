@@ -9,7 +9,9 @@
  */
 
 import { flagSvg } from '../assets/flags';
+import { randomTeamLogo, teamLogoSvg } from '../assets/logos';
 import { playerPortrait, type PortraitOptions } from '../assets/portraits';
+import type { TeamLogo } from '../types';
 
 /* ===== RGB Tuple Type ===== */
 
@@ -254,7 +256,7 @@ export function clearPlateCache(): void {
  * Generate an Elifoot-style team name plate as an HTML string.
  *
  * The plate has a dark background (derived from c1/c2) with readable
- * light text, plus an inline country flag glyph rendered to the left
+ * light text, plus an inline procedural team logo rendered to the left
  * of the team name.  Uses the `team-plate` CSS class (or
  * `team-plate-sm` for the compact variant).
  *
@@ -262,7 +264,7 @@ export function clearPlateCache(): void {
  * @param c2      - Second team colour (hex)
  * @param name    - Team name to display
  * @param sm      - If true, use the smaller "team-plate-sm" variant
- * @param country - Optional country code for the leading flag glyph
+ * @param country - Optional country code used for deterministic logo seeding
  * @returns An HTML `<span>` string with inline background/color styles
  */
 export function teamPlate(
@@ -271,13 +273,13 @@ export function teamPlate(
   name: string,
   sm?: boolean,
   country?: string,
+  logo?: TeamLogo,
 ): string {
   const { bg, txt } = plateColors(c1, c2);
   const cls = sm ? 'team-plate team-plate-sm' : 'team-plate';
-  const flag = country
-    ? `<span class="team-plate-flag" aria-hidden="true">${flagSvg(country)}</span>`
-    : '';
-  return `<span class="${cls}" style="background:${bg};color:${txt}">${flag}<span class="team-plate-name">${name.toUpperCase()}</span></span>`;
+  const resolvedLogo = logo || randomTeamLogo(`${name}|${country || ''}|${c1}|${c2}`);
+  const logoBadge = `<span class="team-plate-logo" aria-hidden="true">${teamLogoSvg(resolvedLogo, c1, c2)}</span>`;
+  return `<span class="${cls}" style="background:${bg};color:${txt}">${logoBadge}<span class="team-plate-name">${name.toUpperCase()}</span></span>`;
 }
 
 /**
@@ -319,26 +321,40 @@ export interface TeamLike {
   name: string;
   /** Optional country code; when provided, a flag is prepended. */
   country?: string;
+  /** Optional procedural logo definition */
+  logo?: TeamLogo;
 }
 
 /**
  * Generate a full-size team name plate from a team object.
  *
  * @param t - A team (or any object with c1, c2, name, country)
- * @returns An HTML team plate string with an inline flag glyph
+ * @returns An HTML team plate string with an inline logo glyph
  */
 export function teamLabel(t: TeamLike): string {
-  return teamPlate(t.c1, t.c2, t.name, false, t.country);
+  return teamPlate(t.c1, t.c2, t.name, false, t.country, t.logo);
 }
 
 /**
  * Generate a compact (small) team name plate from a team object.
  *
  * @param t - A team (or any object with c1, c2, name, country)
- * @returns An HTML team plate string (small variant) with inline flag
+ * @returns An HTML team plate string (small variant) with inline logo
  */
 export function teamLabelSm(t: TeamLike): string {
-  return teamPlate(t.c1, t.c2, t.name, true, t.country);
+  return teamPlate(t.c1, t.c2, t.name, true, t.country, t.logo);
+}
+
+/**
+ * Generate a stand-alone team logo glyph.
+ *
+ * Uses the team's stored procedural logo when available, falling back
+ * to a deterministic seed from team metadata to keep rendering stable.
+ */
+export function teamLogo(team: TeamLike, extra?: string): string {
+  const cls = extra ? `team-logo ${extra}` : 'team-logo';
+  const resolvedLogo = team.logo || randomTeamLogo(`${team.name}|${team.country || ''}|${team.c1}|${team.c2}`);
+  return `<span class="${cls}" aria-hidden="true">${teamLogoSvg(resolvedLogo, team.c1, team.c2)}</span>`;
 }
 
 /* ================================================================

@@ -32,8 +32,8 @@ import { teamLabel } from '../utils/helpers';
 import { SFX } from '../audio/sfx';
 import { t } from '../data/i18n';
 
-/** Milliseconds per tick (1 second = 2 game minutes) */
-const TICK_MS = 500;
+/** Base milliseconds per tick at 1x speed (1 second = 2 game minutes) */
+const BASE_TICK_MS = 500;
 
 /** Total game minutes (90) */
 const TOTAL_MINUTES = 90;
@@ -117,6 +117,7 @@ export function runAnimatedMatch(
   let currentMin = 0;
   let homeGoals = 0;
   let awayGoals = 0;
+  let currentSpeed = settings.matchSpeed || 1;
   let isPaused = false;
   let timerId: ReturnType<typeof setInterval> | null = null;
   let countdownTimerId: ReturnType<typeof setInterval> | null = null;
@@ -124,6 +125,69 @@ export function runAnimatedMatch(
   /* Play kick-off whistle */
   SFX.whistle();
   updateMatchTimer(0, t(settings, 'kickOff'));
+
+  function speedTickMs(): number {
+    return Math.max(90, Math.round(BASE_TICK_MS / currentSpeed));
+  }
+
+  function updateSpeedControlsUI(): void {
+    document.querySelectorAll('.match-speed-btn').forEach((btn) => {
+      const el = btn as HTMLButtonElement;
+      el.classList.toggle('active', Number(el.dataset.speed) === currentSpeed);
+    });
+    const skipHalfBtn = document.getElementById('match-skip-ht') as HTMLButtonElement | null;
+    if (skipHalfBtn) skipHalfBtn.disabled = currentMin >= HALF_TIME;
+  }
+
+  function setMatchSpeed(speed: number): void {
+    if (speed !== 1 && speed !== 2 && speed !== 4) return;
+    currentSpeed = speed;
+    settings.matchSpeed = speed as 1 | 2 | 4;
+    const persistSpeed = (window as unknown as { setMatchSpeedSetting?: (value: number) => void }).setMatchSpeedSetting;
+    if (typeof persistSpeed === 'function') {
+      persistSpeed(speed);
+    }
+    updateSpeedControlsUI();
+    if (timerId && !isPaused) {
+      clearInterval(timerId);
+      startTicker();
+    }
+  }
+
+  function skipToHalfTime(): void {
+    if (currentMin >= HALF_TIME) return;
+    if (timerId) clearInterval(timerId);
+    processEventsUpTo(HALF_TIME);
+    currentMin = HALF_TIME;
+    updateProgressBar((currentMin / TOTAL_MINUTES) * 100);
+    showHalfTime();
+    updateSpeedControlsUI();
+  }
+
+  function skipToFullTime(): void {
+    if (currentMin >= TOTAL_MINUTES) return;
+    if (timerId) clearInterval(timerId);
+    processEventsUpTo(TOTAL_MINUTES);
+    currentMin = TOTAL_MINUTES;
+    showFullTime();
+    updateSpeedControlsUI();
+  }
+
+  function renderSpeedControls(): void {
+    const progress = document.querySelector('.match-progress');
+    if (!progress || !progress.parentElement) return;
+    const controls = document.createElement('div');
+    controls.className = 'match-speed-controls';
+    controls.innerHTML =
+      `<span class="mp-label">${t(settings, 'matchSpeed')}</span>` +
+      `<button class="btn btn-secondary match-speed-btn" data-speed="1" onclick="setMatchSpeed(1)">1x</button>` +
+      `<button class="btn btn-secondary match-speed-btn" data-speed="2" onclick="setMatchSpeed(2)">2x</button>` +
+      `<button class="btn btn-secondary match-speed-btn" data-speed="4" onclick="setMatchSpeed(4)">4x</button>` +
+      `<button class="btn btn-secondary match-skip-btn" id="match-skip-ht" onclick="skipToHalfTime()">${t(settings, 'skipHalf')}</button>` +
+      `<button class="btn btn-secondary match-skip-btn" onclick="skipToFullTime()">${t(settings, 'skipFull')}</button>`;
+    progress.parentElement.insertBefore(controls, progress.nextSibling);
+    updateSpeedControlsUI();
+  }
 
   /**
    * Trigger a pulse animation on the live score element.
@@ -214,7 +278,7 @@ export function runAnimatedMatch(
     const cardEvents = events.filter(e => e.type === 'yellow' || e.type === 'red');
 
     let html = '<div class="match-summary">';
-    html += '<div class="match-summary-title">Match Summary</div>';
+    html += `<div class="match-summary-title">${t(settings, 'matchSummary')}</div>`;
 
     /* Goal scorers */
     if (goalEvents.length > 0) {
@@ -224,7 +288,7 @@ export function runAnimatedMatch(
         html += `<div class="match-summary-row">${goalIcon} <b>${g.scorer}</b> ${g.minute}' (${team.name})</div>`;
       }
     } else {
-      html += '<div class="match-summary-row">No goals scored</div>';
+      html += `<div class="match-summary-row">${t(settings, 'noGoalsScored')}</div>`;
     }
 
     /* Cards */
@@ -238,12 +302,12 @@ export function runAnimatedMatch(
 
     /* MOTM */
     if (fixture.motm) {
-      html += `<div class="match-summary-row"><span class="inline-icon">${icon('star', 14)}</span> <b>Man of the Match:</b> ${fixture.motm}</div>`;
+      html += `<div class="match-summary-row"><span class="inline-icon">${icon('star', 14)}</span> <b>${t(settings, 'manOfTheMatch')}:</b> ${fixture.motm}</div>`;
     }
 
     /* Team talk effect */
     if (G.activeTeamTalk) {
-      html += `<div class="match-summary-row"><span class="inline-icon">${icon('users', 14)}</span> Your team talk set the tone for this match</div>`;
+      html += `<div class="match-summary-row"><span class="inline-icon">${icon('users', 14)}</span> ${t(settings, 'teamTalkImpact')}</div>`;
     }
 
     html += '</div>';
@@ -258,7 +322,7 @@ export function runAnimatedMatch(
     if (timerId) clearInterval(timerId);
 
     SFX.whistle();
-    updateMatchTimer(45, 'Half Time');
+    updateMatchTimer(45, t(settings, 'halfTime'));
 
     /* Determine score from player's perspective */
     const myGoals = isPlayerHome ? homeGoals : awayGoals;
@@ -279,7 +343,7 @@ export function runAnimatedMatch(
       const subsLeft = 3 - G.matchSubs;
       const autoSubBtn = (!isNeutral && subsLeft > 0)
         ? `<button class="btn btn-secondary auto-sub-btn btn-has-icon" onclick="autoSub()">` +
-          `<span class="btn-icon">${icon('refresh', 14)}</span> Auto Sub (${subsLeft})</button>`
+          `<span class="btn-icon">${icon('refresh', 14)}</span> ${t(settings, 'autoSubWithCount', { count: String(subsLeft) })}</button>`
         : '';
 
       htContainer.style.display = 'block';
@@ -290,10 +354,10 @@ export function runAnimatedMatch(
         `<span class="coach-text">"${comment}"</span>` +
         `</div>` +
         `<div class="ht-actions">` +
-        `<div class="ht-label"><span class="inline-icon">${icon('clock', 14)}</span> Half Time &mdash; Make substitutions or continue</div>` +
+        `<div class="ht-label"><span class="inline-icon">${icon('clock', 14)}</span> ${t(settings, 'halfTimeBreak')}</div>` +
         `<div style="display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px">` +
         `<button class="btn btn-accent ht-continue-btn btn-has-icon" onclick="continueMatch()">` +
-        `<span class="btn-icon">${icon('arrowRight', 14)}</span> 2nd Half</button>` +
+        `<span class="btn-icon">${icon('arrowRight', 14)}</span> ${t(settings, 'continueMatch')}</button>` +
         autoSubBtn +
         `</div>` +
         `</div>` +
@@ -331,7 +395,7 @@ export function runAnimatedMatch(
     if (timerId) clearInterval(timerId);
 
     SFX.whistle();
-    updateMatchTimer(90, 'Full Time');
+    updateMatchTimer(90, t(settings, 'fullTime'));
     updateProgressBar(100);
 
     /* Determine score from player's perspective */
@@ -371,7 +435,7 @@ export function runAnimatedMatch(
         `</div>` +
         summaryHTML +
         `<button class="btn btn-success ht-continue-btn btn-has-icon" style="margin-top:12px" ` +
-        `onclick="finishMatch()"><span class="btn-icon">${icon('check', 14)}</span> Continue <span id="ft-countdown">(15s)</span></button>` +
+        `onclick="finishMatch()"><span class="btn-icon">${icon('check', 14)}</span> ${t(settings, 'continueLabel')} <span id="ft-countdown">(15s)</span></button>` +
         `</div>`;
     }
 
@@ -416,7 +480,7 @@ export function runAnimatedMatch(
       }
 
       /* Update timer and progress bar */
-      const half = currentMin <= 45 ? '1st Half' : '2nd Half';
+      const half = currentMin <= 45 ? t(settings, 'firstHalf') : t(settings, 'secondHalf');
       updateMatchTimer(currentMin, half);
       updateProgressBar((currentMin / TOTAL_MINUTES) * 100);
 
@@ -427,7 +491,7 @@ export function runAnimatedMatch(
       if (options.rivalResults) {
         updateRivalResults(options.rivalResults, currentMin);
       }
-    }, TICK_MS);
+    }, speedTickMs());
   }
 
   /* Track whether onComplete has already been called to prevent double-fire */
@@ -435,6 +499,9 @@ export function runAnimatedMatch(
 
   /* Expose continue/finish functions on window for onclick handlers */
   (window as unknown as Record<string, unknown>).continueMatch = continueMatch;
+  (window as unknown as Record<string, unknown>).setMatchSpeed = setMatchSpeed;
+  (window as unknown as Record<string, unknown>).skipToHalfTime = skipToHalfTime;
+  (window as unknown as Record<string, unknown>).skipToFullTime = skipToFullTime;
   (window as unknown as Record<string, unknown>).finishMatch = () => {
     /* Prevent double-fire using local flag (more reliable than matchInProgress) */
     if (completeCalled) return;
@@ -461,5 +528,6 @@ export function runAnimatedMatch(
 
   /* Mark match as in progress and start the ticker */
   G.matchInProgress = true;
+  renderSpeedControls();
   startTicker();
 }

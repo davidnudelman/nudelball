@@ -15,7 +15,7 @@
  * This module manages the settings state and persists changes to localStorage.
  */
 
-import type { Settings, Theme, Language, StrengthDisplay, Difficulty } from '../../types';
+import type { Settings, Theme, Language, StrengthDisplay, Difficulty, MatchSpeed } from '../../types';
 import { SETTINGS_KEY, DIFFICULTY_SETTINGS } from '../../config';
 
 /* ================================================================
@@ -41,6 +41,11 @@ export function loadSettings(settings: Settings): void {
       if (data.volume != null) settings.volume = data.volume;
       if (data.muted != null) settings.muted = data.muted;
       if (data.difficulty) settings.difficulty = data.difficulty;
+      if (data.matchSpeed === 1 || data.matchSpeed === 2 || data.matchSpeed === 4) {
+        settings.matchSpeed = data.matchSpeed;
+      }
+      if (typeof data.autoTeamTalk === 'boolean') settings.autoTeamTalk = data.autoTeamTalk;
+      if (typeof data.skipLowStaminaWarning === 'boolean') settings.skipLowStaminaWarning = data.skipLowStaminaWarning;
     }
   } catch {
     /* Silently ignore corrupt settings */
@@ -131,6 +136,22 @@ export function updateSettingsUI(settings: Settings): void {
   document.querySelectorAll('#difficulty-toggle .stoggle-opt').forEach(b => {
     const btn = b as HTMLElement;
     btn.classList.toggle('active', btn.dataset.value === (settings.difficulty || 'normal'));
+  });
+
+  /* Match speed toggle */
+  document.querySelectorAll('#match-speed-toggle .stoggle-opt').forEach(b => {
+    const btn = b as HTMLElement;
+    btn.classList.toggle('active', btn.dataset.value === String(settings.matchSpeed || 1));
+  });
+
+  /* Pre-match friction toggles */
+  document.querySelectorAll('#auto-team-talk-toggle .stoggle-opt').forEach(b => {
+    const btn = b as HTMLElement;
+    btn.classList.toggle('active', btn.dataset.value === String(!!settings.autoTeamTalk));
+  });
+  document.querySelectorAll('#stamina-warning-toggle .stoggle-opt').forEach(b => {
+    const btn = b as HTMLElement;
+    btn.classList.toggle('active', btn.dataset.value === String(!settings.skipLowStaminaWarning));
   });
 }
 
@@ -256,6 +277,37 @@ export function setDifficulty(settings: Settings, difficulty: Difficulty): void 
 }
 
 /**
+ * Change preferred animated match speed.
+ *
+ * @param settings - User settings (mutated)
+ * @param speed    - Animation speed multiplier (1x, 2x, 4x)
+ */
+export function setMatchSpeed(settings: Settings, speed: MatchSpeed): void {
+  settings.matchSpeed = speed;
+  saveSettings(settings);
+  updateSettingsUI(settings);
+}
+
+/**
+ * Toggle auto team-talk selection.
+ */
+export function setAutoTeamTalk(settings: Settings, enabled: boolean): void {
+  settings.autoTeamTalk = enabled;
+  saveSettings(settings);
+  updateSettingsUI(settings);
+}
+
+/**
+ * Toggle low-stamina warning behavior.
+ * `enabled=true` means warnings show; `false` suppresses them.
+ */
+export function setStaminaWarning(settings: Settings, enabled: boolean): void {
+  settings.skipLowStaminaWarning = !enabled;
+  saveSettings(settings);
+  updateSettingsUI(settings);
+}
+
+/**
  * Get the current difficulty multipliers based on the settings.
  *
  * @param settings - User settings
@@ -293,6 +345,48 @@ export function buildDifficultyRow(): string {
 }
 
 /**
+ * Build the HTML for the match speed selector row.
+ *
+ * @returns HTML string for match speed settings row
+ */
+export function buildMatchSpeedRow(): string {
+  return `<div class="settings-row">` +
+    `<span class="settings-label"><span data-icon="clock"></span> Match Speed</span>` +
+    `<div class="settings-toggle" id="match-speed-toggle">` +
+    `<button class="stoggle-opt" data-value="1" onclick="setMatchSpeedSetting(1)">1x</button>` +
+    `<button class="stoggle-opt" data-value="2" onclick="setMatchSpeedSetting(2)">2x</button>` +
+    `<button class="stoggle-opt" data-value="4" onclick="setMatchSpeedSetting(4)">4x</button>` +
+    `</div>` +
+    `</div>`;
+}
+
+/**
+ * Build the auto team-talk settings row.
+ */
+export function buildAutoTeamTalkRow(): string {
+  return `<div class="settings-row">` +
+    `<span class="settings-label"><span data-icon="users"></span> Auto Team Talk</span>` +
+    `<div class="settings-toggle" id="auto-team-talk-toggle">` +
+    `<button class="stoggle-opt" data-value="false" onclick="setAutoTeamTalkSetting(false)">Off</button>` +
+    `<button class="stoggle-opt" data-value="true" onclick="setAutoTeamTalkSetting(true)">On</button>` +
+    `</div>` +
+    `</div>`;
+}
+
+/**
+ * Build the stamina warning settings row.
+ */
+export function buildStaminaWarningRow(): string {
+  return `<div class="settings-row">` +
+    `<span class="settings-label"><span data-icon="battery"></span> Stamina Warning</span>` +
+    `<div class="settings-toggle" id="stamina-warning-toggle">` +
+    `<button class="stoggle-opt" data-value="true" onclick="setStaminaWarningSetting(true)">On</button>` +
+    `<button class="stoggle-opt" data-value="false" onclick="setStaminaWarningSetting(false)">Off</button>` +
+    `</div>` +
+    `</div>`;
+}
+
+/**
  * Inject the difficulty selector row into the settings overlay.
  *
  * Finds the settings box and inserts the difficulty row after the
@@ -312,11 +406,17 @@ export function injectDifficultyRow(settings: Settings): void {
   const rows = settingsBox.querySelectorAll('.settings-row');
   const strengthRow = rows[2]; /* 0=theme, 1=lang, 2=strength */
   if (strengthRow) {
-    const diffRow = document.createElement('div');
-    diffRow.innerHTML = buildDifficultyRow();
-    const newRow = diffRow.firstElementChild;
-    if (newRow) {
-      strengthRow.after(newRow);
+    const injectionRows = [buildDifficultyRow(), buildMatchSpeedRow(), buildAutoTeamTalkRow(), buildStaminaWarningRow()];
+    let cursor: Element = strengthRow;
+
+    for (const rowHtml of injectionRows) {
+      const rowWrapper = document.createElement('div');
+      rowWrapper.innerHTML = rowHtml;
+      const newRow = rowWrapper.firstElementChild;
+      if (!newRow) continue;
+      cursor.after(newRow);
+      cursor = newRow;
+
       /* Resolve any data-icon placeholders in the injected markup */
       const hydrate = (window as unknown as { hydrateIcons?: (root?: HTMLElement | Document) => void }).hydrateIcons;
       if (typeof hydrate === 'function') hydrate(newRow as HTMLElement);

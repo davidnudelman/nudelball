@@ -34,7 +34,7 @@
 
 import type { GameState, Settings } from '../../types';
 import { FACILITY_COSTS, SPONSORSHIP_TIERS, STADIUM_INCOME_BONUS, STADIUM_HOME_GAME_BONUS, TRAINING_FACILITY_BONUS, YOUTH_ACADEMY_SKILL_BONUS } from '../../config';
-import { teamLabel, teamFlag } from '../../utils/helpers';
+import { teamLabel, teamLogo } from '../../utils/helpers';
 import { icon } from '../../assets/icons';
 import { t } from '../../data/i18n';
 import { stadiumScene, trainingScene, youthScene, sponsorBadge, levelPips } from './office-visuals';
@@ -111,7 +111,7 @@ export function renderClub(G: GameState, settings: Settings): void {
   h += `<div class="card club-header-card">`;
   h += `<div class="club-header-row">`;
   h += `<div class="club-identity">`;
-  h += `<div class="club-flag-large">${teamFlag(pt.country)}</div>`;
+  h += `<div class="club-flag-large">${teamLogo(pt)}</div>`;
   h += `<div>`;
   h += `<div class="club-name">${teamLabel(pt)}</div>`;
   h += `<div class="club-meta">${t(settings, 'office')} &middot; Division ${pt.div} &middot; Season ${G.season}</div>`;

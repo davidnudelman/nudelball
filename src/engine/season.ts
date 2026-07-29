@@ -11,6 +11,7 @@ import type {
   FinancialAward,
   GameState,
   Player,
+  Position,
   PlayerRole,
   Records,
   SeasonAward,
@@ -18,6 +19,7 @@ import type {
   SeasonHistory,
   SeasonMove,
   Team,
+  TeamLogo,
   TrophyType,
   YouthProspect,
 } from '../types';
@@ -42,6 +44,7 @@ import {
 import { applyDevelopmentCurve, agePlayer, genName, genSkill, makePlayer, rand } from './player';
 import { getTeamPowerLevels } from './match';
 import { emptyStats, generateFixtures, getSortedDiv } from './league';
+import { randomTeamLogo } from '../assets/logos';
 import {
   awardSeasonIncome,
   generateSeasonFreeAgents,
@@ -327,11 +330,12 @@ export const endOfSeason = (G: GameState): {
   for (const m of moves) {
     if (m.to === 0) {
       /* Team exits the league — save to return pool */
-      (G.returnPool as any[]).push({
+      G.returnPool.push({
         name: m.team.name,
         c1: m.team.c1,
         c2: m.team.c2,
         country: m.team.country,
+        logo: m.team.logo,
         returnIn: G.season + 2,
         stats: { ...m.team.stats },
         trophies: [...m.team.trophies],
@@ -367,8 +371,9 @@ export const endOfSeason = (G: GameState): {
     c1: string;
     c2: string;
     country: string;
-    stats?: any;
-    trophies?: any;
+    logo?: TeamLogo;
+    stats?: Team['stats'];
+    trophies?: Team['trophies'];
   }> = [];
 
   for (let i = G.returnPool.length - 1; i >= 0; i--) {
@@ -388,16 +393,17 @@ export const endOfSeason = (G: GameState): {
       /* Reinstate existing team */
       existing.div = 4;
       existing.players = [];
-      if (cty) existing.country = cty as any;
+      if (cty) existing.country = cty;
+      existing.logo = et.logo || existing.logo || randomTeamLogo(`${existing.name}|${cty}|${existing.c1}|${existing.c2}`);
       existing.aiFormation = rand(0, FORMATIONS.length - 1);
 
-      const positions: string[] = [];
+      const positions: Position[] = [];
       for (const [pos, cnt] of Object.entries(SQUAD_COMP)) {
-        for (let i = 0; i < cnt; i++) positions.push(pos);
+        for (let i = 0; i < cnt; i++) positions.push(pos as Position);
       }
       for (const pos of positions) {
         existing.players.push(
-          makePlayer(genName(cty), pos as any, genSkill(4), 18 + rand(0, 15)),
+          makePlayer(genName(cty), pos, genSkill(4), 18 + rand(0, 15)),
         );
       }
       if (et.stats) existing.stats = et.stats;
@@ -411,7 +417,8 @@ export const endOfSeason = (G: GameState): {
         div: 4,
         c1: et.c1,
         c2: et.c2,
-        country: (cty || '') as any,
+        country: cty || '',
+        logo: et.logo || randomTeamLogo(`${et.name}|${cty}|${et.c1}|${et.c2}`),
         players: [],
         stats: et.stats || emptyStats(),
         seasonStats: emptyStats(),

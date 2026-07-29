@@ -118,6 +118,9 @@ import {
   setVolume as settingsSetVolume,
   toggleMute as settingsToggleMute,
   setDifficulty as settingsSetDifficulty,
+  setMatchSpeed as settingsSetMatchSpeed,
+  setAutoTeamTalk as settingsSetAutoTeamTalk,
+  setStaminaWarning as settingsSetStaminaWarning,
   initSettingsCallbacks,
   updateSettingsUI,
   injectDifficultyRow,
@@ -125,6 +128,7 @@ import {
 } from './ui/components/settings';
 import { toggleHelp } from './ui/components/help';
 import { toggleChangelog, initVersionLabels } from './ui/components/changelog';
+import { showConfirmDialog, showPromptDialog, showToast } from './ui/components/templates';
 
 // ===========================================================================
 // 6. UI: VIEW RENDERERS
@@ -205,6 +209,9 @@ const settings: Settings = {
   volume: 0.5,
   muted: false,
   difficulty: 'normal',
+  matchSpeed: 1,
+  autoTeamTalk: false,
+  skipLowStaminaWarning: false,
 };
 
 // ===========================================================================
@@ -370,7 +377,7 @@ function refreshCurrentView(): void {
  *
  * After every action the game is auto-saved and the UI is refreshed.
  */
-function playMatch(): void {
+async function playMatch(): Promise<void> {
   /* Don't start a new match while animation is running */
   if (G.matchInProgress) return;
 
@@ -422,12 +429,27 @@ function playMatch(): void {
 
   /* --- Warn if any selected players have stamina below 60% --- */
   const tiredStarters = pt.players.filter(p => p.selected && p.stamina < 60);
-  if (tiredStarters.length > 0) {
+  if (tiredStarters.length > 0 && !settings.skipLowStaminaWarning) {
     const names = tiredStarters.map(p => `${p.name} (${p.stamina}%)`).join(', ');
-    const proceed = confirm(
-      `Warning: ${tiredStarters.length} starter${tiredStarters.length > 1 ? 's have' : ' has'} low stamina:\n\n${names}\n\nProceed with match anyway?`
-    );
+    const proceed = await showConfirmDialog({
+      title: t(settings, 'lowStaminaWarningTitle'),
+      message: t(settings, 'lowStaminaWarningMessage', {
+        count: String(tiredStarters.length),
+        names,
+      }),
+      confirmLabel: t(settings, 'proceed'),
+      cancelLabel: t(settings, 'cancel'),
+      severity: 'warning',
+    });
     if (!proceed) return;
+  }
+
+  if (settings.autoTeamTalk) {
+    const allIds = Object.keys(TEAM_TALKS) as TeamTalkId[];
+    const randomTalkId = allIds[Math.floor(Math.random() * allIds.length)];
+    G.activeTeamTalk = randomTalkId;
+    proceedWithMatch();
+    return;
   }
 
   /* Show team talk selection before proceeding with the match */
@@ -467,7 +489,7 @@ function showTeamTalkSelection(onSelect: () => void): void {
   overlay.className = 'team-talk-overlay';
   overlay.innerHTML =
     `<div class="team-talk-panel">` +
-    `<div class="team-talk-title"><span class="title-icon">${icon('users', 18)}</span> Pre-Match Team Talk</div>` +
+    `<div class="team-talk-title"><span class="title-icon">${icon('users', 18)}</span> ${t(settings, 'preMatchTeamTalk')}</div>` +
     cardsHTML +
     `</div>`;
   document.body.appendChild(overlay);
@@ -1390,12 +1412,26 @@ function autoSub(): void {
   for (const starter of starterScores) {
     if (subsUsed >= maxSubs) break;
 
-    /* Find the best available bench player not yet used */
-    const bestBench = benchSorted.find(b => !usedBench.has(b.idx));
+    const starterPos = (starter.player.assignedPos || starter.player.pos) as Position;
+
+    /* Prefer position-fit bench options before raw skill */
+    const bestBench = benchSorted
+      .filter(b => !usedBench.has(b.idx))
+      .map((b) => {
+        const oop = getOopPenalty(b.player.pos, starterPos);
+        if (oop <= 0) return null;
+        const naturalFit = b.player.pos === starterPos ? 1 : 0;
+        const fitScore = (b.player.skill * oop) + (naturalFit * 8);
+        return { ...b, oop, fitScore, naturalFit };
+      })
+      .filter(Boolean)
+      .sort((a, b) => b!.fitScore - a!.fitScore)[0];
+
     if (!bestBench) break;
 
-    /* Only sub if bench player is meaningfully better or starter is very tired */
-    const skillGap = bestBench.player.skill - starter.player.skill;
+    /* Only sub if replacement is suitable enough or starter is very tired */
+    const effectiveSkill = Math.round(bestBench.player.skill * bestBench.oop);
+    const skillGap = effectiveSkill - starter.player.skill;
     const staminaLow = starter.player.stamina < 70;
     if (skillGap < -5 && !staminaLow) continue;
 
@@ -1418,11 +1454,15 @@ function autoSub(): void {
   autoSubBtns.forEach(btn => {
     if (remaining <= 0) {
       (btn as HTMLButtonElement).disabled = true;
-      btn.innerHTML = `${refreshIconHtml} No Subs Left`;
+      btn.innerHTML = `${refreshIconHtml} ${t(settings, 'noSubsLeft')}`;
     } else {
-      btn.innerHTML = `${refreshIconHtml} Auto Sub (${remaining})`;
+      btn.innerHTML = `${refreshIconHtml} ${t(settings, 'autoSubWithCount', { count: String(remaining) })}`;
     }
   });
+
+  if (subsUsed > 0) {
+    showToast(t(settings, 'autoSubReasoningApplied'), 'info', 1800);
+  }
 }
 
 // ===========================================================================
@@ -1434,12 +1474,18 @@ function autoSub(): void {
  *
  * @param slotId - Slot number (1-4 for manual saves).
  */
-function globalSaveToSlot(slotId: number): void {
-  const name = prompt('Save name:', `Save ${slotId}`);
+async function globalSaveToSlot(slotId: number): Promise<void> {
+  const name = await showPromptDialog({
+    title: t(settings, 'saveGameTitle'),
+    message: t(settings, 'saveGamePrompt'),
+    confirmLabel: t(settings, 'save'),
+    cancelLabel: t(settings, 'cancel'),
+    initialValue: t(settings, 'saveSlotDefaultName', { slot: String(slotId) }),
+  });
   if (name === null) return;
-  saveToSlot(slotId, name || `Save ${slotId}`);
+  saveToSlot(slotId, name || t(settings, 'saveSlotDefaultName', { slot: String(slotId) }));
   SFX.click();
-  alert('Game saved!');
+  showToast(t(settings, 'gameSaved'), 'success');
 }
 
 /**
@@ -1463,8 +1509,15 @@ function globalLoadFromSlot(slotId: number): boolean {
  *
  * @param slotId - Slot number (0-4).
  */
-function globalDeleteSlot(slotId: number): void {
-  if (!confirm('Delete this save?')) return;
+async function globalDeleteSlot(slotId: number): Promise<void> {
+  const shouldDelete = await showConfirmDialog({
+    title: t(settings, 'deleteSaveTitle'),
+    message: t(settings, 'deleteSavePrompt'),
+    confirmLabel: t(settings, 'delete'),
+    cancelLabel: t(settings, 'cancel'),
+    severity: 'danger',
+  });
+  if (!shouldDelete) return;
   deleteSlot(slotId);
   renderSaveSlots(settings, welcomeCallbacks);
 }
@@ -1481,7 +1534,7 @@ function loadSaveSlot(slotId: number): void {
     enterGame(G, settings);
     showView('dashboard');
   } else {
-    alert('Failed to load save.');
+    showToast(t(settings, 'failedToLoadSave'), 'error');
   }
 }
 
@@ -1490,8 +1543,15 @@ function loadSaveSlot(slotId: number): void {
  *
  * @param slotId - Slot number.
  */
-function deleteSaveSlot(slotId: number): void {
-  if (!confirm('Delete this save?')) return;
+async function deleteSaveSlot(slotId: number): Promise<void> {
+  const shouldDelete = await showConfirmDialog({
+    title: t(settings, 'deleteSaveTitle'),
+    message: t(settings, 'deleteSavePrompt'),
+    confirmLabel: t(settings, 'delete'),
+    cancelLabel: t(settings, 'cancel'),
+    severity: 'danger',
+  });
+  if (!shouldDelete) return;
   deleteSlot(slotId);
   renderSaveSlots(settings, welcomeCallbacks);
 }
@@ -1535,9 +1595,9 @@ function globalImportSave(): void {
       saveGame();
       enterGame(G, settings);
       showView('dashboard');
-      alert('Save imported successfully!');
+      showToast(t(settings, 'saveImported'), 'success');
     } else {
-      alert('Invalid save file.');
+      showToast(t(settings, 'invalidSaveFile'), 'error');
     }
   }));
 
@@ -1599,6 +1659,23 @@ function globalToggleChangelog(): void {
 /** Change the game difficulty level. */
 function globalSetDifficulty(difficulty: string): void {
   settingsSetDifficulty(settings, difficulty as Difficulty);
+}
+
+/** Change preferred animated match speed. */
+function globalSetMatchSpeedSetting(speed: number): void {
+  if (speed === 1 || speed === 2 || speed === 4) {
+    settingsSetMatchSpeed(settings, speed);
+  }
+}
+
+/** Toggle automatic team talk selection before matches. */
+function globalSetAutoTeamTalkSetting(enabled: boolean): void {
+  settingsSetAutoTeamTalk(settings, enabled);
+}
+
+/** Toggle low-stamina pre-match warning dialog behavior. */
+function globalSetStaminaWarningSetting(enabled: boolean): void {
+  settingsSetStaminaWarning(settings, enabled);
 }
 
 // ===========================================================================
@@ -1663,6 +1740,9 @@ declare global {
     setStrengthDisplay: typeof globalSetStrengthDisplay;
     setVolume: typeof globalSetVolume;
     setDifficulty: typeof globalSetDifficulty;
+    setMatchSpeedSetting: typeof globalSetMatchSpeedSetting;
+    setAutoTeamTalkSetting: typeof globalSetAutoTeamTalkSetting;
+    setStaminaWarningSetting: typeof globalSetStaminaWarningSetting;
 
     /* Game Actions */
     playMatch: typeof playMatch;
@@ -1754,6 +1834,9 @@ window.setLang = globalSetLang;
 window.setStrengthDisplay = globalSetStrengthDisplay;
 window.setVolume = globalSetVolume;
 window.setDifficulty = globalSetDifficulty;
+window.setMatchSpeedSetting = globalSetMatchSpeedSetting;
+window.setAutoTeamTalkSetting = globalSetAutoTeamTalkSetting;
+window.setStaminaWarningSetting = globalSetStaminaWarningSetting;
 
 /* --- Game Actions --- */
 window.playMatch = playMatch;
