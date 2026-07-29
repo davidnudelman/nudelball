@@ -85,10 +85,10 @@ export type ReputationTier = 'novice' | 'amateur' | 'semiPro' | 'professional' |
 export type TrophyType = 'gold_trophy' | 'silver_trophy' | 'gold_medal' | 'silver_medal';
 
 /** Procedural team logo shape options */
-export type TeamLogoShape = 'shield' | 'circle' | 'hex' | 'diamond' | 'pennant';
+export type TeamLogoShape = 'shield' | 'circle' | 'hex' | 'diamond' | 'pennant' | 'octagon' | 'badge' | 'banner';
 
 /** Procedural team logo motif options */
-export type TeamLogoMotif = 'paw' | 'ball' | 'wings' | 'horns' | 'stripe' | 'star';
+export type TeamLogoMotif = 'paw' | 'ball' | 'wings' | 'horns' | 'stripe' | 'star' | 'claw' | 'crown' | 'helmet' | 'bolt';
 
 /** Procedural logo configuration stored per team */
 export interface TeamLogo {
