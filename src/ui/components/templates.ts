@@ -155,6 +155,45 @@ export interface PromptDialogOptions {
   initialValue?: string;
 }
 
+function getFocusableElements(container: HTMLElement): HTMLElement[] {
+  const selector = [
+    'button:not([disabled])',
+    'a[href]',
+    'input:not([disabled])',
+    'select:not([disabled])',
+    'textarea:not([disabled])',
+    '[tabindex]:not([tabindex="-1"])',
+  ].join(',');
+  return Array.from(container.querySelectorAll<HTMLElement>(selector))
+    .filter((el) => !el.hasAttribute('disabled') && el.tabIndex !== -1);
+}
+
+function trapTabKey(event: KeyboardEvent, container: HTMLElement): void {
+  if (event.key !== 'Tab') return;
+  const focusables = getFocusableElements(container);
+  if (focusables.length === 0) {
+    event.preventDefault();
+    return;
+  }
+
+  const first = focusables[0];
+  const last = focusables[focusables.length - 1];
+  const active = document.activeElement as HTMLElement | null;
+
+  if (event.shiftKey) {
+    if (active === first || !container.contains(active)) {
+      event.preventDefault();
+      last.focus();
+    }
+    return;
+  }
+
+  if (active === last || !container.contains(active)) {
+    event.preventDefault();
+    first.focus();
+  }
+}
+
 /**
  * Show a floating toast notification.
  */
@@ -186,11 +225,14 @@ export function showConfirmDialog(options: ConfirmDialogOptions): Promise<boolea
     overlay.style.display = 'flex';
     overlay.setAttribute('role', 'dialog');
     overlay.setAttribute('aria-modal', 'true');
+    overlay.tabIndex = -1;
+    const titleId = `app-dialog-title-${Date.now()}`;
+    overlay.setAttribute('aria-labelledby', titleId);
 
     const severityClass = options.severity ? ` is-${options.severity}` : '';
     overlay.innerHTML =
       `<div class="overlay-content app-dialog${severityClass}">` +
-      `<div class="app-dialog-title">${escapeHtml(options.title)}</div>` +
+      `<div class="app-dialog-title" id="${titleId}">${escapeHtml(options.title)}</div>` +
       `<div class="app-dialog-message">${escapeHtml(options.message)}</div>` +
       `<div class="app-dialog-actions">` +
       `<button class="btn btn-secondary app-dialog-cancel">${escapeHtml(options.cancelLabel)}</button>` +
@@ -209,7 +251,9 @@ export function showConfirmDialog(options: ConfirmDialogOptions): Promise<boolea
       if (event.target === overlay) close(false);
     });
     overlay.addEventListener('keydown', (event) => {
+      trapTabKey(event, overlay);
       if (event.key === 'Escape') close(false);
+      if (event.key === 'Enter') close(true);
     });
     confirmBtn?.addEventListener('click', () => close(true));
     cancelBtn?.addEventListener('click', () => close(false));
@@ -229,10 +273,13 @@ export function showPromptDialog(options: PromptDialogOptions): Promise<string |
     overlay.style.display = 'flex';
     overlay.setAttribute('role', 'dialog');
     overlay.setAttribute('aria-modal', 'true');
+    overlay.tabIndex = -1;
+    const titleId = `app-dialog-title-${Date.now()}`;
+    overlay.setAttribute('aria-labelledby', titleId);
 
     overlay.innerHTML =
       `<div class="overlay-content app-dialog">` +
-      `<div class="app-dialog-title">${escapeHtml(options.title)}</div>` +
+      `<div class="app-dialog-title" id="${titleId}">${escapeHtml(options.title)}</div>` +
       `<div class="app-dialog-message">${escapeHtml(options.message)}</div>` +
       `<input class="app-dialog-input" type="text" maxlength="40" placeholder="${escapeHtml(options.placeholder || '')}" value="${escapeHtml(options.initialValue || '')}" />` +
       `<div class="app-dialog-actions">` +
@@ -253,6 +300,7 @@ export function showPromptDialog(options: PromptDialogOptions): Promise<string |
       if (event.target === overlay) close(null);
     });
     overlay.addEventListener('keydown', (event) => {
+      trapTabKey(event, overlay);
       if (event.key === 'Escape') close(null);
       if (event.key === 'Enter') close((input?.value || '').trim());
     });

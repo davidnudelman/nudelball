@@ -109,6 +109,13 @@ export interface RivalResult {
   awayId: number;
 }
 
+export type MatchZone = 'home' | 'mid' | 'away';
+
+export interface PitchPoint {
+  x: number;
+  y: number;
+}
+
 /**
  * Set up the match simulation UI (initial DOM structure).
  *
@@ -166,7 +173,7 @@ export function setupMatchUI(
   /* Derby banner (#13) */
   const isDerby = (homeTeam.rivals?.includes(awayTeam.id)) || (awayTeam.rivals?.includes(homeTeam.id));
   const derbyBanner = isDerby
-    ? `<div class="derby-banner"><span class="db-icon">${icon('fire', 16)}</span><span class="db-label">DERBY MATCH</span><span class="db-icon">${icon('fire', 16)}</span></div>`
+    ? `<div class="derby-banner"><span class="db-icon">${icon('fire', 16)}</span><span class="db-label">${t(settings, 'derbyMatch')}</span><span class="db-icon">${icon('fire', 16)}</span></div>`
     : '';
 
   /* Tactic buttons for mid-match adjustments */
@@ -185,7 +192,7 @@ export function setupMatchUI(
     const bench = playerTeam.players.filter(p => !p.selected && !p.injuredFor && !p.suspendedFor);
     if (bench.length > 0) {
       benchHTML = `<div class="subs-panel" id="subs-panel">` +
-        `<div class="subs-title"><span class="title-icon">${icon('refresh', 16)}</span> Substitutions (<span id="subs-remaining">3</span>/3 remaining)</div>` +
+        `<div class="subs-title"><span class="title-icon">${icon('refresh', 16)}</span> ${t(settings, 'substitutions')} (<span id="subs-remaining">3</span>/3 ${t(settings, 'subsRemaining')})</div>` +
         `<div id="subs-list">`;
       for (const bp of bench) {
         const posClass = bp.pos.toLowerCase();
@@ -211,11 +218,39 @@ export function setupMatchUI(
     strengthHTML +
     `<div class="match-timer" id="match-timer"><span class="minute">0'</span> — ${t(settings, 'kickOff')}</div>` +
     `<div class="match-progress"><div class="match-progress-bar" id="match-bar" style="width:0%"></div></div>` +
+    `<div class="match-momentum" id="match-momentum" aria-label="${t(settings, 'matchMomentum')}">` +
+    `<div class="match-momentum-home" id="match-momentum-home" style="width:50%"></div>` +
+    `<div class="match-momentum-away" id="match-momentum-away" style="width:50%"></div>` +
+    `</div>` +
+    `<div class="match-zone-state" id="match-zone-state">` +
+    `<div class="match-zone-pitch">` +
+    `<span class="zone-seg home"></span><span class="zone-seg mid"></span><span class="zone-seg away"></span>` +
+    `<span class="zone-marker" id="match-zone-marker"></span>` +
+    `</div>` +
+    `<div class="match-zone-label" id="match-zone-label">50 : 50</div>` +
+    `</div>` +
+    `<div class="match-tactical-wrap" id="match-tactical-wrap">` +
+    `<div class="match-tactical-head">` +
+    `<span class="inline-icon">${icon('chartUp', 14)}</span> ${t(settings, 'tacticalSimulation')}` +
+    `<span class="match-cadence-badge" id="match-cadence-badge">${t(settings, 'standardCadence')}</span>` +
+    `</div>` +
+    `<svg class="match-tactical-pitch" id="match-tactical-pitch" viewBox="0 0 100 56" preserveAspectRatio="none" aria-hidden="true">` +
+    `<rect x="0.8" y="0.8" width="98.4" height="54.4" rx="2" class="mtp-outline" />` +
+    `<line x1="50" y1="1.2" x2="50" y2="54.8" class="mtp-line" />` +
+    `<circle cx="50" cy="28" r="7" class="mtp-line" fill="none" />` +
+    `<rect x="0.8" y="18" width="12" height="20" class="mtp-box" fill="none" />` +
+    `<rect x="87.2" y="18" width="12" height="20" class="mtp-box" fill="none" />` +
+    `<path id="match-ball-trail" class="mtp-ball-trail" d="" />` +
+    `${Array.from({ length: 11 }).map((_, idx) => `<circle id="match-home-dot-${idx}" class="mtp-dot home" cx="20" cy="${4 + idx * 4}" r="1.35" />`).join('')}` +
+    `${Array.from({ length: 11 }).map((_, idx) => `<circle id="match-away-dot-${idx}" class="mtp-dot away" cx="80" cy="${4 + idx * 4}" r="1.35" />`).join('')}` +
+    `<circle id="match-ball-dot" class="mtp-ball" cx="50" cy="28" r="1.1" />` +
+    `</svg>` +
+    `</div>` +
     `<div id="ht-continue-container" style="display:none"></div>` +
     tacticsBar +
     `<div class="match-events" id="match-events"></div>` +
     `<div class="rival-results" id="rival-results-panel" style="display:none">` +
-    `<div class="rr-title"><span class="title-icon">${icon('chartUp', 16)}</span> Other Results</div>` +
+    `<div class="rr-title"><span class="title-icon">${icon('chartUp', 16)}</span> ${t(settings, 'otherResults')}</div>` +
     `<div id="rival-results-list"></div></div>` +
     benchHTML;
 
@@ -286,6 +321,71 @@ export function updateMatchTimer(minute: number, label?: string): void {
 export function updateProgressBar(percent: number): void {
   const el = document.getElementById('match-bar');
   if (el) (el as HTMLElement).style.width = percent + '%';
+}
+
+/**
+ * Update momentum bars and pitch-zone marker.
+ */
+export function updatePitchState(homePressure: number, awayPressure: number, zone: MatchZone): void {
+  const h = Math.max(0, Math.min(100, homePressure));
+  const a = Math.max(0, Math.min(100, awayPressure));
+  const total = h + a || 100;
+  const hPct = Math.round((h / total) * 100);
+  const aPct = Math.max(0, 100 - hPct);
+
+  const homeEl = document.getElementById('match-momentum-home') as HTMLElement | null;
+  const awayEl = document.getElementById('match-momentum-away') as HTMLElement | null;
+  const marker = document.getElementById('match-zone-marker') as HTMLElement | null;
+  const label = document.getElementById('match-zone-label') as HTMLElement | null;
+  const zoneState = document.getElementById('match-zone-state');
+
+  if (homeEl) homeEl.style.width = `${hPct}%`;
+  if (awayEl) awayEl.style.width = `${aPct}%`;
+  if (label) label.textContent = `${hPct} : ${aPct}`;
+  if (zoneState) zoneState.setAttribute('data-zone', zone);
+
+  if (marker) {
+    const pos = zone === 'home' ? 20 : zone === 'away' ? 80 : 50;
+    marker.style.left = `${pos}%`;
+  }
+}
+
+export function updateCadenceBadge(label: string): void {
+  const badge = document.getElementById('match-cadence-badge');
+  if (badge) badge.textContent = label;
+}
+
+export function updateTacticalPitch(homeDots: PitchPoint[], awayDots: PitchPoint[], ball: PitchPoint, trail: PitchPoint[]): void {
+  const clamp = (value: number, min: number, max: number): number => Math.max(min, Math.min(max, value));
+
+  for (let i = 0; i < 11; i++) {
+    const home = homeDots[i];
+    const away = awayDots[i];
+    const homeEl = document.getElementById(`match-home-dot-${i}`);
+    const awayEl = document.getElementById(`match-away-dot-${i}`);
+    if (homeEl && home) {
+      homeEl.setAttribute('cx', String(clamp(home.x, 2, 98)));
+      homeEl.setAttribute('cy', String(clamp(home.y, 2, 54)));
+    }
+    if (awayEl && away) {
+      awayEl.setAttribute('cx', String(clamp(away.x, 2, 98)));
+      awayEl.setAttribute('cy', String(clamp(away.y, 2, 54)));
+    }
+  }
+
+  const ballEl = document.getElementById('match-ball-dot');
+  if (ballEl) {
+    ballEl.setAttribute('cx', String(clamp(ball.x, 2, 98)));
+    ballEl.setAttribute('cy', String(clamp(ball.y, 2, 54)));
+  }
+
+  const trailEl = document.getElementById('match-ball-trail');
+  if (trailEl) {
+    const points = trail
+      .map((point) => `${clamp(point.x, 2, 98).toFixed(2)},${clamp(point.y, 2, 54).toFixed(2)}`)
+      .join(' L ');
+    trailEl.setAttribute('d', points.length ? `M ${points}` : '');
+  }
 }
 
 /**

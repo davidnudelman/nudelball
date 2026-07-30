@@ -24,8 +24,11 @@ import {
   updateProgressBar,
   appendMatchEvent,
   updateRivalResults,
+  updateCadenceBadge,
+  updatePitchState,
+  updateTacticalPitch,
 } from '../ui/views/match-view';
-import type { RivalResult } from '../ui/views/match-view';
+import type { MatchZone, PitchPoint, RivalResult } from '../ui/views/match-view';
 import { icon } from '../assets/icons';
 import { getCoachComment } from '../data/coach-comments';
 import { teamLabel } from '../utils/helpers';
@@ -34,6 +37,9 @@ import { t } from '../data/i18n';
 
 /** Base milliseconds per tick at 1x speed (1 second = 2 game minutes) */
 const BASE_TICK_MS = 500;
+const TACTICAL_TICK_MS = 700;
+const STANDARD_STEP_MINUTES = 2;
+const TACTICAL_STEP_MINUTES = 1;
 
 /** Total game minutes (90) */
 const TOTAL_MINUTES = 90;
@@ -53,6 +59,88 @@ export interface AnimatedMatchOptions {
   rivalResults?: RivalResult[];
   /** Callback when the full animation completes */
   onComplete: () => void;
+}
+
+export interface MatchPitchState {
+  homePressure: number;
+  awayPressure: number;
+  zone: MatchZone;
+}
+
+export interface TacticalFrame {
+  homeDots: PitchPoint[];
+  awayDots: PitchPoint[];
+  ball: PitchPoint;
+  trail: PitchPoint[];
+}
+
+const HOME_ANCHORS: ReadonlyArray<PitchPoint> = [
+  { x: 8, y: 28 },
+  { x: 20, y: 10 }, { x: 20, y: 20 }, { x: 20, y: 36 }, { x: 20, y: 46 },
+  { x: 34, y: 8 }, { x: 34, y: 22 }, { x: 34, y: 34 }, { x: 34, y: 48 },
+  { x: 46, y: 20 }, { x: 46, y: 36 },
+];
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
+/**
+ * Derive a lightweight momentum/zone state from scoreline, minute, and event bias.
+ */
+export function derivePitchState(
+  homeGoals: number,
+  awayGoals: number,
+  minute: number,
+  eventBias: number,
+): MatchPitchState {
+  const scoreBias = (homeGoals - awayGoals) * 12;
+  const timeBias = Math.sin(minute / 8) * 5;
+  const combined = clamp(scoreBias + eventBias + timeBias, -42, 42);
+  const homePressure = clamp(50 + combined, 10, 90);
+  const awayPressure = 100 - homePressure;
+  const zone: MatchZone = combined >= 14 ? 'away' : combined <= -14 ? 'home' : 'mid';
+  return { homePressure, awayPressure, zone };
+}
+
+/**
+ * Build a tactical frame: player dots, ball location, and a short trail.
+ */
+export function deriveTacticalFrame(
+  minute: number,
+  zone: MatchZone,
+  homePressure: number,
+  eventBias: number,
+  previousTrail: PitchPoint[],
+): TacticalFrame {
+  const pressureShift = clamp((homePressure - 50) / 3, -9, 9);
+  const zoneBias = zone === 'away' ? 8 : zone === 'home' ? -8 : 0;
+  const wave = Math.sin((minute + eventBias) / 5);
+
+  const homeDots = HOME_ANCHORS.map((anchor, idx) => {
+    const verticalBreathe = Math.sin((minute / 6) + idx) * 0.9;
+    return {
+      x: clamp(anchor.x + pressureShift + wave * 0.8, 2, 98),
+      y: clamp(anchor.y + verticalBreathe, 2, 54),
+    };
+  });
+
+  const awayDots = HOME_ANCHORS.map((anchor, idx) => {
+    const mirroredX = 100 - anchor.x;
+    const verticalBreathe = Math.cos((minute / 6) + idx) * 0.9;
+    return {
+      x: clamp(mirroredX - pressureShift - wave * 0.8, 2, 98),
+      y: clamp(anchor.y + verticalBreathe, 2, 54),
+    };
+  });
+
+  const ball = {
+    x: clamp(50 + pressureShift * 0.95 + zoneBias + (Math.sin((minute + eventBias) / 3.8) * 2.6), 2, 98),
+    y: clamp(28 + (Math.cos(minute / 3.1) * 10.5) + (Math.sin(eventBias / 6) * 2), 2, 54),
+  };
+
+  const trail = [...previousTrail, ball].slice(-10);
+  return { homeDots, awayDots, ball, trail };
 }
 
 /* ================================================================
@@ -118,29 +206,54 @@ export function runAnimatedMatch(
   let homeGoals = 0;
   let awayGoals = 0;
   let currentSpeed = settings.matchSpeed || 1;
+  let cadenceMode: 'standard' | 'tactical' = 'standard';
   let isPaused = false;
   let timerId: ReturnType<typeof setInterval> | null = null;
   let countdownTimerId: ReturnType<typeof setInterval> | null = null;
+  let eventBias = 0;
+  let ballTrail: PitchPoint[] = [];
 
   /* Play kick-off whistle */
   SFX.whistle();
   updateMatchTimer(0, t(settings, 'kickOff'));
+  updatePitchState(50, 50, 'mid');
+  updateCadenceBadge(t(settings, 'standardCadence'));
+  const initialFrame = deriveTacticalFrame(0, 'mid', 50, 0, []);
+  ballTrail = initialFrame.trail;
+  updateTacticalPitch(initialFrame.homeDots, initialFrame.awayDots, initialFrame.ball, initialFrame.trail);
 
   function speedTickMs(): number {
+    if (cadenceMode === 'tactical') return TACTICAL_TICK_MS;
     return Math.max(90, Math.round(BASE_TICK_MS / currentSpeed));
+  }
+
+  function minuteStep(): number {
+    return cadenceMode === 'tactical' ? TACTICAL_STEP_MINUTES : STANDARD_STEP_MINUTES;
   }
 
   function updateSpeedControlsUI(): void {
     document.querySelectorAll('.match-speed-btn').forEach((btn) => {
       const el = btn as HTMLButtonElement;
       el.classList.toggle('active', Number(el.dataset.speed) === currentSpeed);
+      el.disabled = cadenceMode === 'tactical';
     });
     const skipHalfBtn = document.getElementById('match-skip-ht') as HTMLButtonElement | null;
     if (skipHalfBtn) skipHalfBtn.disabled = currentMin >= HALF_TIME;
+    const cadenceBtn = document.getElementById('match-cadence-btn') as HTMLButtonElement | null;
+    if (cadenceBtn) {
+      cadenceBtn.classList.toggle('active', cadenceMode === 'tactical');
+      cadenceBtn.textContent = cadenceMode === 'tactical'
+        ? t(settings, 'tacticalCadence')
+        : t(settings, 'standardCadence');
+    }
   }
 
   function setMatchSpeed(speed: number): void {
     if (speed !== 1 && speed !== 2 && speed !== 4) return;
+    if (cadenceMode === 'tactical') {
+      cadenceMode = 'standard';
+      updateCadenceBadge(t(settings, 'standardCadence'));
+    }
     currentSpeed = speed;
     settings.matchSpeed = speed as 1 | 2 | 4;
     const persistSpeed = (window as unknown as { setMatchSpeedSetting?: (value: number) => void }).setMatchSpeedSetting;
@@ -154,12 +267,27 @@ export function runAnimatedMatch(
     }
   }
 
+  function toggleMatchCadence(): void {
+    cadenceMode = cadenceMode === 'standard' ? 'tactical' : 'standard';
+    updateCadenceBadge(t(settings, cadenceMode === 'tactical' ? 'tacticalCadence' : 'standardCadence'));
+    updateSpeedControlsUI();
+    if (timerId && !isPaused) {
+      clearInterval(timerId);
+      startTicker();
+    }
+  }
+
   function skipToHalfTime(): void {
     if (currentMin >= HALF_TIME) return;
     if (timerId) clearInterval(timerId);
     processEventsUpTo(HALF_TIME);
     currentMin = HALF_TIME;
     updateProgressBar((currentMin / TOTAL_MINUTES) * 100);
+    const pitchState = derivePitchState(homeGoals, awayGoals, currentMin, eventBias);
+    updatePitchState(pitchState.homePressure, pitchState.awayPressure, pitchState.zone);
+    const frame = deriveTacticalFrame(currentMin, pitchState.zone, pitchState.homePressure, eventBias, ballTrail);
+    ballTrail = frame.trail;
+    updateTacticalPitch(frame.homeDots, frame.awayDots, frame.ball, frame.trail);
     showHalfTime();
     updateSpeedControlsUI();
   }
@@ -169,6 +297,11 @@ export function runAnimatedMatch(
     if (timerId) clearInterval(timerId);
     processEventsUpTo(TOTAL_MINUTES);
     currentMin = TOTAL_MINUTES;
+    const pitchState = derivePitchState(homeGoals, awayGoals, currentMin, eventBias);
+    updatePitchState(pitchState.homePressure, pitchState.awayPressure, pitchState.zone);
+    const frame = deriveTacticalFrame(currentMin, pitchState.zone, pitchState.homePressure, eventBias, ballTrail);
+    ballTrail = frame.trail;
+    updateTacticalPitch(frame.homeDots, frame.awayDots, frame.ball, frame.trail);
     showFullTime();
     updateSpeedControlsUI();
   }
@@ -183,6 +316,7 @@ export function runAnimatedMatch(
       `<button class="btn btn-secondary match-speed-btn" data-speed="1" onclick="setMatchSpeed(1)">1x</button>` +
       `<button class="btn btn-secondary match-speed-btn" data-speed="2" onclick="setMatchSpeed(2)">2x</button>` +
       `<button class="btn btn-secondary match-speed-btn" data-speed="4" onclick="setMatchSpeed(4)">4x</button>` +
+      `<button class="btn btn-secondary match-cadence-btn" id="match-cadence-btn" onclick="toggleMatchCadence()">${t(settings, 'standardCadence')}</button>` +
       `<button class="btn btn-secondary match-skip-btn" id="match-skip-ht" onclick="skipToHalfTime()">${t(settings, 'skipHalf')}</button>` +
       `<button class="btn btn-secondary match-skip-btn" onclick="skipToFullTime()">${t(settings, 'skipFull')}</button>`;
     progress.parentElement.insertBefore(controls, progress.nextSibling);
@@ -214,14 +348,23 @@ export function runAnimatedMatch(
       if (ev.type === 'goal') {
         if (ev.teamId === fixture.home) homeGoals++;
         else awayGoals++;
+        eventBias += ev.teamId === fixture.home ? 10 : -10;
         updateLiveScore(homeGoals, awayGoals);
         pulseScore();
         SFX.goal();
       } else if (ev.type === 'yellow') {
+        eventBias += ev.teamId === fixture.home ? 3 : -3;
         SFX.yellowCard();
       } else if (ev.type === 'red') {
+        eventBias += ev.teamId === fixture.home ? 8 : -8;
         SFX.redCard();
       }
+
+      const pitchState = derivePitchState(homeGoals, awayGoals, currentMin, eventBias);
+      updatePitchState(pitchState.homePressure, pitchState.awayPressure, pitchState.zone);
+      const frame = deriveTacticalFrame(currentMin, pitchState.zone, pitchState.homePressure, eventBias, ballTrail);
+      ballTrail = frame.trail;
+      updateTacticalPitch(frame.homeDots, frame.awayDots, frame.ball, frame.trail);
 
       eventIdx++;
     }
@@ -462,7 +605,8 @@ export function runAnimatedMatch(
    */
   function startTicker(): void {
     timerId = setInterval(() => {
-      currentMin += 2; /* 2 game minutes per tick */
+      const prevMin = currentMin;
+      currentMin += minuteStep();
 
       if (currentMin > TOTAL_MINUTES) {
         /* Process any remaining events (e.g. stoppage-time goals at 91-93') */
@@ -472,9 +616,13 @@ export function runAnimatedMatch(
       }
 
       /* Half-time pause */
-      if (currentMin >= HALF_TIME && currentMin < HALF_TIME + 2 && !isPaused) {
+      if (prevMin < HALF_TIME && currentMin >= HALF_TIME && !isPaused) {
         /* Process events up to minute 45 first */
         processEventsUpTo(HALF_TIME);
+        currentMin = HALF_TIME;
+        const halfFrame = deriveTacticalFrame(currentMin, 'mid', 50, eventBias, ballTrail);
+        ballTrail = halfFrame.trail;
+        updateTacticalPitch(halfFrame.homeDots, halfFrame.awayDots, halfFrame.ball, halfFrame.trail);
         showHalfTime();
         return;
       }
@@ -483,9 +631,16 @@ export function runAnimatedMatch(
       const half = currentMin <= 45 ? t(settings, 'firstHalf') : t(settings, 'secondHalf');
       updateMatchTimer(currentMin, half);
       updateProgressBar((currentMin / TOTAL_MINUTES) * 100);
+      eventBias *= 0.82;
 
       /* Process events for this minute */
       processEventsUpTo(currentMin);
+
+      const pitchState = derivePitchState(homeGoals, awayGoals, currentMin, eventBias);
+      updatePitchState(pitchState.homePressure, pitchState.awayPressure, pitchState.zone);
+      const frame = deriveTacticalFrame(currentMin, pitchState.zone, pitchState.homePressure, eventBias, ballTrail);
+      ballTrail = frame.trail;
+      updateTacticalPitch(frame.homeDots, frame.awayDots, frame.ball, frame.trail);
 
       /* Update rival results */
       if (options.rivalResults) {
@@ -500,6 +655,7 @@ export function runAnimatedMatch(
   /* Expose continue/finish functions on window for onclick handlers */
   (window as unknown as Record<string, unknown>).continueMatch = continueMatch;
   (window as unknown as Record<string, unknown>).setMatchSpeed = setMatchSpeed;
+  (window as unknown as Record<string, unknown>).toggleMatchCadence = toggleMatchCadence;
   (window as unknown as Record<string, unknown>).skipToHalfTime = skipToHalfTime;
   (window as unknown as Record<string, unknown>).skipToFullTime = skipToFullTime;
   (window as unknown as Record<string, unknown>).finishMatch = () => {
