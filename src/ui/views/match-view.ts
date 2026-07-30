@@ -203,21 +203,27 @@ export function setupMatchUI(
   /* Build the full match UI — HT container placed right below timer for visibility */
   sim.innerHTML =
     derbyBanner +
+    `<div class="match-shell">` +
     `<div class="match-header-area">` +
     `<div class="mh-team home">${teamLabel(homeTeam)}</div>` +
     `<div class="match-score-big" id="live-score">0 — 0</div>` +
     `<div class="mh-team away">${teamLabel(awayTeam)}</div>` +
     `</div>` +
     strengthHTML +
+    `<div class="match-status-card">` +
     `<div class="match-timer" id="match-timer"><span class="minute">0'</span> — ${t(settings, 'kickOff')}</div>` +
     `<div class="match-progress"><div class="match-progress-bar" id="match-bar" style="width:0%"></div></div>` +
-    `<div id="ht-continue-container" style="display:none"></div>` +
+    `</div>` +
     tacticsBar +
-    `<div class="match-events" id="match-events"></div>` +
+    `<div id="ht-continue-container" class="ht-continue-container" style="display:none"></div>` +
+    `<div class="match-events-card"><div class="match-events" id="match-events"></div></div>` +
+    `<div class="match-meta-panels">` +
     `<div class="rival-results" id="rival-results-panel" style="display:none">` +
     `<div class="rr-title"><span class="title-icon">${icon('chartUp', 16)}</span> Other Results</div>` +
     `<div id="rival-results-list"></div></div>` +
-    benchHTML;
+    benchHTML +
+    `</div>` +
+    `</div>`;
 
   return sim;
 }

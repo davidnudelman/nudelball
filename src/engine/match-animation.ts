@@ -179,12 +179,16 @@ export function runAnimatedMatch(
     const controls = document.createElement('div');
     controls.className = 'match-speed-controls';
     controls.innerHTML =
-      `<span class="mp-label">${t(settings, 'matchSpeed')}</span>` +
-      `<button class="btn btn-secondary match-speed-btn" data-speed="1" onclick="setMatchSpeed(1)">1x</button>` +
-      `<button class="btn btn-secondary match-speed-btn" data-speed="2" onclick="setMatchSpeed(2)">2x</button>` +
-      `<button class="btn btn-secondary match-speed-btn" data-speed="4" onclick="setMatchSpeed(4)">4x</button>` +
-      `<button class="btn btn-secondary match-skip-btn" id="match-skip-ht" onclick="skipToHalfTime()">${t(settings, 'skipHalf')}</button>` +
-      `<button class="btn btn-secondary match-skip-btn" onclick="skipToFullTime()">${t(settings, 'skipFull')}</button>`;
+      `<div class="match-speed-label"><span class="mp-label">${t(settings, 'matchSpeed')}</span></div>` +
+      `<div class="match-speed-group">` +
+      `<button class="btn btn-secondary btn-sm match-speed-btn" data-speed="1" onclick="setMatchSpeed(1)">1x</button>` +
+      `<button class="btn btn-secondary btn-sm match-speed-btn" data-speed="2" onclick="setMatchSpeed(2)">2x</button>` +
+      `<button class="btn btn-secondary btn-sm match-speed-btn" data-speed="4" onclick="setMatchSpeed(4)">4x</button>` +
+      `</div>` +
+      `<div class="match-skip-group">` +
+      `<button class="btn btn-secondary btn-sm match-skip-btn" id="match-skip-ht" onclick="skipToHalfTime()">${t(settings, 'skipHalf')}</button>` +
+      `<button class="btn btn-secondary btn-sm match-skip-btn" onclick="skipToFullTime()">${t(settings, 'skipFull')}</button>` +
+      `</div>`;
     progress.parentElement.insertBefore(controls, progress.nextSibling);
     updateSpeedControlsUI();
   }
@@ -355,8 +359,8 @@ export function runAnimatedMatch(
         `</div>` +
         `<div class="ht-actions">` +
         `<div class="ht-label"><span class="inline-icon">${icon('clock', 14)}</span> ${t(settings, 'halfTimeBreak')}</div>` +
-        `<div style="display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px">` +
-        `<button class="btn btn-accent ht-continue-btn btn-has-icon" onclick="continueMatch()">` +
+        `<div class="ht-actions-row">` +
+        `<button class="btn btn-success ht-continue-btn btn-has-icon" onclick="continueMatch()">` +
         `<span class="btn-icon">${icon('arrowRight', 14)}</span> ${t(settings, 'continueMatch')}</button>` +
         autoSubBtn +
         `</div>` +
@@ -434,7 +438,7 @@ export function runAnimatedMatch(
         `<span class="coach-text">"${comment}"</span>` +
         `</div>` +
         summaryHTML +
-        `<button class="btn btn-success ht-continue-btn btn-has-icon" style="margin-top:12px" ` +
+        `<button class="btn btn-success ht-continue-btn ht-finish-btn btn-has-icon" ` +
         `onclick="finishMatch()"><span class="btn-icon">${icon('check', 14)}</span> ${t(settings, 'continueLabel')} <span id="ft-countdown">(15s)</span></button>` +
         `</div>`;
     }

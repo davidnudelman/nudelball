@@ -327,10 +327,10 @@ export function enterGame(G: GameState, settings: Settings): void {
   if (welcome) welcome.style.display = 'none';
 
   const topBar = document.getElementById('top-bar');
-  if (topBar) topBar.style.display = '';
+  if (topBar) topBar.style.display = 'block';
 
   const nav = document.getElementById('nav');
-  if (nav) nav.style.display = '';
+  if (nav) nav.style.display = 'block';
 
   const main = document.getElementById('main');
   if (main) main.style.display = 'block';
