@@ -311,33 +311,29 @@ export function renderMarket(
 
   /* ===== Sell Players Section ===== */
   h += `<div class="market-section-title">${t(settings, 'sellPlayers')}</div>`;
-  if (!isOpen) {
-    h += `<p style="color:var(--text-muted);font-size:.88rem;padding:8px 0">${t(settings, 'windowClosedMsg')}</p>`;
-  } else {
-    h += '<div class="player-grid">';
-    pt.players.forEach((p, i) => {
-      const sellVal = playerSellValue(p);
-      const canSell = squadSize > SQUAD_MIN;
-      const stam = p.stamina != null ? p.stamina : 100;
-      const stamColor = stam >= 70 ? 'stam-green' : stam >= 40 ? 'stam-yellow' : 'stam-red';
-      const ownAvatar = playerAvatar(p.name, { c1: pt.c1, c2: pt.c2, size: 40 });
+  h += '<div class="player-grid">';
+  pt.players.forEach((p, i) => {
+    const sellVal = playerSellValue(p);
+    const canSell = squadSize > SQUAD_MIN;
+    const stam = p.stamina != null ? p.stamina : 100;
+    const stamColor = stam >= 70 ? 'stam-green' : stam >= 40 ? 'stam-yellow' : 'stam-red';
+    const ownAvatar = playerAvatar(p.name, { c1: pt.c1, c2: pt.c2, size: 40 });
 
-      h += `<div class="fa-card">`;
-      h += `<div class="fa-header">`;
-      h += `<div class="fa-avatar">${ownAvatar}</div>`;
-      h += `<span class="p-pos ${POS_CSS[p.pos]}">${p.pos}</span>`;
-      h += `<span class="p-name" style="font-weight:600;font-size:.92rem">${p.name}</span>`;
-      h += `<span class="p-skill-label">${t(settings, 'skill')}: <b>${p.skill}</b></span>`;
-      h += `<span style="font-size:.75rem;color:${(p.age || 25) >= 33 ? 'var(--red)' : (p.age || 25) >= 30 ? '#e8a735' : 'var(--text-muted)'}">${t(settings, 'age')}: ${p.age || '?'}</span>`;
-      h += `</div>`;
-      h += `<div class="stamina-bar" style="margin:4px 0"><div class="stamina-fill ${stamColor}" style="width:${stam}%"></div><span class="stamina-text">${stam}%</span></div>`;
-      h += `<div class="fa-actions">`;
-      h += `<span class="fa-price" style="color:var(--red)">$${sellVal.toLocaleString()}</span>`;
-      h += `<button class="btn-sell" ${canSell ? `onclick="${sellFn}(${i})"` : 'disabled'}>${canSell ? t(settings, 'sell') : t(settings, 'minSquad')}</button>`;
-      h += `</div></div>`;
-    });
-    h += '</div>';
-  }
+    h += `<div class="fa-card">`;
+    h += `<div class="fa-header">`;
+    h += `<div class="fa-avatar">${ownAvatar}</div>`;
+    h += `<span class="p-pos ${POS_CSS[p.pos]}">${p.pos}</span>`;
+    h += `<span class="p-name" style="font-weight:600;font-size:.92rem">${p.name}</span>`;
+    h += `<span class="p-skill-label">${t(settings, 'skill')}: <b>${p.skill}</b></span>`;
+    h += `<span style="font-size:.75rem;color:${(p.age || 25) >= 33 ? 'var(--red)' : (p.age || 25) >= 30 ? '#e8a735' : 'var(--text-muted)'}">${t(settings, 'age')}: ${p.age || '?'}</span>`;
+    h += `</div>`;
+    h += `<div class="stamina-bar" style="margin:4px 0"><div class="stamina-fill ${stamColor}" style="width:${stam}%"></div><span class="stamina-text">${stam}%</span></div>`;
+    h += `<div class="fa-actions">`;
+    h += `<span class="fa-price" style="color:var(--red)">$${sellVal.toLocaleString()}</span>`;
+    h += `<button class="btn-sell" ${canSell ? `onclick="${sellFn}(${i})"` : 'disabled'}>${canSell ? t(settings, 'sell') : t(settings, 'minSquad')}</button>`;
+    h += `</div></div>`;
+  });
+  h += '</div>';
 
   /* ===== Transfer Log ===== */
   if (G.transferLog && G.transferLog.length) {
