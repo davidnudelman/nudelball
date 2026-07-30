@@ -15,7 +15,7 @@
 <!-- ===== WELCOME SCREEN ===== -->
 <div id="welcome" class="welcome-screen">
   <div class="welcome-box welcome-card">
-    <h1><span data-i18n="welcomeTitle1">Park the</span> <span data-i18n="welcomeTitle2" style="color:var(--accent)">Bus</span></h1>
+    <h1><span data-i18n="welcomeTitle1">Park the</span> <span class="text-accent" data-i18n="welcomeTitle2">Bus</span></h1>
     <p class="subtitle" data-i18n="welcomeSubtitle">Football Manager</p>
 
     <!-- New Game Form -->
@@ -25,7 +25,7 @@
       </div>
       <div class="team-picker-gate-text" id="team-picker-gate-text"></div>
       <div class="team-picker" id="team-picker"></div>
-      <div class="team-assign" id="team-selected" style="display:none">
+      <div class="team-assign hidden-init" id="team-selected">
         <div class="label" data-i18n="selectedTeam">Selected Team</div>
         <div class="team" id="assigned-team">&mdash;</div>
         <div class="rename-row">
@@ -47,21 +47,21 @@
     </div>
 
     <!-- Continue / New Game Buttons (shown when a save exists) -->
-    <div id="welcome-continue" style="display:none">
+    <div id="welcome-continue" class="hidden-init">
       <button class="btn btn-success btn-start" id="continue-btn" data-i18n="continueGame">Continue Game</button>
       <button class="btn btn-secondary" id="newgame-btn" data-i18n="newGame">New Game</button>
     </div>
 
     <!-- Welcome screen quick-access buttons -->
-    <button class="btn btn-secondary btn-sm btn-has-icon" style="margin-top:var(--sp-sm);width:100%" onclick="toggleHelp()"><span class="btn-icon" data-icon="book"></span> How to Play</button>
-    <button class="btn btn-secondary btn-sm btn-has-icon" style="margin-top:var(--sp-xs);width:100%" onclick="toggleSettings()"><span class="btn-icon" data-icon="gear"></span> <span data-i18n="settings">Settings</span></button>
+    <button class="btn btn-secondary btn-sm btn-has-icon welcome-quick-btn" onclick="toggleHelp()"><span class="btn-icon" data-icon="book"></span> How to Play</button>
+    <button class="btn btn-secondary btn-sm btn-has-icon welcome-quick-btn" onclick="toggleSettings()"><span class="btn-icon" data-icon="gear"></span> <span data-i18n="settings">Settings</span></button>
 
     <div class="welcome-footer">A Game by DAV<span class="footer-red">ID</span> NUDELMAN</div>
   </div>
 </div>
 
 <!-- ===== TOP BAR ===== -->
-<div id="top-bar" class="top-bar" style="display:none">
+<div id="top-bar" class="top-bar hidden-init">
   <div class="top-bar-inner">
     <div class="top-bar-title-row">
       <div class="top-bar-title">Park the <span>Bus</span></div>
@@ -81,7 +81,7 @@
 </div>
 
 <!-- ===== NAV BAR ===== -->
-<div id="nav" class="nav-bar" style="display:none">
+<div id="nav" class="nav-bar hidden-init">
   <div class="nav-bar-inner">
     <button class="nav-btn active" data-view="dashboard" data-i18n="dashboard" data-shortcut="D" onclick="showView('dashboard')"><kbd class="nav-key">D</kbd> Dashboard</button>
     <button class="nav-btn" data-view="squad" data-i18n="squad" data-shortcut="S" onclick="showView('squad')"><kbd class="nav-key">S</kbd> Squad</button>
@@ -96,7 +96,7 @@
 </div>
 
 <!-- ===== MAIN CONTENT ===== -->
-<div id="main" class="container" style="display:none" role="main">
+<div id="main" class="container hidden-init" role="main">
 
   <!-- Dashboard -->
   <div id="view-dashboard" class="view active">
@@ -118,12 +118,12 @@
   <!-- Squad -->
   <div id="view-squad" class="view">
     <div id="news-panel" class="news-panel" style="display:none"></div>
-    <div class="card" id="tactic-card" style="margin-bottom:8px">
+    <div class="card mb-sm" id="tactic-card">
       <div class="tactic-bar" id="tactic-bar"></div>
     </div>
-    <div class="card" id="training-card" style="margin-bottom:8px">
+    <div class="card mb-sm" id="training-card">
       <div class="training-bar" id="training-bar"></div>
-      <div id="squad-rules-panel" style="margin-top:4px"></div>
+      <div id="squad-rules-panel" class="mt-xs"></div>
     </div>
     <div class="card">
       <div class="card-title" data-i18n="squadManagement">Squad Management</div>
@@ -134,13 +134,13 @@
         <button class="btn btn-secondary" id="sort-btn" onclick="toggleSort()">Sort: Position</button>
         <div class="selected-count"><span data-i18n="selected">Selected:</span> <span id="sel-count">0</span>/11</div>
       </div>
-      <div id="formation-bar" class="formation-bar" style="display:none">
+      <div id="formation-bar" class="formation-bar hidden-init">
         <span class="form-label" data-i18n="formation">Formation:</span>
         <span class="form-display" id="formation-display">&mdash;</span>
         <span id="formation-status"></span>
       </div>
-      <div id="power-bar" class="power-bar" style="display:none"></div>
-      <div id="selection-warning" style="display:none;color:var(--yellow);font-size:.82rem;margin-bottom:8px"></div>
+      <div id="power-bar" class="power-bar hidden-init"></div>
+      <div id="selection-warning" class="selection-warning hidden-init"></div>
       <div id="player-grid" class="squad-list"></div>
     </div>
   </div>
@@ -208,7 +208,7 @@
 </div>
 
 <!-- ===== SETTINGS OVERLAY ===== -->
-<div class="overlay settings-overlay" id="settings-overlay" style="display:none" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+<div class="overlay settings-overlay hidden-init" id="settings-overlay" role="dialog" aria-modal="true" aria-labelledby="settings-title">
   <div class="overlay-content settings-box">
     <div class="overlay-header settings-header">
       <h2 id="settings-title" data-i18n="settings">Settings</h2>
@@ -240,9 +240,9 @@
     <!-- Difficulty toggle is injected here dynamically by settings.ts -->
     <div class="settings-row">
       <span class="settings-label"><span data-icon="volume"></span> Volume</span>
-      <div style="display:flex;align-items:center;gap:8px">
+      <div class="settings-volume-row">
         <input type="range" class="volume-slider" id="volume-slider" min="0" max="100" oninput="setVolume(this.value/100)">
-        <span id="volume-pct" style="font-family:'Oswald';font-size:.82rem;color:var(--text-dim);min-width:32px">50%</span>
+        <span id="volume-pct" class="volume-pct">50%</span>
       </div>
     </div>
     <a class="settings-changelog-link" onclick="toggleSettings();showView('trophyroom')"><span data-icon="trophy"></span> Coach Achievements</a>
@@ -252,7 +252,7 @@
 </div>
 
 <!-- ===== HELP OVERLAY ===== -->
-<div class="overlay help-overlay" id="help-overlay" style="display:none" role="dialog" aria-modal="true" aria-labelledby="help-title">
+<div class="overlay help-overlay hidden-init" id="help-overlay" role="dialog" aria-modal="true" aria-labelledby="help-title">
   <div class="overlay-content help-box">
     <div class="overlay-header help-header">
       <h2 id="help-title"><span data-icon="book"></span> How to Play</h2>
@@ -263,7 +263,7 @@
 </div>
 
 <!-- ===== CHANGELOG OVERLAY ===== -->
-<div class="overlay changelog-overlay" id="changelog-overlay" style="display:none" role="dialog" aria-modal="true" aria-labelledby="changelog-title">
+<div class="overlay changelog-overlay hidden-init" id="changelog-overlay" role="dialog" aria-modal="true" aria-labelledby="changelog-title">
   <div class="overlay-content changelog-box">
     <div class="overlay-header changelog-header">
       <h2 id="changelog-title"><span data-icon="clipboard"></span> Changelog</h2>
@@ -274,7 +274,7 @@
 </div>
 
 <!-- Hidden file input for save import -->
-<input type="file" id="import-input" accept=".json" style="display:none">
+<input type="file" id="import-input" class="hidden-init" accept=".json">
 
 <!-- Vite module entry point -->
 <script type="module" src="/src/main.ts"></script>
