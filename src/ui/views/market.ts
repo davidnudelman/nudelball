@@ -159,7 +159,7 @@ export function renderMarket(
   const hasFreeSign = !G.usedFreeSign;
 
   const signFn = callbacks?.signPlayer ?? 'signPlayer';
-  const sellFn = callbacks?.sellPlayer ?? 'sellPlayer';
+  const sellFn = callbacks?.sellPlayer ?? 'confirmSellPlayer';
   const buyAIFn = callbacks?.buyAIPlayer ?? 'buyAIPlayer';
   const playFn = callbacks?.playMatch ?? 'playMatch';
 
@@ -333,7 +333,7 @@ export function renderMarket(
       h += `<div class="stamina-bar" style="margin:4px 0"><div class="stamina-fill ${stamColor}" style="width:${stam}%"></div><span class="stamina-text">${stam}%</span></div>`;
       h += `<div class="fa-actions">`;
       h += `<span class="fa-price" style="color:var(--red)">$${sellVal.toLocaleString()}</span>`;
-      h += `<button class="btn-sell" ${canSell ? `onclick="if(confirm('${t(settings, 'sellConfirm', { name: p.name.replace(/'/g, "\\'"), amount: sellVal.toLocaleString() })}'))${sellFn}(${i})"` : 'disabled'}>${canSell ? t(settings, 'sell') : t(settings, 'minSquad')}</button>`;
+      h += `<button class="btn-sell" ${canSell ? `onclick="${sellFn}(${i})"` : 'disabled'}>${canSell ? t(settings, 'sell') : t(settings, 'minSquad')}</button>`;
       h += `</div></div>`;
     });
     h += '</div>';

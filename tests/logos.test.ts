@@ -16,7 +16,7 @@ describe('team logos', () => {
     expect(svg.includes('currentColor')).toBe(true);
   });
 
-  it('assigns unique logo signatures across all configured teams', () => {
+  it('assigns unique icon signatures across all configured teams', () => {
     const usedSignatures = new Set<string>();
     const allSeeds = [
       ...TEAMS_DATA.map(td => `${td.name}|${td.country}|${td.c1}|${td.c2}`),
