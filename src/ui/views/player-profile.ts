@@ -150,10 +150,9 @@ export function renderPlayerProfile(G: GameState, settings: Settings): void {
      destructive action. The `onSellPlayer` callback is wired through
      main.ts and navigates back to the squad view on success. */
   const sellVal = playerSellValue(p);
-  const windowOpen = !!G.transferWindow;
   const squadSize = pt.players.length;
   const canSellSquadSize = squadSize > SQUAD_MIN;
-  const canSell = windowOpen && canSellSquadSize && p.injuredFor === 0 && p.suspendedFor === 0;
+  const canSell = canSellSquadSize && p.injuredFor === 0 && p.suspendedFor === 0;
 
   h += `<div class="pp-section pp-sell-section">`;
   h += `<div class="pp-section-title">${icon('money', 14)} ${t(settings, 'transferMarket')}</div>`;
@@ -171,9 +170,7 @@ export function renderPlayerProfile(G: GameState, settings: Settings): void {
   h += `</div>`;
 
   /* Explanation of why the button is disabled, if applicable */
-  if (!windowOpen) {
-    h += `<div class="pp-sell-reason">${t(settings, 'windowClosedMsg')}</div>`;
-  } else if (!canSellSquadSize) {
+  if (!canSellSquadSize) {
     h += `<div class="pp-sell-reason">${t(settings, 'minSquad')} (${SQUAD_MIN})</div>`;
   } else if (p.injuredFor > 0) {
     h += `<div class="pp-sell-reason">${t(settings, 'cannotSellInjured')}</div>`;
