@@ -46,6 +46,8 @@ export function stadiumScene(level: number): string {
 
   /* Sky */
   s += `<rect width="200" height="110" fill="url(#of-sky-${lv})"/>`;
+  s += `<ellipse cx="52" cy="20" rx="${16 + lv * 2}" ry="${6 + lv}" fill="#dce7f2" opacity="0.18"/>`;
+  s += `<ellipse cx="148" cy="${24 - lv}" rx="${18 + lv * 2}" ry="${7 + lv}" fill="#dce7f2" opacity="0.14"/>`;
 
   /* Floodlights -- only visible from level 1 onwards */
   if (lv >= 1) {
@@ -67,6 +69,7 @@ export function stadiumScene(level: number): string {
 
   /* Pitch / grass area */
   s += `<rect x="0" y="78" width="200" height="32" fill="${grass}"/>`;
+  s += `<rect x="0" y="78" width="200" height="8" fill="#fff" opacity="0.03"/>`;
   /* Centre circle */
   s += `<circle cx="100" cy="94" r="6" fill="none" stroke="#b9c8d2" stroke-width="0.6" opacity="0.6"/>`;
   s += `<line x1="100" y1="80" x2="100" y2="108" stroke="#b9c8d2" stroke-width="0.5" opacity="0.4"/>`;
@@ -101,6 +104,17 @@ export function stadiumScene(level: number): string {
       s += `<path d="M 18 38 Q 100 22 182 38" fill="none" stroke="#cad3df" stroke-width="1.4"/>`;
       s += `<path d="M 18 38 Q 100 26 182 38" fill="#202830" opacity="0.5"/>`;
     }
+
+    /* Animated crowd bands with denser rows at higher levels */
+    const crowdRows = lv >= 3 ? 3 : lv >= 2 ? 2 : 1;
+    for (let row = 0; row < crowdRows; row++) {
+      const y = 72 - (row * 6);
+      for (let x = 10; x <= 190; x += 5) {
+        const hue = (x + row * 21) % 4;
+        const crowdColor = hue === 0 ? '#d6dde6' : hue === 1 ? '#f4cd57' : hue === 2 ? '#ff7676' : '#7ec5ff';
+        s += `<circle cx="${x}" cy="${y}" r="0.8" fill="${crowdColor}" opacity="${0.55 - row * 0.08}"/>`;
+      }
+    }
   }
 
   /* Corner flags from level 2 */
@@ -114,6 +128,7 @@ export function stadiumScene(level: number): string {
   /* Star burst on top tier roof at max level */
   if (lv >= 3) {
     s += `<text x="100" y="33" text-anchor="middle" font-family="Oswald, sans-serif" font-size="6" fill="#ffd34a" font-weight="700">ELITE</text>`;
+    s += `<path d="M78 32 Q100 26 122 32" fill="none" stroke="#ffd34a" stroke-width="0.9" opacity="0.6"/>`;
   }
 
   s += `</svg>`;
@@ -149,6 +164,7 @@ export function trainingScene(level: number): string {
   s += `</linearGradient>`;
   s += `</defs>`;
   s += `<rect width="200" height="110" fill="url(#of-sky-tr-${lv})"/>`;
+  s += `<path d="M0 48 Q30 36 60 45 T120 43 T200 47 L200 68 L0 68 Z" fill="#000" opacity="0.1"/>`;
 
   /* Distant fence/horizon line */
   s += `<line x1="0" y1="68" x2="200" y2="68" stroke="#3a4456" stroke-width="0.6" opacity="0.6"/>`;
@@ -160,6 +176,7 @@ export function trainingScene(level: number): string {
     /* Dome highlight */
     s += `<path d="M 132 60 Q 160 38 188 60" fill="none" stroke="#7a8696" stroke-width="0.8"/>`;
     s += `<text x="160" y="66" text-anchor="middle" font-family="Oswald, sans-serif" font-size="5" fill="#cad3df" font-weight="700">INDOOR</text>`;
+    s += `<ellipse cx="160" cy="69.5" rx="22" ry="8" fill="#fff" opacity="0.08"/>`;
   }
 
   /* Gym building at level 2+ */
@@ -177,10 +194,13 @@ export function trainingScene(level: number): string {
     s += `<rect x="32" y="58" width="8" height="10" fill="#2a3242"/>`;
     /* Sign */
     s += `<text x="36" y="48" text-anchor="middle" font-family="Oswald, sans-serif" font-size="5" fill="#ffd34a" font-weight="700">GYM</text>`;
+    s += `<rect x="16" y="66" width="40" height="1.8" fill="#000" opacity="0.18"/>`;
   }
 
   /* Grass field */
   s += `<rect x="0" y="68" width="200" height="42" fill="${grass}"/>`;
+  s += `<path d="M0 98 L200 82" stroke="#fff" stroke-width="0.6" opacity="0.26"/>`;
+  s += `<path d="M0 106 L200 90" stroke="#fff" stroke-width="0.5" opacity="0.22"/>`;
   /* Field stripes */
   s += `<rect x="0" y="74" width="200" height="6" fill="#000" opacity="0.06"/>`;
   s += `<rect x="0" y="86" width="200" height="6" fill="#000" opacity="0.06"/>`;
@@ -207,11 +227,16 @@ export function trainingScene(level: number): string {
     /* Ball */
     s += `<circle cx="100" cy="98" r="2.4" fill="#fff" stroke="#1a212b" stroke-width="0.4"/>`;
     s += `<polygon points="100,96.8 101.2,97.6 100.8,99 99.2,99 98.8,97.6" fill="#1a212b" opacity="0.6"/>`;
+    /* Coach + player silhouettes */
+    s += `<circle cx="82" cy="92" r="1.6" fill="#1a212b"/><rect x="80.8" y="93.5" width="2.4" height="5.2" fill="#1a212b"/>`;
+    s += `<circle cx="118" cy="92" r="1.6" fill="#1a212b"/><rect x="116.8" y="93.5" width="2.4" height="5.2" fill="#1a212b"/>`;
   }
 
   /* Second goal at level 2+ */
   if (lv >= 2) {
     s += `<rect x="160" y="76" width="20" height="12" fill="none" stroke="#fff" stroke-width="0.8"/>`;
+    s += `<path d="M150 102 C154 96, 157 96, 161 102" fill="none" stroke="#1a212b" stroke-width="1.1"/>`;
+    s += `<path d="M168 103 C172 97, 175 97, 179 103" fill="none" stroke="#1a212b" stroke-width="1.1"/>`;
   }
 
   s += `</svg>`;

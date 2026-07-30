@@ -44,7 +44,7 @@ import {
 import { applyDevelopmentCurve, agePlayer, genName, genSkill, makePlayer, rand } from './player';
 import { getTeamPowerLevels } from './match';
 import { emptyStats, generateFixtures, getSortedDiv } from './league';
-import { randomTeamLogo } from '../assets/logos';
+import { logoSignature, randomTeamLogo } from '../assets/logos';
 import {
   awardSeasonIncome,
   generateSeasonFreeAgents,
@@ -385,16 +385,46 @@ export const endOfSeason = (G: GameState): {
     enteringTeams.push(G.waitingPool.shift()!);
   }
 
+  const usedLogoSignatures = new Set<string>();
+  for (const tm of G.teams) {
+    if (tm.div >= 1 && tm.div <= 4 && tm.logo) {
+      usedLogoSignatures.add(logoSignature(tm.logo));
+    }
+  }
+
+  const resolveUniqueLogo = (
+    seed: string,
+    preferredA?: TeamLogo,
+    preferredB?: TeamLogo,
+  ): TeamLogo => {
+    for (const preferred of [preferredA, preferredB]) {
+      if (!preferred) continue;
+      const key = logoSignature(preferred);
+      if (!usedLogoSignatures.has(key)) {
+        usedLogoSignatures.add(key);
+        return preferred;
+      }
+    }
+    const generated = randomTeamLogo(seed, usedLogoSignatures);
+    usedLogoSignatures.add(logoSignature(generated));
+    return generated;
+  };
+
   for (const et of enteringTeams) {
     const existing = G.teams.find(tm => tm.name === et.name);
     const cty = et.country || '';
+    const logoSeed = `${et.name}|${cty}|${et.c1}|${et.c2}`;
 
     if (existing) {
       /* Reinstate existing team */
       existing.div = 4;
       existing.players = [];
       if (cty) existing.country = cty;
-      existing.logo = et.logo || existing.logo || randomTeamLogo(`${existing.name}|${cty}|${existing.c1}|${existing.c2}`);
+      existing.logo = resolveUniqueLogo(
+        `${existing.name}|${cty}|${existing.c1}|${existing.c2}`,
+        et.logo,
+        existing.logo,
+      );
       existing.aiFormation = rand(0, FORMATIONS.length - 1);
 
       const positions: Position[] = [];
@@ -418,7 +448,7 @@ export const endOfSeason = (G: GameState): {
         c1: et.c1,
         c2: et.c2,
         country: cty || '',
-        logo: et.logo || randomTeamLogo(`${et.name}|${cty}|${et.c1}|${et.c2}`),
+        logo: resolveUniqueLogo(logoSeed, et.logo),
         players: [],
         stats: et.stats || emptyStats(),
         seasonStats: emptyStats(),
@@ -426,13 +456,13 @@ export const endOfSeason = (G: GameState): {
         aiFormation: rand(0, FORMATIONS.length - 1),
       };
 
-      const positions: string[] = [];
+      const positions: Position[] = [];
       for (const [pos, cnt] of Object.entries(SQUAD_COMP)) {
-        for (let i = 0; i < cnt; i++) positions.push(pos);
+        for (let i = 0; i < cnt; i++) positions.push(pos as Position);
       }
       for (const pos of positions) {
         team.players.push(
-          makePlayer(genName(cty), pos as any, genSkill(4), 18 + rand(0, 15)),
+          makePlayer(genName(cty), pos, genSkill(4), 18 + rand(0, 15)),
         );
       }
       G.teams.push(team);

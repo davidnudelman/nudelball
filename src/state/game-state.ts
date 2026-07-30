@@ -48,7 +48,7 @@ import {
 } from '../config';
 
 import { genName, genSkill, makePlayer, rand } from '../engine/player';
-import { randomTeamLogo } from '../assets/logos';
+import { logoSignature, randomTeamLogo } from '../assets/logos';
 import { generateSeasonFreeAgents, initBudgets as _initBudgets } from '../engine/transfers';
 
 // ---------------------------------------------------------------------------
@@ -354,6 +354,13 @@ export const initNewGame = (): void => {
    * with correct division-based skills after randomised division assignment.
    */
   const allTeams: Team[] = [];
+  const usedLogoSignatures = new Set<string>();
+  const assignUniqueLogo = (seed: string) => {
+    const logo = randomTeamLogo(seed, usedLogoSignatures);
+    usedLogoSignatures.add(logoSignature(logo));
+    return logo;
+  };
+
   for (const td of TEAMS_DATA) {
     const team: Team = {
       id: allTeams.length,
@@ -362,7 +369,7 @@ export const initNewGame = (): void => {
       c1: td.c1,
       c2: td.c2,
       country: td.country,
-      logo: randomTeamLogo(`${td.name}|${td.country}|${td.c1}|${td.c2}`),
+      logo: assignUniqueLogo(`${td.name}|${td.country}|${td.c1}|${td.c2}`),
       players: [],
       stats: emptyStats(),
       seasonStats: emptyStats(),
@@ -393,7 +400,7 @@ export const initNewGame = (): void => {
     c1: td.c1,
     c2: td.c2,
     country: td.country,
-    logo: randomTeamLogo(`${td.name}|${td.country}|${td.c1}|${td.c2}`),
+    logo: assignUniqueLogo(`${td.name}|${td.country}|${td.c1}|${td.c2}`),
   }));
   G.returnPool = [];
 

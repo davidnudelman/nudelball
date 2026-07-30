@@ -6339,14 +6339,26 @@ html.light .changelog-overlay {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   width: 40px;
   height: 40px;
   border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
   background: var(--surface2);
-  box-shadow: 0 0 0 1px var(--border), 0 2px 6px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 0 1px var(--border), 0 2px 6px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
   transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  isolation: isolate;
+}
+
+.player-portrait::after {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.22), transparent 45%);
+  pointer-events: none;
+  z-index: 1;
 }
 
 .player-portrait svg {
@@ -7075,12 +7087,28 @@ html.light .changelog-overlay {
   aspect-ratio: 200 / 110;
   background: #15202b;
   overflow: hidden;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .of-card-visual .of-scene {
   display: block;
   width: 100%;
   height: 100%;
+  filter: saturate(1.08) contrast(1.04);
+  transition: transform 340ms ease, filter 340ms ease;
+}
+
+.of-card:hover .of-card-visual .of-scene {
+  transform: scale(1.035);
+  filter: saturate(1.14) contrast(1.08);
+}
+
+.of-card-visual::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 34%, rgba(0, 0, 0, 0.2));
+  pointer-events: none;
 }
 
 /* Level badge floating over the scene */
@@ -7202,6 +7230,24 @@ html.light .changelog-overlay {
 .of-facility-card[data-level="3"] {
   box-shadow: inset 0 -4px 0 rgba(255, 211, 74, 0.5), 0 0 12px rgba(255, 211, 74, 0.18);
   border-color: rgba(255, 211, 74, 0.45);
+}
+
+.of-scene-stadium,
+.of-scene-training,
+.of-scene-youth {
+  image-rendering: auto;
+}
+
+.of-facility-card[data-level="0"] .of-scene-stadium,
+.of-facility-card[data-level="0"] .of-scene-training,
+.of-facility-card[data-level="0"] .of-scene-youth {
+  filter: brightness(0.94) saturate(0.92);
+}
+
+.of-facility-card[data-level="3"] .of-scene-stadium,
+.of-facility-card[data-level="3"] .of-scene-training,
+.of-facility-card[data-level="3"] .of-scene-youth {
+  filter: brightness(1.06) saturate(1.16);
 }
 
 /* Sponsor cards -- centred badge above text */

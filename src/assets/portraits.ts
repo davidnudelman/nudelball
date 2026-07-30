@@ -144,6 +144,8 @@ export function playerPortrait(seed: string, opts: PortraitOptions = {}): string
   /* Jersey colour falls back to a consistent palette when no team info */
   const jerseyMain = opts.c1 || JERSEY_DEFAULTS[slot(h, 4) % JERSEY_DEFAULTS.length];
   const jerseyTrim = opts.c2 || '#ffffff';
+  const jerseyShade = shade(jerseyMain, -0.24);
+  const jerseyHighlight = shade(jerseyMain, 0.24);
 
   /* Subtle background plate (team-tinted or a slate default) */
   const bg = opts.transparent
@@ -165,18 +167,41 @@ export function playerPortrait(seed: string, opts: PortraitOptions = {}): string
       ? 'M26 47 Q32 44 38 47'
       : 'M26 46 L38 46';
 
+  const bgGradId = `pp-bg-${h.toString(16)}`;
+  const jerseyGradId = `pp-jersey-${h.toString(16)}`;
+  const clipId = `pp-clip-${h.toString(16)}`;
+  const backgroundDefs = `<defs>` +
+    (bg === 'none'
+      ? ''
+      : `<radialGradient id="${bgGradId}" cx="50%" cy="35%" r="75%">` +
+        `<stop offset="0" stop-color="${shade(bg, 0.26)}"/>` +
+        `<stop offset="1" stop-color="${shade(bg, -0.18)}"/>` +
+        `</radialGradient>`) +
+    `<linearGradient id="${jerseyGradId}" x1="0" y1="0" x2="0" y2="1">` +
+    `<stop offset="0" stop-color="${jerseyHighlight}"/>` +
+    `<stop offset="1" stop-color="${jerseyShade}"/>` +
+    `</linearGradient>` +
+    `<clipPath id="${clipId}"><circle cx="32" cy="32" r="32"/></clipPath>` +
+    `</defs>`;
+
   /* Background + jersey shoulders */
   const bgRect = bg === 'none'
     ? ''
-    : `<rect width="64" height="64" fill="${bg}"/>`;
+    : `<rect width="64" height="64" fill="url(#${bgGradId})"/>` +
+      `<ellipse cx="32" cy="56" rx="28" ry="10" fill="#000" opacity="0.16"/>` +
+      `<circle cx="20" cy="18" r="12" fill="#fff" opacity="0.05"/>`;
 
   const jersey =
-    `<path d="M6 64 Q6 50 22 46 L42 46 Q58 50 58 64 Z" fill="${jerseyMain}"/>` +
-    `<path d="M24 46 Q32 52 40 46 L40 50 Q32 55 24 50 Z" fill="${jerseyTrim}" opacity=".9"/>`;
+    `<path d="M6 64 Q6 50 22 46 L42 46 Q58 50 58 64 Z" fill="url(#${jerseyGradId})"/>` +
+    `<path d="M24 46 Q32 52 40 46 L40 50 Q32 55 24 50 Z" fill="${jerseyTrim}" opacity=".9"/>` +
+    `<path d="M10 58 Q32 50 54 58" fill="none" stroke="${shade(jerseyTrim, -0.15)}" stroke-width="1.2" opacity="0.42"/>`;
 
   /* Head and neck */
   const neck = `<rect x="28" y="40" width="8" height="8" fill="${shade(skin, -0.1)}"/>`;
   const head = `<circle cx="32" cy="28" r="14" fill="${skin}"/>`;
+  const headShadow = `<ellipse cx="32" cy="31.2" rx="13.5" ry="11.8" fill="#000" opacity="0.08"/>`;
+  const cheekLight = `<ellipse cx="27.5" cy="33.2" rx="2.4" ry="1.6" fill="#fff" opacity="0.14"/>` +
+    `<ellipse cx="36.5" cy="33.2" rx="2.4" ry="1.6" fill="#fff" opacity="0.14"/>`;
 
   /* Hair */
   const hairLayer = hairSvg(hairstyle, hair);
@@ -189,17 +214,34 @@ export function playerPortrait(seed: string, opts: PortraitOptions = {}): string
     `<rect x="24" y="${26 + browTilt}" width="6" height="1.2" fill="${hair}"/>` +
     `<rect x="34" y="${26 - browTilt}" width="6" height="1.2" fill="${hair}"/>`;
   const mouth = `<path d="${mouthPath}" stroke="#1b1b1b" stroke-width="1.2" fill="none" stroke-linecap="round"/>`;
+  const nose = `<path d="M32 33.5 L31.4 36.2 L32.7 36.4" stroke="#6b4a2f" stroke-opacity="0.45" stroke-width="0.9" fill="none" stroke-linecap="round"/>`;
+  const eyeLight =
+    `<circle cx="${27 + eyeOffset + 0.4}" cy="29.6" r="0.35" fill="#fff" opacity="0.8"/>` +
+    `<circle cx="${37 + eyeOffset + 0.4}" cy="29.6" r="0.35" fill="#fff" opacity="0.8"/>`;
+  const jawLine = `<path d="M22 34 Q32 42 42 34" fill="none" stroke="${shade(skin, -0.28)}" stroke-width="0.9" opacity="0.45"/>`;
+  const vignette = bg === 'none'
+    ? ''
+    : `<circle cx="32" cy="32" r="30.8" fill="none" stroke="#fff" stroke-opacity="0.07" stroke-width="1.1"/>`;
 
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"${size}>` +
+      backgroundDefs +
+      `<g${bg === 'none' ? '' : ` clip-path="url(#${clipId})"`}>` +
       bgRect +
       jersey +
       neck +
+      headShadow +
       head +
+      cheekLight +
       hairLayer +
       brows +
       eyes +
+      eyeLight +
+      nose +
       mouth +
+      jawLine +
+      vignette +
+      `</g>` +
     `</svg>`
   );
 }
