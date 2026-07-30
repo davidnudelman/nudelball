@@ -111,11 +111,6 @@ export interface RivalResult {
 
 export type MatchZone = 'home' | 'mid' | 'away';
 
-export interface PitchPoint {
-  x: number;
-  y: number;
-}
-
 /**
  * Set up the match simulation UI (initial DOM structure).
  *
@@ -229,23 +224,6 @@ export function setupMatchUI(
     `</div>` +
     `<div class="match-zone-label" id="match-zone-label">50 : 50</div>` +
     `</div>` +
-    `<div class="match-tactical-wrap" id="match-tactical-wrap">` +
-    `<div class="match-tactical-head">` +
-    `<span class="inline-icon">${icon('chartUp', 14)}</span> ${t(settings, 'tacticalSimulation')}` +
-    `<span class="match-cadence-badge" id="match-cadence-badge">${t(settings, 'standardCadence')}</span>` +
-    `</div>` +
-    `<svg class="match-tactical-pitch" id="match-tactical-pitch" viewBox="0 0 100 56" preserveAspectRatio="none" aria-hidden="true">` +
-    `<rect x="0.8" y="0.8" width="98.4" height="54.4" rx="2" class="mtp-outline" />` +
-    `<line x1="50" y1="1.2" x2="50" y2="54.8" class="mtp-line" />` +
-    `<circle cx="50" cy="28" r="7" class="mtp-line" fill="none" />` +
-    `<rect x="0.8" y="18" width="12" height="20" class="mtp-box" fill="none" />` +
-    `<rect x="87.2" y="18" width="12" height="20" class="mtp-box" fill="none" />` +
-    `<path id="match-ball-trail" class="mtp-ball-trail" d="" />` +
-    `${Array.from({ length: 11 }).map((_, idx) => `<circle id="match-home-dot-${idx}" class="mtp-dot home" cx="20" cy="${4 + idx * 4}" r="1.35" />`).join('')}` +
-    `${Array.from({ length: 11 }).map((_, idx) => `<circle id="match-away-dot-${idx}" class="mtp-dot away" cx="80" cy="${4 + idx * 4}" r="1.35" />`).join('')}` +
-    `<circle id="match-ball-dot" class="mtp-ball" cx="50" cy="28" r="1.1" />` +
-    `</svg>` +
-    `</div>` +
     `<div id="ht-continue-container" style="display:none"></div>` +
     tacticsBar +
     `<div class="match-events" id="match-events"></div>` +
@@ -347,44 +325,6 @@ export function updatePitchState(homePressure: number, awayPressure: number, zon
   if (marker) {
     const pos = zone === 'home' ? 20 : zone === 'away' ? 80 : 50;
     marker.style.left = `${pos}%`;
-  }
-}
-
-export function updateCadenceBadge(label: string): void {
-  const badge = document.getElementById('match-cadence-badge');
-  if (badge) badge.textContent = label;
-}
-
-export function updateTacticalPitch(homeDots: PitchPoint[], awayDots: PitchPoint[], ball: PitchPoint, trail: PitchPoint[]): void {
-  const clamp = (value: number, min: number, max: number): number => Math.max(min, Math.min(max, value));
-
-  for (let i = 0; i < 11; i++) {
-    const home = homeDots[i];
-    const away = awayDots[i];
-    const homeEl = document.getElementById(`match-home-dot-${i}`);
-    const awayEl = document.getElementById(`match-away-dot-${i}`);
-    if (homeEl && home) {
-      homeEl.setAttribute('cx', String(clamp(home.x, 2, 98)));
-      homeEl.setAttribute('cy', String(clamp(home.y, 2, 54)));
-    }
-    if (awayEl && away) {
-      awayEl.setAttribute('cx', String(clamp(away.x, 2, 98)));
-      awayEl.setAttribute('cy', String(clamp(away.y, 2, 54)));
-    }
-  }
-
-  const ballEl = document.getElementById('match-ball-dot');
-  if (ballEl) {
-    ballEl.setAttribute('cx', String(clamp(ball.x, 2, 98)));
-    ballEl.setAttribute('cy', String(clamp(ball.y, 2, 54)));
-  }
-
-  const trailEl = document.getElementById('match-ball-trail');
-  if (trailEl) {
-    const points = trail
-      .map((point) => `${clamp(point.x, 2, 98).toFixed(2)},${clamp(point.y, 2, 54).toFixed(2)}`)
-      .join(' L ');
-    trailEl.setAttribute('d', points.length ? `M ${points}` : '');
   }
 }
 
