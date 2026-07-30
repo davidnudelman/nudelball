@@ -24,8 +24,9 @@ import {
   updateProgressBar,
   appendMatchEvent,
   updateRivalResults,
+  updatePitchState,
 } from '../ui/views/match-view';
-import type { RivalResult } from '../ui/views/match-view';
+import type { MatchZone, RivalResult } from '../ui/views/match-view';
 import { icon } from '../assets/icons';
 import { getCoachComment } from '../data/coach-comments';
 import { teamLabel } from '../utils/helpers';
@@ -34,6 +35,7 @@ import { t } from '../data/i18n';
 
 /** Base milliseconds per tick at 1x speed (1 second = 2 game minutes) */
 const BASE_TICK_MS = 500;
+const STANDARD_STEP_MINUTES = 2;
 
 /** Total game minutes (90) */
 const TOTAL_MINUTES = 90;
@@ -53,6 +55,32 @@ export interface AnimatedMatchOptions {
   rivalResults?: RivalResult[];
   /** Callback when the full animation completes */
   onComplete: () => void;
+}
+
+export interface MatchPitchState {
+  homePressure: number;
+  awayPressure: number;
+  zone: MatchZone;
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
+/**
+ * Derive momentum/zone state from scoreline and real event advantage.
+ */
+export function derivePitchState(
+  homeGoals: number,
+  awayGoals: number,
+  homeEventAdvantage: number,
+): MatchPitchState {
+  const scoreBias = (homeGoals - awayGoals) * 12;
+  const combined = clamp(scoreBias + homeEventAdvantage, -42, 42);
+  const homePressure = clamp(50 + combined, 10, 90);
+  const awayPressure = 100 - homePressure;
+  const zone: MatchZone = combined >= 14 ? 'away' : combined <= -14 ? 'home' : 'mid';
+  return { homePressure, awayPressure, zone };
 }
 
 /* ================================================================
@@ -121,13 +149,19 @@ export function runAnimatedMatch(
   let isPaused = false;
   let timerId: ReturnType<typeof setInterval> | null = null;
   let countdownTimerId: ReturnType<typeof setInterval> | null = null;
+  let homeEventAdvantage = 0;
 
   /* Play kick-off whistle */
   SFX.whistle();
   updateMatchTimer(0, t(settings, 'kickOff'));
+  updatePitchState(50, 50, 'mid');
 
   function speedTickMs(): number {
     return Math.max(90, Math.round(BASE_TICK_MS / currentSpeed));
+  }
+
+  function minuteStep(): number {
+    return STANDARD_STEP_MINUTES;
   }
 
   function updateSpeedControlsUI(): void {
@@ -160,6 +194,8 @@ export function runAnimatedMatch(
     processEventsUpTo(HALF_TIME);
     currentMin = HALF_TIME;
     updateProgressBar((currentMin / TOTAL_MINUTES) * 100);
+    const pitchState = derivePitchState(homeGoals, awayGoals, homeEventAdvantage);
+    updatePitchState(pitchState.homePressure, pitchState.awayPressure, pitchState.zone);
     showHalfTime();
     updateSpeedControlsUI();
   }
@@ -169,6 +205,8 @@ export function runAnimatedMatch(
     if (timerId) clearInterval(timerId);
     processEventsUpTo(TOTAL_MINUTES);
     currentMin = TOTAL_MINUTES;
+    const pitchState = derivePitchState(homeGoals, awayGoals, homeEventAdvantage);
+    updatePitchState(pitchState.homePressure, pitchState.awayPressure, pitchState.zone);
     showFullTime();
     updateSpeedControlsUI();
   }
@@ -218,14 +256,20 @@ export function runAnimatedMatch(
       if (ev.type === 'goal') {
         if (ev.teamId === fixture.home) homeGoals++;
         else awayGoals++;
+        homeEventAdvantage += ev.teamId === fixture.home ? 10 : -10;
         updateLiveScore(homeGoals, awayGoals);
         pulseScore();
         SFX.goal();
       } else if (ev.type === 'yellow') {
+        homeEventAdvantage += ev.teamId === fixture.home ? 3 : -3;
         SFX.yellowCard();
       } else if (ev.type === 'red') {
+        homeEventAdvantage += ev.teamId === fixture.home ? 8 : -8;
         SFX.redCard();
       }
+
+      const pitchState = derivePitchState(homeGoals, awayGoals, homeEventAdvantage);
+      updatePitchState(pitchState.homePressure, pitchState.awayPressure, pitchState.zone);
 
       eventIdx++;
     }
@@ -466,7 +510,8 @@ export function runAnimatedMatch(
    */
   function startTicker(): void {
     timerId = setInterval(() => {
-      currentMin += 2; /* 2 game minutes per tick */
+      const prevMin = currentMin;
+      currentMin += minuteStep();
 
       if (currentMin > TOTAL_MINUTES) {
         /* Process any remaining events (e.g. stoppage-time goals at 91-93') */
@@ -476,9 +521,10 @@ export function runAnimatedMatch(
       }
 
       /* Half-time pause */
-      if (currentMin >= HALF_TIME && currentMin < HALF_TIME + 2 && !isPaused) {
+      if (prevMin < HALF_TIME && currentMin >= HALF_TIME && !isPaused) {
         /* Process events up to minute 45 first */
         processEventsUpTo(HALF_TIME);
+        currentMin = HALF_TIME;
         showHalfTime();
         return;
       }
@@ -490,6 +536,9 @@ export function runAnimatedMatch(
 
       /* Process events for this minute */
       processEventsUpTo(currentMin);
+
+      const pitchState = derivePitchState(homeGoals, awayGoals, homeEventAdvantage);
+      updatePitchState(pitchState.homePressure, pitchState.awayPressure, pitchState.zone);
 
       /* Update rival results */
       if (options.rivalResults) {

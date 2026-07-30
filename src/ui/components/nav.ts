@@ -245,7 +245,7 @@ export function updatePlayBtn(): void {
   /* Check for injured or suspended starters that shouldn't be playing */
   const unavailable = sel.filter(p => p.injuredFor > 0 || p.suspendedFor > 0);
   if (unavailable.length > 0) {
-    setBtn(true, `${unavailable.length} unavailable starter${unavailable.length > 1 ? 's' : ''}`);
+    setBtn(true, t(settings, 'unavailableStarters', { count: unavailable.length }));
     return;
   }
 

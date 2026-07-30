@@ -81,6 +81,7 @@ import { applyTraining, applyAITraining } from './engine/training';
 import {
   signPlayer as engineSignPlayer,
   sellPlayer as engineSellPlayer,
+  playerSellValue,
   buyFromTeam as engineBuyFromTeam,
   loanPlayer as engineLoanPlayer,
   applyDeadlineDayScramble,
@@ -1128,6 +1129,23 @@ function globalSellPlayer(playerIdx: number): void {
   }
 }
 
+async function confirmSellPlayer(playerIdx: number): Promise<void> {
+  if (G.playerTeamId == null) return;
+  const pt = G.teams[G.playerTeamId];
+  const p = pt?.players[playerIdx];
+  if (!p) return;
+
+  const shouldSell = await showConfirmDialog({
+    title: t(settings, 'sell'),
+    message: t(settings, 'sellConfirm', { name: p.name, amount: playerSellValue(p).toLocaleString() }),
+    confirmLabel: t(settings, 'sell'),
+    cancelLabel: t(settings, 'cancel'),
+    severity: 'warning',
+  });
+  if (!shouldSell) return;
+  globalSellPlayer(playerIdx);
+}
+
 /**
  * Sell a player triggered from the Player Profile page.
  *
@@ -1150,6 +1168,23 @@ function sellPlayerFromProfile(playerIdx: number): void {
     updatePlayBtn();
     showView('squad');
   }
+}
+
+async function confirmSellPlayerFromProfile(playerIdx: number): Promise<void> {
+  if (G.playerTeamId == null) return;
+  const pt = G.teams[G.playerTeamId];
+  const p = pt?.players[playerIdx];
+  if (!p) return;
+
+  const shouldSell = await showConfirmDialog({
+    title: t(settings, 'sell'),
+    message: t(settings, 'sellConfirm', { name: p.name, amount: playerSellValue(p).toLocaleString() }),
+    confirmLabel: t(settings, 'sell'),
+    cancelLabel: t(settings, 'cancel'),
+    severity: 'warning',
+  });
+  if (!shouldSell) return;
+  sellPlayerFromProfile(playerIdx);
 }
 
 /**
@@ -1767,6 +1802,8 @@ declare global {
     signPlayer: typeof globalSignPlayer;
     sellPlayer: typeof globalSellPlayer;
     sellPlayerFromProfile: typeof sellPlayerFromProfile;
+    confirmSellPlayer: typeof confirmSellPlayer;
+    confirmSellPlayerFromProfile: typeof confirmSellPlayerFromProfile;
     buyAIPlayer: typeof globalBuyAIPlayer;
 
     /* New Feature Actions */
@@ -1861,6 +1898,8 @@ window.showTeamProfile = globalOpenTeamProfile;
 window.signPlayer = globalSignPlayer;
 window.sellPlayer = globalSellPlayer;
 window.sellPlayerFromProfile = sellPlayerFromProfile;
+window.confirmSellPlayer = confirmSellPlayer;
+window.confirmSellPlayerFromProfile = confirmSellPlayerFromProfile;
 window.buyAIPlayer = globalBuyAIPlayer;
 
 /* --- New Feature Actions --- */

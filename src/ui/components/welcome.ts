@@ -17,6 +17,7 @@ import type { GameState, Settings, SaveSlot } from '../../types';
 import { teamLabel, teamLogo, clearPlateCache } from '../../utils/helpers';
 import { icon } from '../../assets/icons';
 import { t } from '../../data/i18n';
+import { showToast } from './templates';
 import { listSaveSlots } from '../../state/save-manager';
 
 /* ================================================================
@@ -204,7 +205,7 @@ export function bootWelcome(
 
   if (hasSave === 'incompatible') {
     /* Old save format detected -- show message and start fresh */
-    alert(t(settings, 'incompatibleSave'));
+    showToast(t(settings, 'incompatibleSave'), 'error', 3200);
     callbacks.initNewGame();
     renderTeamPicker(G, settings);
   } else if (hasSave && G.manager) {

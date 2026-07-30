@@ -109,6 +109,8 @@ export interface RivalResult {
   awayId: number;
 }
 
+export type MatchZone = 'home' | 'mid' | 'away';
+
 /**
  * Set up the match simulation UI (initial DOM structure).
  *
@@ -166,7 +168,7 @@ export function setupMatchUI(
   /* Derby banner (#13) */
   const isDerby = (homeTeam.rivals?.includes(awayTeam.id)) || (awayTeam.rivals?.includes(homeTeam.id));
   const derbyBanner = isDerby
-    ? `<div class="derby-banner"><span class="db-icon">${icon('fire', 16)}</span><span class="db-label">DERBY MATCH</span><span class="db-icon">${icon('fire', 16)}</span></div>`
+    ? `<div class="derby-banner"><span class="db-icon">${icon('fire', 16)}</span><span class="db-label">${t(settings, 'derbyMatch')}</span><span class="db-icon">${icon('fire', 16)}</span></div>`
     : '';
 
   /* Tactic buttons for mid-match adjustments */
@@ -185,7 +187,7 @@ export function setupMatchUI(
     const bench = playerTeam.players.filter(p => !p.selected && !p.injuredFor && !p.suspendedFor);
     if (bench.length > 0) {
       benchHTML = `<div class="subs-panel" id="subs-panel">` +
-        `<div class="subs-title"><span class="title-icon">${icon('refresh', 16)}</span> Substitutions (<span id="subs-remaining">3</span>/3 remaining)</div>` +
+        `<div class="subs-title"><span class="title-icon">${icon('refresh', 16)}</span> ${t(settings, 'substitutions')} (<span id="subs-remaining">3</span>/3 ${t(settings, 'subsRemaining')})</div>` +
         `<div id="subs-list">`;
       for (const bp of bench) {
         const posClass = bp.pos.toLowerCase();
@@ -213,13 +215,24 @@ export function setupMatchUI(
     `<div class="match-status-card">` +
     `<div class="match-timer" id="match-timer"><span class="minute">0'</span> — ${t(settings, 'kickOff')}</div>` +
     `<div class="match-progress"><div class="match-progress-bar" id="match-bar" style="width:0%"></div></div>` +
+    `<div class="match-momentum" id="match-momentum" aria-label="${t(settings, 'matchMomentum')}">` +
+    `<div class="match-momentum-home" id="match-momentum-home" style="width:50%"></div>` +
+    `<div class="match-momentum-away" id="match-momentum-away" style="width:50%"></div>` +
+    `</div>` +
+    `<div class="match-zone-state" id="match-zone-state">` +
+    `<div class="match-zone-pitch">` +
+    `<span class="zone-seg home"></span><span class="zone-seg mid"></span><span class="zone-seg away"></span>` +
+    `<span class="zone-marker" id="match-zone-marker"></span>` +
+    `</div>` +
+    `<div class="match-zone-label" id="match-zone-label">50 : 50</div>` +
+    `</div>` +
     `</div>` +
     tacticsBar +
     `<div id="ht-continue-container" class="ht-continue-container" style="display:none"></div>` +
     `<div class="match-events-card"><div class="match-events" id="match-events"></div></div>` +
     `<div class="match-meta-panels">` +
     `<div class="rival-results" id="rival-results-panel" style="display:none">` +
-    `<div class="rr-title"><span class="title-icon">${icon('chartUp', 16)}</span> Other Results</div>` +
+    `<div class="rr-title"><span class="title-icon">${icon('chartUp', 16)}</span> ${t(settings, 'otherResults')}</div>` +
     `<div id="rival-results-list"></div></div>` +
     benchHTML +
     `</div>` +
@@ -292,6 +305,33 @@ export function updateMatchTimer(minute: number, label?: string): void {
 export function updateProgressBar(percent: number): void {
   const el = document.getElementById('match-bar');
   if (el) (el as HTMLElement).style.width = percent + '%';
+}
+
+/**
+ * Update momentum bars and pitch-zone marker.
+ */
+export function updatePitchState(homePressure: number, awayPressure: number, zone: MatchZone): void {
+  const h = Math.max(0, Math.min(100, homePressure));
+  const a = Math.max(0, Math.min(100, awayPressure));
+  const total = h + a || 100;
+  const hPct = Math.round((h / total) * 100);
+  const aPct = Math.max(0, 100 - hPct);
+
+  const homeEl = document.getElementById('match-momentum-home') as HTMLElement | null;
+  const awayEl = document.getElementById('match-momentum-away') as HTMLElement | null;
+  const marker = document.getElementById('match-zone-marker') as HTMLElement | null;
+  const label = document.getElementById('match-zone-label') as HTMLElement | null;
+  const zoneState = document.getElementById('match-zone-state');
+
+  if (homeEl) homeEl.style.width = `${hPct}%`;
+  if (awayEl) awayEl.style.width = `${aPct}%`;
+  if (label) label.textContent = `${hPct} : ${aPct}`;
+  if (zoneState) zoneState.setAttribute('data-zone', zone);
+
+  if (marker) {
+    const pos = zone === 'home' ? 20 : zone === 'away' ? 80 : 50;
+    marker.style.left = `${pos}%`;
+  }
 }
 
 /**

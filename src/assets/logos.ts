@@ -22,8 +22,12 @@ function hashSeed(seed: string): number {
   return Math.abs(h >>> 0);
 }
 
+/**
+ * Icon signature for uniqueness checks.
+ * Purposefully excludes shape/color so the motif icon itself is unique.
+ */
 export function logoSignature(logo: TeamLogo): string {
-  return `${logo.shape}|${logo.motif}|${logo.variant}`;
+  return `${logo.motif}|${logo.variant}`;
 }
 
 export function randomTeamLogo(seed: string, usedSignatures?: ReadonlySet<string>): TeamLogo {
