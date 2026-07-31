@@ -259,7 +259,13 @@ export function showConfirmDialog(options: ConfirmDialogOptions): Promise<boolea
     cancelBtn?.addEventListener('click', () => close(false));
 
     document.body.appendChild(overlay);
-    confirmBtn?.focus();
+    /* The .overlay class starts hidden (opacity: 0, visibility: hidden) and
+       only becomes visible with .active — add it on the next frame so the
+       fade-in transition runs, then focus (hidden elements can't be focused) */
+    requestAnimationFrame(() => {
+      overlay.classList.add('active');
+      confirmBtn?.focus();
+    });
   });
 }
 
@@ -308,7 +314,12 @@ export function showPromptDialog(options: PromptDialogOptions): Promise<string |
     cancelBtn?.addEventListener('click', () => close(null));
 
     document.body.appendChild(overlay);
-    input?.focus();
-    input?.select();
+    /* Same visibility handling as showConfirmDialog: .overlay needs .active
+       to become visible, and focus only works once the element is shown */
+    requestAnimationFrame(() => {
+      overlay.classList.add('active');
+      input?.focus();
+      input?.select();
+    });
   });
 }
