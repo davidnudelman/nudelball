@@ -167,8 +167,9 @@ export function renderHelp(_settings: Settings): void {
     {
       title: 'Match Day',
       content: `
-        <p>Matches can be played in <b>instant</b> mode (immediate result) or <b>animated</b> mode (minute-by-minute with events).</p>
-        <p>During animated matches you can:</p>
+        <p>Every match is played out as a series of <b>possessions</b>: pass chains that end in a shot or a turnover. The goals, scorers and assists come from those shots, and the <b>live pitch</b> replays them minute by minute: both lineups as numbered dots, passes and shots drawn as lines, the ball moving with the play, and a shot map that builds up over the match.</p>
+        <p>Under the pitch you get live <b>possession</b>, <b>shots</b>, <b>shots on target</b> and <b>xG</b> (expected goals). Use the speed buttons (1x / 2x / 4x) or skip to half-time / full-time.</p>
+        <p>During the match you can:</p>
         <ul>
           <li><b>Make substitutions</b> Up to 3 per match. Click SUB next to a bench player, then pick which starter to replace. Subbed-in players get a +10% effectiveness boost.</li>
           <li><b>Change tactics</b> Switch between Attack/Balanced/Defensive/Counter at any time to counter your opponent.</li>

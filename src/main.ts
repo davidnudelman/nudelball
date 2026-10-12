@@ -524,6 +524,7 @@ function proceedWithMatch(): void {
   /* Simulate all league fixtures for the current round across all divisions */
   const roundIdx = G.week - 1;
   let playerFixture: import('./types').Fixture | null = null;
+  let playerTimeline: import('./types').MatchTimeline | null = null;
   let playerFixtureDiv = 0;
 
   for (let d = 1; d <= 4; d++) {
@@ -537,9 +538,10 @@ function proceedWithMatch(): void {
         playerFixtureDiv = d;
       }
 
-      simulateMatch(f, G, {
+      const timeline = simulateMatch(f, G, {
         difficulty: diffMult.aiStrengthMult,
       });
+      if (f === playerFixture) playerTimeline = timeline;
     }
   }
 
@@ -603,6 +605,7 @@ function proceedWithMatch(): void {
 
     runAnimatedMatch(playerFixture, G, settings, {
       rivalResults,
+      timeline: playerTimeline ?? undefined,
       onComplete: () => {
         /* Advance week counter BEFORE rendering so UI shows correct state */
         G.week++;

@@ -7,7 +7,7 @@
 
 import type { GameState, Settings, Team, Fixture, SeasonRecapData } from '../../types';
 import { SEASON_WEEKS, FORMATIONS, MORALE_MAX, SCOUT_COSTS } from '../../config';
-import { teamLabel, plateColors } from '../../utils/helpers';
+import { teamLabel, plateColors, teamLogo } from '../../utils/helpers';
 import { icon } from '../../assets/icons';
 import { t } from '../../data/i18n';
 import { calculateSeasonAwards } from '../../engine/season';
@@ -220,8 +220,11 @@ export function renderDashboard(
               `<span class="inline-icon">${icon('star', 14)}</span> <b>Man of the Match:</b> ${pm.motm}${motmTeam ? ` (${teamLabel(motmTeam)})` : ''}</div>`;
           }
 
-          lr.innerHTML = `<div class="result-banner"><h3 style="color:${rc}">${t(settings, 'week')} ${prevWeek} — ${resultLabel}</h3>` +
-            `<div class="score-line"><span>${teamLabel(ht)}</span><span class="score">${pm.homeGoals} — ${pm.awayGoals}</span><span>${teamLabel(at)}</span></div>` +
+          lr.innerHTML = `<div class="result-banner result-${resultKey}"><h3 style="color:${rc}">${t(settings, 'week')} ${prevWeek} — ${resultLabel}</h3>` +
+            `<div class="score-line">` +
+            `<span class="sl-team home">${teamLogo(ht, 'sl-logo')}${teamLabel(ht)}</span>` +
+            `<span class="score">${pm.homeGoals}<span class="score-dash">–</span>${pm.awayGoals}</span>` +
+            `<span class="sl-team away">${teamLabel(at)}${teamLogo(at, 'sl-logo')}</span></div>` +
             `${detailHTML ? `<div class="rb-details">${detailHTML}</div>` : ''}${motmHTML}</div>`;
         }
       }
@@ -306,10 +309,10 @@ export function renderDashboard(
             insightsHTML += `</div>`;
           }
 
-          nfc.innerHTML = `<div class="fixture-card player-match">${derbyBadge}<div class="fixture-main">` +
-            `<div class="team-name home">${teamLabel(ht)}</div>` +
+          nfc.innerHTML = `<div class="fixture-card player-match fixture-hero">${derbyBadge}<div class="fixture-main">` +
+            `<div class="fh-team home">${teamLogo(ht, 'fh-logo')}<div class="team-name home">${teamLabel(ht)}</div></div>` +
             `<div class="vs">${t(settings, 'vs')}</div>` +
-            `<div class="team-name away">${teamLabel(at)}</div></div>${insightsHTML}</div>`;
+            `<div class="fh-team away">${teamLogo(at, 'fh-logo')}<div class="team-name away">${teamLabel(at)}</div></div></div>${insightsHTML}</div>`;
         } else {
           nfc.innerHTML = '';
         }

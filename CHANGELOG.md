@@ -2,6 +2,20 @@
 
 All notable changes to Park the Bus will be documented in this file.
 
+## [0.92.0] - 2026-10-12
+
+### Added
+- **Possession-based match engine** — matches are generated as a timeline of plays (pass chains ending in a shot or a turnover). Goals, scorers and assists are derived from the shots, so what you see on the pitch is exactly what produced the score. Shot volume and conversion are calibrated to the existing expected-goals model, so tactics, formations, synergies and matchups balance exactly as before
+- **Live pitch view** — SVG pitch with both lineups as numbered dots in their formation, passes and shots drawn as lines as they happen, the ball gliding along, goal / saved / wide / blocked banners, red-card dismissals and a shot map that builds up through the match
+- **Broadcast scoreboard** — club logos, formation and tactic per side, big score, live clock, possession indicator, HT / FT badge
+- **Live match stats** — possession, shots, shots on target and xG under the pitch, and in the full-time summary
+- **Chances in the events feed** — saves, misses and blocks appear as muted rows with their xG; goals show the assist
+- **Dashboard** — last result and next fixture cards redesigned with club logos and a result-coloured banner
+
+### Changed
+- Match replay now advances one minute per tick (about 70 seconds at 1x); 2x and 4x speeds and the skip buttons remain
+- Removed the leftover styles from the old synthetic tactical layer
+
 ## [0.91.0] - 2026-04-05
 
 ### Added
