@@ -9,10 +9,24 @@
 import type { ChangelogEntry } from '../types';
 
 /** Current game version string displayed in the footer and settings. */
-export const GAME_VERSION = "0.90";
+export const GAME_VERSION = "0.92";
 
 /** Full changelog, newest version first. */
 export const CHANGELOG: readonly ChangelogEntry[] = [
+  {
+    version: "0.92",
+    date: "2026-10-12",
+    title: "Match Day — Live Pitch",
+    changes: [
+      "Matches are now played out as possessions: pass chains that end in a shot or a turnover, with goals, scorers and assists coming from the shots themselves",
+      "Live pitch view — both lineups as numbered dots, passes and shots drawn as lines as they happen, ball movement, goal and save banners",
+      "Broadcast-style scoreboard with club logos, formation and tactic, live clock and possession indicator",
+      "Live match stats: possession, shots, shots on target and expected goals (xG), plus a shot map that builds up over the match",
+      "Events feed now lists big chances (saves, misses, blocks) with their xG, and goals show the assist",
+      "Red cards remove the player from the pitch and hand the opponent extra chances for the rest of the match",
+      "Dashboard: last result and next fixture cards redesigned with club logos",
+    ],
+  },
   {
     version: "0.90",
     date: "2026-03-31",

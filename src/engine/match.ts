@@ -2,9 +2,12 @@
  * Match engine module — handles match simulation, team strength
  * calculations, goal scoring, card events, and post-match processing.
  *
- * The core `simulateMatch()` function replicates the logic from the
- * original index.html `simulateMatchInstant()` while accepting a
- * difficulty parameter that scales AI team strength.
+ * The core `simulateMatch()` function computes each side's expected goals
+ * from strength, tactics, formations and matchups, then hands those numbers
+ * to the possession engine (`match-sim.ts`), which plays the match out as a
+ * sequence of passes and shots. Goals, scorers and assists come from those
+ * shots, and the resulting timeline is returned so the match view can
+ * replay it on the pitch.
  */
 
 import type {
@@ -13,6 +16,7 @@ import type {
   MatchEvent,
   MatchInjury,
   MatchSimOptions,
+  MatchTimeline,
   Player,
   Position,
   PowerLevels,
@@ -46,7 +50,6 @@ import {
   SEASON_WEEKS,
   GOAL_NARRATIVES,
   LATE_GOAL_SUFFIXES,
-  LATE_GOAL_BIAS,
   YELLOW_NARRATIVES,
   RED_NARRATIVES,
   PRESSURE_THRESHOLD_WEEKS,
@@ -63,6 +66,8 @@ import {
   TEAM_TALKS,
 } from '../config';
 import { getOopPenalty, playerOvr, rand, clamp, pick } from './player';
+import { buildMatchTimeline } from './match-sim';
+import type { SimCardInput } from './match-sim';
 
 // ---------------------------------------------------------------------------
 // Narrative Generation
@@ -89,17 +94,6 @@ const generateYellowNarrative = (playerName: string): string =>
 /** Generate a narrative for a red card event. */
 const generateRedNarrative = (playerName: string): string =>
   pick(RED_NARRATIVES).replace('{name}', playerName);
-
-/**
- * Generate a goal minute with late-game drama bias.
- * ~20% of goals are pushed into the 85-93 minute range.
- */
-const generateGoalMinute = (): number => {
-  if (Math.random() < LATE_GOAL_BIAS) {
-    return rand(85, 93);
-  }
-  return rand(1, 90);
-};
 
 // ---------------------------------------------------------------------------
 // Hot Streak Detection
@@ -892,9 +886,10 @@ export const updateMatchRecords = (f: Fixture, G: GameState): void => {
  * This is the core match engine. It:
  * 1. Auto-selects AI team lineups.
  * 2. Calculates team strengths with tactic modifiers.
- * 3. Generates goals using Poisson distribution.
- * 4. Assigns goal scorers weighted by position and skill.
- * 5. Generates yellow/red card events.
+ * 3. Generates yellow/red card events.
+ * 4. Plays the match out as possessions (passes, shots, turnovers) with
+ *    shot volume and conversion calibrated to the expected goals.
+ * 5. Derives goals, scorers and assists from the shots that went in.
  * 6. Tracks player appearances and goals.
  * 7. Updates match stats (points, standings).
  * 8. Updates player form for the human team.
@@ -906,8 +901,9 @@ export const updateMatchRecords = (f: Fixture, G: GameState): void => {
  * @param f - The fixture to simulate (mutated in-place with results).
  * @param G - The game state (mutated in-place).
  * @param options - Optional simulation parameters (tactic override, difficulty).
+ * @returns The play-by-play timeline, for the animated match view.
  */
-export const simulateMatch = (f: Fixture, G: GameState, options?: MatchSimOptions): void => {
+export const simulateMatch = (f: Fixture, G: GameState, options?: MatchSimOptions): MatchTimeline => {
   const { tacticOverride, difficulty = 1.0 } = options || {};
 
   const homeTeam = G.teams[f.home];
@@ -1040,76 +1036,48 @@ export const simulateMatch = (f: Fixture, G: GameState, options?: MatchSimOption
     * awayCounterMult * awayAtkMult * awayMidMult
   );
 
-  /* Generate goals */
-  f.homeGoals = poissonGoals(homeExp);
-  f.awayGoals = poissonGoals(awayExp);
-  f.events = [];
-
-  /* Home team goals */
-  for (let i = 0; i < f.homeGoals; i++) {
-    const sc = pickScorer(homeTeam, f.home);
-    const minute = generateGoalMinute();
-    const narrative = generateGoalNarrative(sc.name, sc.pos, minute);
-    f.events.push({ type: 'goal', teamId: f.home, minute, scorer: sc.name, narrative });
-    recordGoal(G, f.home, sc.name);
-    const sp = homeTeam.players.find(p => p.name === sc.name);
-    if (sp) {
-      sp.seasonGoals = (sp.seasonGoals || 0) + 1;
-      sp.careerGoals = (sp.careerGoals || 0) + 1;
-    }
-  }
-
-  /* Away team goals */
-  for (let i = 0; i < f.awayGoals; i++) {
-    const sc = pickScorer(awayTeam, f.away);
-    const minute = generateGoalMinute();
-    const narrative = generateGoalNarrative(sc.name, sc.pos, minute);
-    f.events.push({ type: 'goal', teamId: f.away, minute, scorer: sc.name, narrative });
-    recordGoal(G, f.away, sc.name);
-    const sp = awayTeam.players.find(p => p.name === sc.name);
-    if (sp) {
-      sp.seasonGoals = (sp.seasonGoals || 0) + 1;
-      sp.careerGoals = (sp.careerGoals || 0) + 1;
-    }
-  }
-
-  /* Card events — apply team talk yellow risk multiplier to player's team */
+  /* --- Card events first, so the possession engine can react to red cards --- */
   const homeYellowMult = isPlayerHome ? ttYellowRisk : 1.0;
   const awayYellowMult = isPlayerAway ? ttYellowRisk : 1.0;
-  generateCardEvents(homeTeam, f.home, f.events, homeYellowMult);
-  generateCardEvents(awayTeam, f.away, f.events, awayYellowMult);
+  const cardEvents: MatchEvent[] = [];
+  generateCardEvents(homeTeam, f.home, cardEvents, homeYellowMult);
+  generateCardEvents(awayTeam, f.away, cardEvents, awayYellowMult);
+  const cardInputs: SimCardInput[] = cardEvents.map(ev => ({
+    teamId: ev.teamId,
+    minute: ev.minute,
+    type: ev.type === 'red' ? 'red' : 'yellow',
+    playerName: ev.playerName || '',
+  }));
 
-  /* Red card match impact (#10) — adjust goals for red cards received early */
-  const homeReds = f.events.filter(e => e.type === 'red' && e.teamId === f.home);
-  const awayReds = f.events.filter(e => e.type === 'red' && e.teamId === f.away);
-  if (homeReds.length > 0) {
-    const earliestMin = Math.min(...homeReds.map(e => e.minute));
-    const remainingPct = (90 - earliestMin) / 90;
-    const extraGoals = poissonGoals(remainingPct * 0.4);
-    for (let i = 0; i < extraGoals; i++) {
-      const sc = pickScorer(awayTeam, f.away);
-      const min = rand(earliestMin, 90);
-      f.events.push({ type: 'goal', teamId: f.away, minute: min, scorer: sc.name, narrative: generateGoalNarrative(sc.name, sc.pos, min) });
-      f.awayGoals!++;
-      recordGoal(G, f.away, sc.name);
-      const sp = awayTeam.players.find(p => p.name === sc.name);
-      if (sp) { sp.seasonGoals = (sp.seasonGoals || 0) + 1; sp.careerGoals = (sp.careerGoals || 0) + 1; }
+  /* --- Play the match out as possessions, calibrated to the expected goals --- */
+  const timeline = buildMatchTimeline(
+    { team: homeTeam, teamId: f.home, tactic: homeTacId, expGoals: homeExp, strength: hs },
+    { team: awayTeam, teamId: f.away, tactic: awayTacId, expGoals: awayExp, strength: as_ },
+    cardInputs,
+  );
+
+  f.homeGoals = timeline.homeGoals;
+  f.awayGoals = timeline.awayGoals;
+  f.events = [];
+
+  /* Goals are the shots that went in — record scorer, assist and narrative */
+  for (const play of timeline.plays) {
+    if (play.outcome !== 'goal' || play.shooterSlot == null) continue;
+    const lineup = play.home ? timeline.home : timeline.away;
+    const team = play.home ? homeTeam : awayTeam;
+    const scorerSlot = lineup[play.shooterSlot];
+    const assist = play.assistSlot != null ? lineup[play.assistSlot]?.name : undefined;
+    const narrative = generateGoalNarrative(scorerSlot.name, scorerSlot.pos, play.minute);
+    f.events.push({ type: 'goal', teamId: play.teamId, minute: play.minute, scorer: scorerSlot.name, assist, narrative });
+    recordGoal(G, play.teamId, scorerSlot.name);
+    const sp = team.players.find(p => p.name === scorerSlot.name);
+    if (sp) {
+      sp.seasonGoals = (sp.seasonGoals || 0) + 1;
+      sp.careerGoals = (sp.careerGoals || 0) + 1;
     }
   }
-  if (awayReds.length > 0) {
-    const earliestMin = Math.min(...awayReds.map(e => e.minute));
-    const remainingPct = (90 - earliestMin) / 90;
-    const extraGoals = poissonGoals(remainingPct * 0.4);
-    for (let i = 0; i < extraGoals; i++) {
-      const sc = pickScorer(homeTeam, f.home);
-      const min = rand(earliestMin, 90);
-      f.events.push({ type: 'goal', teamId: f.home, minute: min, scorer: sc.name, narrative: generateGoalNarrative(sc.name, sc.pos, min) });
-      f.homeGoals!++;
-      recordGoal(G, f.home, sc.name);
-      const sp = homeTeam.players.find(p => p.name === sc.name);
-      if (sp) { sp.seasonGoals = (sp.seasonGoals || 0) + 1; sp.careerGoals = (sp.careerGoals || 0) + 1; }
-    }
-  }
+
+  f.events.push(...cardEvents);
 
   /* Sort events chronologically */
   f.events.sort((a, b) => a.minute - b.minute);
@@ -1170,4 +1138,6 @@ export const simulateMatch = (f: Fixture, G: GameState, options?: MatchSimOption
 
   /* Clear team talk after match */
   G.activeTeamTalk = null;
+
+  return timeline;
 };
